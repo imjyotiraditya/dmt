@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,7 +62,10 @@ fun ExpandedPlayer(
     onInfo: () -> Unit,
     onQueue: () -> Unit,
 ) {
-    Column(
+    val configuration = LocalConfiguration.current
+    val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(TuiBg)
@@ -67,11 +73,27 @@ fun ExpandedPlayer(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(horizontal = 20.dp)
     ) {
+        if (landscape) {
+            LandscapePlayer(state, dispatch, onInfo, onQueue)
+        } else {
+            PortraitPlayer(state, dispatch, onInfo, onQueue)
+        }
+    }
+}
+
+@Composable
+private fun PortraitPlayer(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    onInfo: () -> Unit,
+    onQueue: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
         PlayerHeader(dispatch, onInfo)
 
         Spacer(modifier = Modifier.weight(1f))
 
-        CoverPanel(state)
+        CoverPanel(state, Modifier.padding(top = 14.dp))
         TrackMeta(state)
         SeekRow(state, dispatch)
         TransportRow(state, dispatch)
@@ -80,6 +102,44 @@ fun ExpandedPlayer(
         Spacer(modifier = Modifier.weight(1f))
 
         QueueFooter(state, onQueue)
+    }
+}
+
+@Composable
+private fun LandscapePlayer(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    onInfo: () -> Unit,
+    onQueue: () -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(vertical = 16.dp)
+                .aspectRatio(1f, matchHeightConstraintsFirst = true)
+        ) {
+            CoverPanel(state)
+        }
+        Spacer(modifier = Modifier.width(20.dp))
+        Column(modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+        ) {
+            PlayerHeader(dispatch, onInfo)
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            TrackMeta(state)
+            SeekRow(state, dispatch)
+            TransportRow(state, dispatch)
+            StatusRow(state, dispatch)
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            QueueFooter(state, onQueue)
+        }
     }
 }
 
@@ -104,10 +164,10 @@ private fun PlayerHeader(dispatch: (DmtAction) -> Unit, onInfo: () -> Unit) {
 }
 
 @Composable
-private fun CoverPanel(state: DmtState) {
+private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
     val rawArt = state.artRaw
 
-    TuiPanel(modifier = Modifier.padding(top = 14.dp)) {
+    TuiPanel(modifier = modifier) {
         when {
             state.settings.rawArt && rawArt != null -> {
                 val image = remember(rawArt) { rawArt.asImageBitmap() }
