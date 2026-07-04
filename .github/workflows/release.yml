@@ -1,0 +1,46 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: set up jdk
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: set up gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: resolve version
+        id: version
+        run: echo "name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: decode keystore
+        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
+
+      - name: build signed release apk
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
+
+      - name: publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: app/build/outputs/apk/release/*.apk

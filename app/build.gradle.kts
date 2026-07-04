@@ -5,7 +5,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val appVersionName = "1.0"
+val appVersionName = (project.findProperty("versionOverride") as String?) ?: "1.0"
+val appVersionCode = appVersionName
+    .split(".")
+    .mapNotNull { it.toIntOrNull() }
+    .let { (it.getOrElse(0) { 0 } * 10_000) + (it.getOrElse(1) { 0 } * 100) + it.getOrElse(2) { 0 } }
+    .coerceAtLeast(1)
 
 val keystoreProps: Properties? = rootProject.file("keystore.properties")
     .takeIf { it.exists() }
@@ -28,7 +33,7 @@ android {
         applicationId = "dev.jyotiraditya.dmt"
         minSdk = 33
         targetSdk = 37
-        versionCode = 1
+        versionCode = appVersionCode
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
