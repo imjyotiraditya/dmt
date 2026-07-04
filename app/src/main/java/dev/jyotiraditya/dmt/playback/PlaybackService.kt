@@ -14,8 +14,11 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
+import androidx.media3.common.Player
+import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
@@ -62,6 +65,10 @@ class PlaybackService : MediaLibraryService() {
         val CMD_SLEEP_GET = SessionCommand("dev.jyotiraditya.dmt.command.SLEEP_GET", Bundle.EMPTY)
         val CMD_AUDIO_SESSION =
             SessionCommand("dev.jyotiraditya.dmt.command.AUDIO_SESSION", Bundle.EMPTY)
+        val CMD_TOGGLE_SHUFFLE =
+            SessionCommand("dev.jyotiraditya.dmt.command.TOGGLE_SHUFFLE", Bundle.EMPTY)
+        val CMD_CYCLE_REPEAT =
+            SessionCommand("dev.jyotiraditya.dmt.command.CYCLE_REPEAT", Bundle.EMPTY)
     }
 
     private var mediaSession: MediaLibrarySession? = null
@@ -106,6 +113,12 @@ class PlaybackService : MediaLibraryService() {
                 recordStats(playedMs, mediaId)
             }
         )
+        player.addListener(object : Player.Listener {
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) =
+                publishButtons()
+
+            override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
+        })
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .setSessionActivity(
                 PendingIntent.getActivity(
@@ -115,7 +128,38 @@ class PlaybackService : MediaLibraryService() {
                     PendingIntent.FLAG_IMMUTABLE
                 )
             )
+            .setMediaButtonPreferences(sessionButtons(player))
             .build()
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun sessionButtons(player: Player): List<CommandButton> {
+        val shuffleIcon = if (player.shuffleModeEnabled) {
+            CommandButton.ICON_SHUFFLE_ON
+        } else {
+            CommandButton.ICON_SHUFFLE_OFF
+        }
+        val repeatIcon = when (player.repeatMode) {
+            Player.REPEAT_MODE_ALL -> CommandButton.ICON_REPEAT_ALL
+            Player.REPEAT_MODE_ONE -> CommandButton.ICON_REPEAT_ONE
+            else -> CommandButton.ICON_REPEAT_OFF
+        }
+        return listOf(
+            CommandButton.Builder(shuffleIcon)
+                .setDisplayName(getString(R.string.auto_shuffle))
+                .setSessionCommand(CMD_TOGGLE_SHUFFLE)
+                .build(),
+            CommandButton.Builder(repeatIcon)
+                .setDisplayName(getString(R.string.auto_repeat))
+                .setSessionCommand(CMD_CYCLE_REPEAT)
+                .build(),
+        )
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun publishButtons() {
+        val session = mediaSession ?: return
+        session.setMediaButtonPreferences(sessionButtons(session.player))
     }
 
     private suspend fun library(): List<Track> =
@@ -130,31 +174,46 @@ class PlaybackService : MediaLibraryService() {
                 it.album.contains(query, true)
         }
 
+    @OptIn(UnstableApi::class)
     private fun browsableItem(
         id: String,
         title: String,
         subtitle: String? = null,
         artwork: Uri? = null,
-    ): MediaItem = MediaItem.Builder()
-        .setMediaId(id)
-        .setMediaMetadata(
-            MediaMetadata.Builder()
-                .setTitle(title)
-                .setArtist(subtitle)
-                .setArtworkUri(artwork)
-                .setIsBrowsable(true)
-                .setIsPlayable(false)
-                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                .build()
-        )
-        .build()
+        childrenAsGrid: Boolean = false,
+    ): MediaItem {
+        val extras = Bundle().apply {
+            putInt(
+                MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                if (childrenAsGrid) {
+                    MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+                } else {
+                    MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
+                }
+            )
+        }
+        return MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setArtist(subtitle)
+                    .setArtworkUri(artwork)
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                    .setExtras(extras)
+                    .build()
+            )
+            .build()
+    }
 
     private suspend fun childrenOf(parentId: String): List<MediaItem> {
         val tracks = library()
         return when {
             parentId == ROOT_ID -> listOf(
                 browsableItem(TRACKS_ID, getString(R.string.auto_tracks)),
-                browsableItem(ALBUMS_ID, getString(R.string.auto_albums)),
+                browsableItem(ALBUMS_ID, getString(R.string.auto_albums), childrenAsGrid = true),
                 browsableItem(FOLDERS_ID, getString(R.string.auto_folders)),
             )
 
@@ -211,6 +270,8 @@ class PlaybackService : MediaLibraryService() {
                 .add(CMD_SLEEP_SET)
                 .add(CMD_SLEEP_GET)
                 .add(CMD_AUDIO_SESSION)
+                .add(CMD_TOGGLE_SHUFFLE)
+                .add(CMD_CYCLE_REPEAT)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(commands)
@@ -237,6 +298,20 @@ class PlaybackService : MediaLibraryService() {
                 val id = (mediaSession?.player as? ExoPlayer)?.audioSessionId ?: 0
                 val extras = Bundle().apply { putInt(KEY_AUDIO_SESSION, id) }
                 Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+            }
+
+            CMD_TOGGLE_SHUFFLE.customAction -> {
+                session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
+                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+
+            CMD_CYCLE_REPEAT.customAction -> {
+                session.player.repeatMode = when (session.player.repeatMode) {
+                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                    else -> Player.REPEAT_MODE_OFF
+                }
+                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
 
             else -> super.onCustomCommand(session, controller, customCommand, args)

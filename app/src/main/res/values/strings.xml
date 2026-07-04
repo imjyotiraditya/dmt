@@ -8,6 +8,8 @@
     <string name="auto_tracks">tracks</string>
     <string name="auto_albums">albums</string>
     <string name="auto_folders">folders</string>
+    <string name="auto_shuffle">shuffle</string>
+    <string name="auto_repeat">repeat</string>
     <string name="cfg">cfg</string>
 
     <string name="search_tracks_hint">search %1$d tracks</string>
