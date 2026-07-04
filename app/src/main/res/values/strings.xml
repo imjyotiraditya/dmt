@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">dmt</string>
     <string name="tagline">dear music, thanks</string>
+    <string name="shortcut_shuffle">shuffle all</string>
 
     <string name="tab_library">1:library</string>
     <string name="tab_albums">2:albums</string>

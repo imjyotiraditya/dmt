@@ -123,6 +123,7 @@ sealed interface DmtAction {
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
     data object OpenEqualizer : DmtAction
+    data object ShuffleAll : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction
 }
 
@@ -140,6 +141,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var controller: MediaController? = null
     private var noticeJob: Job? = null
     private var sleepEndAt: Long? = null
+    private var pendingShuffle = false
 
     init {
         viewModelScope.launch {
@@ -232,6 +234,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
             DmtAction.OpenEqualizer -> openEqualizer()
+            DmtAction.ShuffleAll -> shuffleAll()
 
             is DmtAction.Config -> {
                 val old = _state.value.settings
@@ -261,6 +264,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         restoreSpeed(c)
         loadCover(c.currentMediaItem)
         loadTech(c.currentMediaItem)
+        if (pendingShuffle) shuffleAll()
         while (isActive) {
             val position = c.currentPosition.coerceAtLeast(0L)
             val duration = c.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
@@ -365,6 +369,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 filteredAlbums = filterAlbums(tracks.toAlbums(), it.query),
             )
         }
+        if (pendingShuffle) shuffleAll()
     }
 
     private fun loadCover(mediaItem: MediaItem?) {
@@ -448,6 +453,21 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             if (bitrate > 0) add(Spec("KBPS", "${bitrate / 1000}", hot = true))
             track?.size?.takeIf { it > 0 }?.let { add(Spec("SIZE", it.asMB())) }
         }
+    }
+
+    private fun shuffleAll() {
+        val c = controller
+        val tracks = _state.value.tracks
+        if (c == null || tracks.isEmpty()) {
+            pendingShuffle = true
+            return
+        }
+        pendingShuffle = false
+        c.setMediaItems(tracks.map { it.toMediaItem() }, tracks.indices.random(), 0L)
+        c.shuffleModeEnabled = true
+        c.prepare()
+        c.play()
+        _state.update { it.copy(expanded = true, error = null) }
     }
 
     private fun openEqualizer() {
