@@ -71,15 +71,15 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 )
             )
         }
+        Caption(stringResource(R.string.tools))
         SettingRow(stringResource(R.string.set_eq), stringResource(R.string.set_eq_open)) {
             dispatch(DmtAction.OpenEqualizer)
         }
-        SettingRow(stringResource(R.string.set_rescan), stringResource(R.string.run)) {
-            dispatch(DmtAction.Rescan)
-        }
-
         SettingRow(stringResource(R.string.stats), stringResource(R.string.stat_view)) {
             dispatch(DmtAction.Show(DmtView.STATS))
+        }
+        SettingRow(stringResource(R.string.set_rescan), stringResource(R.string.run)) {
+            dispatch(DmtAction.Rescan)
         }
 
         Caption(stringResource(R.string.about))
@@ -118,6 +118,11 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 text = stringResource(R.string.credit),
                 style = MaterialTheme.typography.labelMedium,
                 color = TuiDim
+            )
+            Text(
+                text = " ↗",
+                style = MaterialTheme.typography.labelMedium,
+                color = LocalAccent.current
             )
         }
     }

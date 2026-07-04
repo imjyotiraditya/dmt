@@ -39,6 +39,7 @@
     <string name="track_info">track info</string>
 
     <string name="config">config</string>
+    <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
     <string name="set_detail">cover detail</string>
     <string name="set_detail_value">%1$d col</string>
