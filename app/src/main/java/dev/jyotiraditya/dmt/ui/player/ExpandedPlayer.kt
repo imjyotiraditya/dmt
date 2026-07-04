@@ -134,7 +134,7 @@ private fun LandscapePlayer(
             TrackMeta(state)
             SeekRow(state, dispatch)
             TransportRow(state, dispatch)
-            StatusRow(state, dispatch)
+            StatusRow(state, dispatch, singleRow = true)
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -327,17 +327,17 @@ private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp)
-    ) {
+private fun StatusRow(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    singleRow: Boolean = false,
+) {
+    val shuffle: @Composable () -> Unit = {
         TuiStatus("shf", if (state.shuffle) "on" else "off", state.shuffle) {
             dispatch(DmtAction.ToggleShuffle)
         }
+    }
+    val repeat: @Composable () -> Unit = {
         TuiStatus(
             label = "rpt",
             value = when (state.repeat) {
@@ -350,13 +350,7 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             dispatch(DmtAction.CycleRepeat)
         }
     }
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-    ) {
+    val sleep: @Composable () -> Unit = {
         TuiStatus(
             label = "slp",
             value = if (state.sleepMinutes == 0) {
@@ -368,6 +362,8 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.CycleSleep)
         }
+    }
+    val speed: @Composable () -> Unit = {
         TuiStatus(
             label = "spd",
             value = when {
@@ -380,6 +376,42 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             on = kotlin.math.abs(state.speed - 1f) > 0.01f
         ) {
             dispatch(DmtAction.CycleSpeed)
+        }
+    }
+
+    if (singleRow) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            shuffle()
+            repeat()
+            sleep()
+            speed()
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp)
+        ) {
+            shuffle()
+            repeat()
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            sleep()
+            speed()
         }
     }
 }
