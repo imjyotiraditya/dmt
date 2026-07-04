@@ -289,6 +289,14 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.CycleRepeat)
         }
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    ) {
         TuiStatus(
             label = "slp",
             value = if (state.sleepMinutes == 0) {
@@ -299,6 +307,19 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             on = state.sleepMinutes != 0
         ) {
             dispatch(DmtAction.CycleSleep)
+        }
+        TuiStatus(
+            label = "spd",
+            value = when {
+                kotlin.math.abs(state.speed - 1f) < 0.01f -> "1.0x"
+                kotlin.math.abs(state.speed - 0.75f) < 0.01f -> "0.75x"
+                kotlin.math.abs(state.speed - 1.25f) < 0.01f -> "1.25x"
+                kotlin.math.abs(state.speed - 1.5f) < 0.01f -> "1.5x"
+                else -> "2.0x"
+            },
+            on = kotlin.math.abs(state.speed - 1f) > 0.01f
+        ) {
+            dispatch(DmtAction.CycleSpeed)
         }
     }
 }

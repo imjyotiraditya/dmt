@@ -27,6 +27,7 @@ import dev.jyotiraditya.dmt.data.Album
 import dev.jyotiraditya.dmt.data.KEY_ACCENT
 import dev.jyotiraditya.dmt.data.KEY_COLS
 import dev.jyotiraditya.dmt.data.KEY_RAW
+import dev.jyotiraditya.dmt.data.KEY_SPEED
 import dev.jyotiraditya.dmt.data.KEY_SPECS
 import dev.jyotiraditya.dmt.data.KEY_WAVE
 import dev.jyotiraditya.dmt.data.MediaLibrary
@@ -92,6 +93,7 @@ data class DmtState(
     val expanded: Boolean = false,
     val sleepMinutes: Int = 0,
     val sleepLeftMs: Long = 0L,
+    val speed: Float = 1f,
     val settings: DmtSettings = DmtSettings(),
     val tech: List<Spec> = emptyList(),
     val error: String? = null,
@@ -116,6 +118,7 @@ sealed interface DmtAction {
     data class Expand(val value: Boolean) : DmtAction
     data class RemoveAt(val index: Int) : DmtAction
     data object CycleSleep : DmtAction
+    data object CycleSpeed : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction
 }
 
@@ -223,6 +226,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             DmtAction.CycleSleep -> cycleSleep()
+            DmtAction.CycleSpeed -> cycleSpeed()
 
             is DmtAction.Config -> {
                 val old = _state.value.settings
@@ -249,6 +253,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         c.addListener(listener)
         syncFrom(c)
         restoreSleep(c)
+        restoreSpeed(c)
         loadCover(c.currentMediaItem)
         loadTech(c.currentMediaItem)
         while (isActive) {
@@ -308,6 +313,12 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(repeat = repeatMode) }
         }
 
+        override fun onPlaybackParametersChanged(
+            playbackParameters: androidx.media3.common.PlaybackParameters,
+        ) {
+            _state.update { it.copy(speed = playbackParameters.speed) }
+        }
+
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
             controller?.let { c -> _state.update { it.copy(queue = c.queueLabels()) } }
         }
@@ -329,6 +340,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 shuffle = c.shuffleModeEnabled,
                 repeat = c.repeatMode,
                 album = c.mediaMetadata.albumTitle?.toString().orEmpty(),
+                speed = c.playbackParameters.speed,
                 queue = c.queueLabels(),
             )
         }
@@ -433,6 +445,17 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private fun cycleSpeed() {
+        val c = controller ?: return
+        val steps = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+        val currentIndex = steps.indexOfFirst { kotlin.math.abs(it - _state.value.speed) < 0.01f }
+        val next = steps[(currentIndex + 1).mod(steps.size)]
+        c.setPlaybackSpeed(next)
+        viewModelScope.launch {
+            getApplication<Application>().dmtStore.edit { it[KEY_SPEED] = next }
+        }
+    }
+
     private fun cycleSleep() {
         val c = controller ?: return
         val next = when (_state.value.sleepMinutes) {
@@ -452,6 +475,13 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 sleepMinutes = next,
                 sleepLeftMs = if (next == 0) 0L else next * 60_000L,
             )
+        }
+    }
+
+    private suspend fun restoreSpeed(c: MediaController) {
+        val saved = getApplication<Application>().dmtStore.data.first()[KEY_SPEED] ?: 1f
+        if (kotlin.math.abs(c.playbackParameters.speed - saved) > 0.01f) {
+            c.setPlaybackSpeed(saved)
         }
     }
 
