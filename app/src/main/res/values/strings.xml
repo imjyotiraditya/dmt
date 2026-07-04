@@ -52,6 +52,12 @@
     <string name="stat_time">time listened</string>
     <string name="stat_plays">plays</string>
     <string name="stat_top">most played</string>
+    <string name="stat_view">view</string>
+    <string name="stat_library">library</string>
+    <string name="stat_tracks">tracks</string>
+    <string name="stat_albums">albums</string>
+    <string name="stat_folders">folders</string>
+    <string name="stat_empty">nothing played yet</string>
     <string name="about">about</string>
     <string name="about_title">dmt · dear music, thanks</string>
     <string name="about_body">a tui-inspired local music player.\nmusic helped a lot; this is the thank-you note.</string>

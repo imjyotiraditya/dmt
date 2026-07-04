@@ -66,7 +66,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS }
+enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS, STATS }
 
 data class DmtSettings(
     val wave: Boolean = true,

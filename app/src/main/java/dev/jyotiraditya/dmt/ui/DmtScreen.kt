@@ -52,6 +52,7 @@ import dev.jyotiraditya.dmt.ui.screens.FilesPane
 import dev.jyotiraditya.dmt.ui.screens.LibraryPane
 import dev.jyotiraditya.dmt.ui.screens.PermissionPane
 import dev.jyotiraditya.dmt.ui.screens.SettingsPane
+import dev.jyotiraditya.dmt.ui.screens.StatsPane
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
@@ -81,6 +82,8 @@ fun DmtScreen(
         when {
             state.expanded -> dispatch(DmtAction.Expand(false))
 
+            state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
+
             state.view == DmtView.ALBUMS && state.openAlbum != null ->
                 dispatch(DmtAction.OpenAlbum(null))
 
@@ -107,6 +110,7 @@ fun DmtScreen(
 
             Column(modifier = Modifier.weight(1f)) {
                 when {
+                    state.view == DmtView.STATS -> StatsPane(state, dispatch)
                     state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
                     !state.hasPermission -> PermissionPane(dispatch, onRequestPermission)
                     state.scanning -> Caption(stringResource(R.string.scanning))
@@ -182,11 +186,10 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 color = TuiBright,
                 modifier = Modifier.weight(1f)
             )
-            TuiTab(stringResource(R.string.cfg), state.view == DmtView.SETTINGS) {
+            val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
+            TuiTab(stringResource(R.string.cfg), inConfig) {
                 dispatch(
-                    DmtAction.Show(
-                        if (state.view == DmtView.SETTINGS) DmtView.LIBRARY else DmtView.SETTINGS
-                    )
+                    DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS)
                 )
             }
         }
