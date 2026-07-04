@@ -2,6 +2,8 @@ package dev.jyotiraditya.dmt.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,7 +35,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val on = stringResource(R.string.on)
     val off = stringResource(R.string.off)
 
-    Column {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Caption(stringResource(R.string.config))
 
         SettingRow(stringResource(R.string.set_wave), if (settings.wave) on else off) {
