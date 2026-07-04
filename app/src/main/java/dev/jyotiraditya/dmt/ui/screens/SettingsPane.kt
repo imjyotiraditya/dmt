@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
@@ -23,7 +24,9 @@ import dev.jyotiraditya.dmt.ui.DmtState
 import dev.jyotiraditya.dmt.ui.DmtView
 import dev.jyotiraditya.dmt.ui.components.Caption
 import dev.jyotiraditya.dmt.ui.components.TuiKey
+import dev.jyotiraditya.dmt.ui.components.tuiClickable
 import dev.jyotiraditya.dmt.ui.theme.AccentPalette
+import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -97,6 +100,26 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             color = TuiFaint,
             modifier = Modifier.padding(top = 6.dp)
         )
+
+        val uriHandler = LocalUriHandler.current
+        val creditUrl = stringResource(R.string.credit_url)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 12.dp)
+                .tuiClickable { runCatching { uriHandler.openUri(creditUrl) } }
+        ) {
+            Text(
+                text = "▪ ",
+                style = MaterialTheme.typography.labelMedium,
+                color = LocalAccent.current
+            )
+            Text(
+                text = stringResource(R.string.credit),
+                style = MaterialTheme.typography.labelMedium,
+                color = TuiDim
+            )
+        }
     }
 }
 
