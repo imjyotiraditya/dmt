@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
+import kotlin.math.abs
 import dev.jyotiraditya.dmt.player.asTime
 import dev.jyotiraditya.dmt.ui.AsciiCover
 import dev.jyotiraditya.dmt.ui.DmtAction
@@ -184,7 +186,24 @@ private fun TrackMeta(state: DmtState) {
 @Composable
 private fun SeekRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     var scrub by remember { mutableStateOf<Float?>(null) }
+    var seekPending by remember { mutableStateOf(false) }
     val accent = LocalAccent.current
+
+    LaunchedEffect(state.positionMs) {
+        if (!seekPending) return@LaunchedEffect
+        val held = scrub ?: return@LaunchedEffect
+        val target = (held * state.durationMs).toLong()
+        if (abs(state.positionMs - target) < 1200) {
+            scrub = null
+            seekPending = false
+        }
+    }
+
+    LaunchedEffect(state.nowPlayingId) {
+        scrub = null
+        seekPending = false
+    }
+
     val playFraction =
         if (state.durationMs > 0) {
             (state.positionMs.toFloat() / state.durationMs).coerceIn(0f, 1f)
@@ -206,8 +225,14 @@ private fun SeekRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         )
         ThinSlider(
             fraction = scrub ?: playFraction,
-            onScrub = { scrub = it },
-            onSeek = { dispatch(DmtAction.Seek(it)) },
+            onScrub = {
+                scrub = it
+                if (it != null) seekPending = false
+            },
+            onSeek = {
+                dispatch(DmtAction.Seek(it))
+                seekPending = true
+            },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 10.dp)

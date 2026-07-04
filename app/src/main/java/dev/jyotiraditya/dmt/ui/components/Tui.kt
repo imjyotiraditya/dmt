@@ -191,10 +191,7 @@ fun ThinSlider(
                         last = (change.position.x / size.width).coerceIn(0f, 1f)
                         onScrub(last)
                     },
-                    onDragEnd = {
-                        onSeek(last)
-                        onScrub(null)
-                    },
+                    onDragEnd = { onSeek(last) },
                     onDragCancel = { onScrub(null) }
                 )
             }

@@ -201,7 +201,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
             is DmtAction.Seek -> c?.run {
                 val duration = _state.value.durationMs
-                if (duration > 0) seekTo((action.fraction * duration).toLong())
+                if (duration > 0) {
+                    val target = (action.fraction * duration).toLong()
+                    seekTo(target)
+                    _state.update { it.copy(positionMs = target) }
+                }
             }
 
             is DmtAction.Expand -> _state.update { it.copy(expanded = action.value) }
