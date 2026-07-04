@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.ui
 import android.Manifest
 import android.app.Application
 import android.content.ComponentName
+import android.os.Bundle
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaExtractor
@@ -11,6 +12,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Size
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -39,6 +41,8 @@ import dev.jyotiraditya.dmt.player.codecLabel
 import dev.jyotiraditya.dmt.player.cycleRepeat
 import dev.jyotiraditya.dmt.player.mediaController
 import dev.jyotiraditya.dmt.player.queueLabels
+import dev.jyotiraditya.dmt.playback.PlaybackService
+import dev.jyotiraditya.dmt.player.await
 import dev.jyotiraditya.dmt.player.toMediaItem
 import dev.jyotiraditya.dmt.player.togglePlayPause
 import kotlinx.coroutines.Dispatchers
@@ -128,7 +132,6 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private var controller: MediaController? = null
     private var noticeJob: Job? = null
-    private var sleepJob: Job? = null
     private var sleepEndAt: Long? = null
 
     init {
@@ -245,6 +248,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         controller = c
         c.addListener(listener)
         syncFrom(c)
+        restoreSleep(c)
         loadCover(c.currentMediaItem)
         loadTech(c.currentMediaItem)
         while (isActive) {
@@ -254,9 +258,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             val sleepLeft = sleepEndAt?.let { end ->
                 (end - System.currentTimeMillis()).coerceAtLeast(0L)
             } ?: 0L
+            val sleepExpired = sleepEndAt != null && sleepLeft == 0L
+            if (sleepExpired) sleepEndAt = null
             _state.update {
                 if (it.positionMs == position && it.durationMs == duration &&
-                    it.queueIndex == index && it.sleepLeftMs == sleepLeft
+                    it.queueIndex == index && it.sleepLeftMs == sleepLeft && !sleepExpired
                 ) {
                     it
                 } else {
@@ -265,6 +271,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                         durationMs = duration,
                         queueIndex = index,
                         sleepLeftMs = sleepLeft,
+                        sleepMinutes = if (sleepExpired) 0 else it.sleepMinutes,
                     )
                 }
             }
@@ -427,26 +434,41 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun cycleSleep() {
+        val c = controller ?: return
         val next = when (_state.value.sleepMinutes) {
             0 -> 15
             15 -> 30
             30 -> 60
             else -> 0
         }
-        sleepJob?.cancel()
-        sleepEndAt = null
-        if (next == 0) {
-            _state.update { it.copy(sleepMinutes = 0, sleepLeftMs = 0L) }
-            return
+        val endAt = if (next == 0) 0L else System.currentTimeMillis() + next * 60_000L
+        c.sendCustomCommand(
+            PlaybackService.CMD_SLEEP_SET,
+            bundleOf(PlaybackService.KEY_END_AT to endAt)
+        )
+        sleepEndAt = endAt.takeIf { it > 0L }
+        _state.update {
+            it.copy(
+                sleepMinutes = next,
+                sleepLeftMs = if (next == 0) 0L else next * 60_000L,
+            )
         }
-        val durationMs = next * 60_000L
-        sleepEndAt = System.currentTimeMillis() + durationMs
-        _state.update { it.copy(sleepMinutes = next, sleepLeftMs = durationMs) }
-        sleepJob = viewModelScope.launch {
-            delay(durationMs)
-            controller?.pause()
-            sleepEndAt = null
-            _state.update { it.copy(sleepMinutes = 0, sleepLeftMs = 0L) }
+    }
+
+    private suspend fun restoreSleep(c: MediaController) {
+        runCatching {
+            val result = c.sendCustomCommand(PlaybackService.CMD_SLEEP_GET, Bundle.EMPTY).await()
+            val endAt = result.extras.getLong(PlaybackService.KEY_END_AT)
+            if (endAt > System.currentTimeMillis()) {
+                sleepEndAt = endAt
+                val left = endAt - System.currentTimeMillis()
+                val step = when {
+                    left <= 15 * 60_000L -> 15
+                    left <= 30 * 60_000L -> 30
+                    else -> 60
+                }
+                _state.update { it.copy(sleepMinutes = step, sleepLeftMs = left) }
+            }
         }
     }
 
