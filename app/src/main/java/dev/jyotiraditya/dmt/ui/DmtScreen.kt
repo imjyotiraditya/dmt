@@ -7,8 +7,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -32,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -58,6 +63,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DmtScreen(
     state: DmtState,
@@ -66,6 +72,10 @@ fun DmtScreen(
 ) {
     var showQueueSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
+    val configuration = LocalConfiguration.current
+    val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+    val hideChrome = imeVisible && landscape
 
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -105,8 +115,10 @@ fun DmtScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(horizontal = 16.dp)
         ) {
-            Titlebar(state, dispatch)
-            TabsRow(state, dispatch)
+            if (!hideChrome) {
+                Titlebar(state, dispatch)
+                TabsRow(state, dispatch)
+            }
 
             Column(modifier = Modifier.weight(1f)) {
                 when {
@@ -122,7 +134,7 @@ fun DmtScreen(
 
             NoticeLine(state)
 
-            if (state.nowPlayingId != null) {
+            if (state.nowPlayingId != null && !imeVisible) {
                 MiniPlayer(
                     state = state,
                     dispatch = dispatch,
