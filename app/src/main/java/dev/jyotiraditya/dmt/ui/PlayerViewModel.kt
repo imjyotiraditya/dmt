@@ -405,9 +405,14 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     }.getOrNull()
                 }
             }
-            val cover = raw?.let {
-                withContext(Dispatchers.IO) {
-                    runCatching { it.toAsciiBitmap(_state.value.settings.cols) }.getOrNull()
+            val cover = withContext(Dispatchers.IO) {
+                raw?.let { art ->
+                    runCatching { art.toAsciiBitmap(_state.value.settings.cols) }.getOrNull()
+                } ?: mediaItem?.let {
+                    generateAsciiPlaceholder(
+                        seed = forId?.toLongOrNull() ?: forId.hashCode().toLong(),
+                        cols = _state.value.settings.cols,
+                    )
                 }
             }
             _state.update {

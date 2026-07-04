@@ -156,7 +156,7 @@ private fun TrackMeta(state: DmtState) {
         maxLines = 1,
         modifier = Modifier
             .padding(top = 18.dp)
-            .basicMarquee()
+            .basicMarquee(iterations = Int.MAX_VALUE)
     )
     Text(
         text = listOf(state.artist, state.album)

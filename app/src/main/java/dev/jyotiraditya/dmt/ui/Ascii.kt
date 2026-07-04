@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.random.Random
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 
@@ -61,6 +63,51 @@ fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
             AndroidColor.colorToHSV(pixel, hsv)
             hsv[1] = (hsv[1] * 1.25f).coerceAtMost(1f)
             hsv[2] = 0.3f + hsv[2] * 0.7f
+            paint.color = AndroidColor.HSVToColor(hsv)
+            canvas.drawText(symbol.toString(), x * advance, (y + 1) * lineH - lineH * 0.22f, paint)
+        }
+    }
+    return out
+}
+
+fun generateAsciiPlaceholder(seed: Long, cols: Int = 64): Bitmap {
+    val rows = (cols * 0.6f).roundToInt()
+    val random = Random(seed)
+    val f1 = 0.10f + random.nextFloat() * 0.25f
+    val f2 = 0.10f + random.nextFloat() * 0.25f
+    val f3 = 0.05f + random.nextFloat() * 0.15f
+    val p1 = random.nextFloat() * 6.28f
+    val p2 = random.nextFloat() * 6.28f
+    val p3 = random.nextFloat() * 6.28f
+    val hue = random.nextFloat() * 360f
+
+    val paint = Paint().apply {
+        typeface = Typeface.MONOSPACE
+        isAntiAlias = true
+        textSize = 24f
+    }
+    val advance = paint.measureText("M")
+    val lineH = paint.textSize
+    val out = Bitmap.createBitmap(
+        (cols * advance).roundToInt(),
+        (rows * lineH).roundToInt(),
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = AndroidCanvas(out)
+    val hsv = FloatArray(3)
+    for (y in 0 until rows) {
+        for (x in 0 until cols) {
+            val v = (
+                sin(x * f1 + p1) +
+                    sin(y * f2 + p2) +
+                    sin((x + y) * f3 + p3) +
+                    3f
+                ) / 6f
+            val symbol = RAMP[(v * (RAMP.length - 1)).roundToInt().coerceIn(0, RAMP.length - 1)]
+            if (symbol == ' ') continue
+            hsv[0] = hue
+            hsv[1] = 0.30f
+            hsv[2] = 0.20f + v * 0.45f
             paint.color = AndroidColor.HSVToColor(hsv)
             canvas.drawText(symbol.toString(), x * advance, (y + 1) * lineH - lineH * 0.22f, paint)
         }

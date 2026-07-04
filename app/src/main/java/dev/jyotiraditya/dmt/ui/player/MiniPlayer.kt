@@ -69,7 +69,7 @@ fun MiniPlayer(
                     style = MaterialTheme.typography.bodyMedium,
                     color = TuiBright,
                     maxLines = 1,
-                    modifier = Modifier.basicMarquee()
+                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE)
                 )
                 Text(
                     text = "${state.artist} · ${state.positionMs.asTime()}/${state.durationMs.asTime()}"
