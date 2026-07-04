@@ -1,7 +1,6 @@
 package dev.jyotiraditya.dmt
 
 import android.Manifest
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,16 +32,11 @@ import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        const val ACTION_SHUFFLE_ALL = "dev.jyotiraditya.dmt.action.SHUFFLE_ALL"
-    }
-
     private val playerViewModel: PlayerViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        handleIntent(intent)
         setContent {
             DMTTheme {
                 Surface(
@@ -89,17 +83,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent?) {
-        if (intent?.action == ACTION_SHUFFLE_ALL) {
-            playerViewModel.dispatch(DmtAction.ShuffleAll)
         }
     }
 }
