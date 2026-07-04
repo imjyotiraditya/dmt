@@ -1,7 +1,9 @@
 package dev.jyotiraditya.dmt.player
 
 import android.content.ComponentName
+import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -10,9 +12,9 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import dev.jyotiraditya.dmt.data.Track
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 suspend fun <T> ListenableFuture<T>.await(): T = suspendCancellableCoroutine { cont ->
     addListener(
@@ -29,6 +31,10 @@ suspend fun Context.mediaController(): MediaController = MediaController.Builder
     SessionToken(this, ComponentName(this, PlaybackService::class.java))
 ).buildAsync().await()
 
+private val albumArtBase: Uri = Uri.parse("content://media/external/audio/albumart")
+
+fun Track.albumArtUri(): Uri = ContentUris.withAppendedId(albumArtBase, albumId)
+
 fun Track.toMediaItem(): MediaItem = MediaItem.Builder()
     .setMediaId(id.toString())
     .setUri(uri)
@@ -37,6 +43,10 @@ fun Track.toMediaItem(): MediaItem = MediaItem.Builder()
             .setTitle(title)
             .setArtist(artist)
             .setAlbumTitle(album)
+            .setArtworkUri(albumArtUri())
+            .setIsPlayable(true)
+            .setIsBrowsable(false)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
             .build()
     )
     .build()
@@ -81,14 +91,7 @@ fun String.codecLabel(): String = when {
     else -> substringAfterLast('/').uppercase().take(8)
 }
 
-fun Int.asKbps(): String = "${this / 1000}KBPS"
-
 fun Int.asKHz(): String =
     if (this % 1000 == 0) "${this / 1000}K" else "%.1fK".format(this / 1000f)
 
 fun Long.asMB(): String = "%.1fMB".format(this / 1048576f)
-
-fun Track.specLine(): String = buildList {
-    add(mime.codecLabel())
-    if (bitrate > 0) add(bitrate.asKbps())
-}.joinToString(" · ")

@@ -5,6 +5,9 @@
     <string name="tab_library">1:library</string>
     <string name="tab_albums">2:albums</string>
     <string name="tab_files">3:files</string>
+    <string name="auto_tracks">tracks</string>
+    <string name="auto_albums">albums</string>
+    <string name="auto_folders">folders</string>
     <string name="cfg">cfg</string>
 
     <string name="search_tracks_hint">search %1$d tracks</string>

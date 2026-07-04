@@ -44,7 +44,6 @@ import dev.jyotiraditya.dmt.data.toAlbums
 import dev.jyotiraditya.dmt.data.toCounts
 import dev.jyotiraditya.dmt.data.toFolders
 import dev.jyotiraditya.dmt.player.asKHz
-import dev.jyotiraditya.dmt.player.asKbps
 import dev.jyotiraditya.dmt.player.asMB
 import dev.jyotiraditya.dmt.player.codecLabel
 import dev.jyotiraditya.dmt.player.cycleRepeat
