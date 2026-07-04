@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "dev.jyotiraditya.dmt"
-        minSdk = 36
+        minSdk = 33
         targetSdk = 37
         versionCode = 1
         versionName = appVersionName
