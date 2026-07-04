@@ -86,6 +86,8 @@ data class DmtState(
     val cover: Bitmap? = null,
     val artRaw: Bitmap? = null,
     val expanded: Boolean = false,
+    val sleepMinutes: Int = 0,
+    val sleepLeftMs: Long = 0L,
     val settings: DmtSettings = DmtSettings(),
     val tech: List<Spec> = emptyList(),
     val error: String? = null,
@@ -109,6 +111,7 @@ sealed interface DmtAction {
     data class Seek(val fraction: Float) : DmtAction
     data class Expand(val value: Boolean) : DmtAction
     data class RemoveAt(val index: Int) : DmtAction
+    data object CycleSleep : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction
 }
 
@@ -125,6 +128,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private var controller: MediaController? = null
     private var noticeJob: Job? = null
+    private var sleepJob: Job? = null
+    private var sleepEndAt: Long? = null
 
     init {
         viewModelScope.launch {
@@ -214,6 +219,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 if (action.index in 0 until mediaItemCount) removeMediaItem(action.index)
             }
 
+            DmtAction.CycleSleep -> cycleSleep()
+
             is DmtAction.Config -> {
                 val old = _state.value.settings
                 _state.update { it.copy(settings = action.settings) }
@@ -244,11 +251,21 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             val position = c.currentPosition.coerceAtLeast(0L)
             val duration = c.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
             val index = c.currentMediaItemIndex
+            val sleepLeft = sleepEndAt?.let { end ->
+                (end - System.currentTimeMillis()).coerceAtLeast(0L)
+            } ?: 0L
             _state.update {
-                if (it.positionMs == position && it.durationMs == duration && it.queueIndex == index) {
+                if (it.positionMs == position && it.durationMs == duration &&
+                    it.queueIndex == index && it.sleepLeftMs == sleepLeft
+                ) {
                     it
                 } else {
-                    it.copy(positionMs = position, durationMs = duration, queueIndex = index)
+                    it.copy(
+                        positionMs = position,
+                        durationMs = duration,
+                        queueIndex = index,
+                        sleepLeftMs = sleepLeft,
+                    )
                 }
             }
             delay(if (c.isPlaying) 500 else 1500)
@@ -406,6 +423,30 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             channels?.let { add(Spec("CH", if (it == 2) "ST" else "$it")) }
             if (bitrate > 0) add(Spec("KBPS", "${bitrate / 1000}", hot = true))
             track?.size?.takeIf { it > 0 }?.let { add(Spec("SIZE", it.asMB())) }
+        }
+    }
+
+    private fun cycleSleep() {
+        val next = when (_state.value.sleepMinutes) {
+            0 -> 15
+            15 -> 30
+            30 -> 60
+            else -> 0
+        }
+        sleepJob?.cancel()
+        sleepEndAt = null
+        if (next == 0) {
+            _state.update { it.copy(sleepMinutes = 0, sleepLeftMs = 0L) }
+            return
+        }
+        val durationMs = next * 60_000L
+        sleepEndAt = System.currentTimeMillis() + durationMs
+        _state.update { it.copy(sleepMinutes = next, sleepLeftMs = durationMs) }
+        sleepJob = viewModelScope.launch {
+            delay(durationMs)
+            controller?.pause()
+            sleepEndAt = null
+            _state.update { it.copy(sleepMinutes = 0, sleepLeftMs = 0L) }
         }
     }
 

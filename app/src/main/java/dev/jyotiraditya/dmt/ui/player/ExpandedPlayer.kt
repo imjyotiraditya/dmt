@@ -289,6 +289,17 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.CycleRepeat)
         }
+        TuiStatus(
+            label = "slp",
+            value = if (state.sleepMinutes == 0) {
+                "off"
+            } else {
+                "${(state.sleepLeftMs + 59_999) / 60_000}m"
+            },
+            on = state.sleepMinutes != 0
+        ) {
+            dispatch(DmtAction.CycleSleep)
+        }
     }
 }
 
