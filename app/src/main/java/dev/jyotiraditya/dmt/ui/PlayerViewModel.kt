@@ -28,6 +28,9 @@ import androidx.media3.session.MediaController
 import dev.jyotiraditya.dmt.data.Album
 import dev.jyotiraditya.dmt.data.KEY_ACCENT
 import dev.jyotiraditya.dmt.data.KEY_COLS
+import dev.jyotiraditya.dmt.data.KEY_LAST_INDEX
+import dev.jyotiraditya.dmt.data.KEY_LAST_POS
+import dev.jyotiraditya.dmt.data.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.KEY_RAW
 import dev.jyotiraditya.dmt.data.KEY_SPEED
 import dev.jyotiraditya.dmt.data.KEY_STAT_COUNTS
@@ -150,6 +153,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var controller: MediaController? = null
     private var noticeJob: Job? = null
     private var sleepEndAt: Long? = null
+    private var sessionRestored = false
 
     init {
         viewModelScope.launch {
@@ -285,6 +289,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         restoreSpeed(c)
         loadCover(c.currentMediaItem)
         loadTech(c.currentMediaItem)
+        restoreSession()
         while (isActive) {
             val position = c.currentPosition.coerceAtLeast(0L)
             val duration = c.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
@@ -390,6 +395,40 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 folders = tracks.toFolders(),
                 filteredFolders = filterFolders(tracks.toFolders(), it.query),
             )
+        }
+        restoreSession()
+    }
+
+    private fun restoreSession() {
+        if (sessionRestored) return
+        val c = controller ?: return
+        val tracks = _state.value.tracks
+        if (tracks.isEmpty()) return
+        if (c.mediaItemCount > 0) {
+            sessionRestored = true
+            return
+        }
+        sessionRestored = true
+        viewModelScope.launch {
+            val prefs = getApplication<Application>().dmtStore.data.first()
+            val savedIds = (prefs[KEY_LAST_QUEUE] ?: "")
+                .split(',')
+                .mapNotNull { it.toLongOrNull() }
+            if (savedIds.isEmpty()) return@launch
+
+            val byId = tracks.associateBy { it.id }
+            val existing = savedIds.mapNotNull { byId[it] }
+            if (existing.isEmpty()) return@launch
+
+            val savedCurrentId = savedIds.getOrNull(prefs[KEY_LAST_INDEX] ?: 0)
+            var index = existing.indexOfFirst { it.id == savedCurrentId }
+            var position = prefs[KEY_LAST_POS] ?: 0L
+            if (index < 0) {
+                index = 0
+                position = 0L
+            }
+            c.setMediaItems(existing.map { it.toMediaItem() }, index, position)
+            c.prepare()
         }
     }
 

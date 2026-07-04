@@ -28,6 +28,9 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dev.jyotiraditya.dmt.MainActivity
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.data.KEY_LAST_INDEX
+import dev.jyotiraditya.dmt.data.KEY_LAST_POS
+import dev.jyotiraditya.dmt.data.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.KEY_STAT_COUNTS
 import dev.jyotiraditya.dmt.data.KEY_STAT_TOTAL
 import dev.jyotiraditya.dmt.data.MediaLibrary
@@ -118,6 +121,17 @@ class PlaybackService : MediaLibraryService() {
                 publishButtons()
 
             override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (!isPlaying) saveSession()
+            }
+
+            override fun onMediaItemTransition(
+                mediaItem: androidx.media3.common.MediaItem?,
+                reason: Int,
+            ) {
+                saveSession()
+            }
         })
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .setSessionActivity(
@@ -441,6 +455,22 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    private fun saveSession() {
+        val player = mediaSession?.player ?: return
+        if (player.mediaItemCount == 0) return
+        val ids = (0 until player.mediaItemCount)
+            .joinToString(",") { player.getMediaItemAt(it).mediaId }
+        val index = player.currentMediaItemIndex
+        val position = player.currentPosition.coerceAtLeast(0L)
+        scope.launch {
+            dmtStore.edit { prefs ->
+                prefs[KEY_LAST_QUEUE] = ids
+                prefs[KEY_LAST_INDEX] = index
+                prefs[KEY_LAST_POS] = position
+            }
+        }
+    }
+
     private fun recordStats(playedMs: Long, mediaId: Long?) {
         scope.launch {
             dmtStore.edit { prefs ->
@@ -470,6 +500,7 @@ class PlaybackService : MediaLibraryService() {
         mediaSession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        saveSession()
         val player = mediaSession?.player
         if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
             stopSelf()
