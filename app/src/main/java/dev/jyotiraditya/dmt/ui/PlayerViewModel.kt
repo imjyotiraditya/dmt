@@ -139,6 +139,9 @@ sealed interface DmtAction {
     data class Config(val settings: DmtSettings) : DmtAction
 }
 
+private const val QUEUE_CAP = 500
+private const val QUEUE_LOOKBACK = 100
+
 class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _state = MutableStateFlow(
@@ -181,6 +184,14 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         connect()
     }
 
+    private fun windowQueue(list: List<Track>, index: Int): Pair<List<Track>, Int> {
+        if (list.size <= QUEUE_CAP) return list to index
+        val start = (index - QUEUE_LOOKBACK)
+            .coerceAtLeast(0)
+            .coerceAtMost(list.size - QUEUE_CAP)
+        return list.subList(start, start + QUEUE_CAP).toList() to (index - start)
+    }
+
     private fun filter(tracks: List<Track>, query: String): List<Track> =
         if (query.isBlank()) tracks else tracks.filter {
             it.title.contains(query, true) ||
@@ -219,13 +230,14 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
             is DmtAction.PlayAt -> c?.run {
                 _state.update { it.copy(error = null) }
-                setMediaItems(action.list.map { it.toMediaItem() }, action.index, 0L)
+                val (queue, startIndex) = windowQueue(action.list, action.index)
+                setMediaItems(queue.map { it.toMediaItem() }, startIndex, 0L)
                 prepare()
                 play()
             }
 
             is DmtAction.Enqueue -> c?.run {
-                addMediaItems(action.list.map { it.toMediaItem() })
+                addMediaItems(action.list.take(QUEUE_CAP).map { it.toMediaItem() })
                 prepare()
                 notify("queued: ${action.label}")
             }
@@ -382,18 +394,27 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun scan() = viewModelScope.launch {
         _state.update { it.copy(scanning = true) }
-        val tracks = withContext(Dispatchers.IO) {
-            MediaLibrary.scan(getApplication())
+        val query = _state.value.query
+        val (tracks, albums, folders) = withContext(Dispatchers.IO) {
+            val scanned = MediaLibrary.scan(getApplication())
+            Triple(scanned, scanned.toAlbums(), scanned.toFolders())
+        }
+        val (filteredTracks, filteredAlbums, filteredFolders) = withContext(Dispatchers.Default) {
+            Triple(
+                filter(tracks, query),
+                filterAlbums(albums, query),
+                filterFolders(folders, query),
+            )
         }
         _state.update {
             it.copy(
                 scanning = false,
                 tracks = tracks,
-                filtered = filter(tracks, it.query),
-                albums = tracks.toAlbums(),
-                filteredAlbums = filterAlbums(tracks.toAlbums(), it.query),
-                folders = tracks.toFolders(),
-                filteredFolders = filterFolders(tracks.toFolders(), it.query),
+                albums = albums,
+                folders = folders,
+                filtered = filteredTracks,
+                filteredAlbums = filteredAlbums,
+                filteredFolders = filteredFolders,
             )
         }
         restoreSession()
@@ -427,7 +448,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 index = 0
                 position = 0L
             }
-            c.setMediaItems(existing.map { it.toMediaItem() }, index, position)
+            val (queue, startIndex) = windowQueue(existing, index)
+            c.setMediaItems(queue.map { it.toMediaItem() }, startIndex, position)
             c.prepare()
         }
     }
