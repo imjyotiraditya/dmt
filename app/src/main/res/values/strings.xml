@@ -48,6 +48,10 @@
     <string name="run">run</string>
     <string name="on">on</string>
     <string name="off">off</string>
+    <string name="stats">stats</string>
+    <string name="stat_time">time listened</string>
+    <string name="stat_plays">plays</string>
+    <string name="stat_top">most played</string>
     <string name="about">about</string>
     <string name="about_title">dmt · dear music, thanks</string>
     <string name="about_body">a tui-inspired local music player.\nmusic helped a lot; this is the thank-you note.</string>

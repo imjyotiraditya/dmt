@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 
 val Context.dmtStore by preferencesDataStore(name = "dmt")
@@ -14,3 +16,5 @@ val KEY_SPECS = booleanPreferencesKey("specs")
 val KEY_ACCENT = intPreferencesKey("accent")
 val KEY_RAW = booleanPreferencesKey("raw_art")
 val KEY_SPEED = floatPreferencesKey("speed")
+val KEY_STAT_TOTAL = longPreferencesKey("stat_total_ms")
+val KEY_STAT_COUNTS = stringPreferencesKey("stat_counts")

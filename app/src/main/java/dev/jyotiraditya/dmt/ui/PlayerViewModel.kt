@@ -30,14 +30,18 @@ import dev.jyotiraditya.dmt.data.KEY_ACCENT
 import dev.jyotiraditya.dmt.data.KEY_COLS
 import dev.jyotiraditya.dmt.data.KEY_RAW
 import dev.jyotiraditya.dmt.data.KEY_SPEED
+import dev.jyotiraditya.dmt.data.KEY_STAT_COUNTS
+import dev.jyotiraditya.dmt.data.KEY_STAT_TOTAL
 import dev.jyotiraditya.dmt.data.KEY_SPECS
 import dev.jyotiraditya.dmt.data.KEY_WAVE
 import dev.jyotiraditya.dmt.data.MediaLibrary
+import dev.jyotiraditya.dmt.data.DmtStats
 import dev.jyotiraditya.dmt.data.Folder
 import dev.jyotiraditya.dmt.data.dmtStore
 import dev.jyotiraditya.dmt.data.Spec
 import dev.jyotiraditya.dmt.data.Track
 import dev.jyotiraditya.dmt.data.toAlbums
+import dev.jyotiraditya.dmt.data.toCounts
 import dev.jyotiraditya.dmt.data.toFolders
 import dev.jyotiraditya.dmt.player.asKHz
 import dev.jyotiraditya.dmt.player.asKbps
@@ -103,6 +107,7 @@ data class DmtState(
     val sleepLeftMs: Long = 0L,
     val speed: Float = 1f,
     val settings: DmtSettings = DmtSettings(),
+    val stats: DmtStats = DmtStats(),
     val tech: List<Spec> = emptyList(),
     val error: String? = null,
     val notice: String? = null,
@@ -161,6 +166,15 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             )
             _state.update { it.copy(settings = settings) }
             applyIcon(settings.accent)
+        }
+        viewModelScope.launch {
+            getApplication<Application>().dmtStore.data.collect { prefs ->
+                val stats = DmtStats(
+                    totalMs = prefs[KEY_STAT_TOTAL] ?: 0L,
+                    counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts(),
+                )
+                _state.update { if (it.stats == stats) it else it.copy(stats = stats) }
+            }
         }
         if (_state.value.hasPermission) scan()
         connect()

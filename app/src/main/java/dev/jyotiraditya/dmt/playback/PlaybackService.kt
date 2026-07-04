@@ -7,16 +7,24 @@ import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
+import androidx.datastore.preferences.core.edit
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dev.jyotiraditya.dmt.MainActivity
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.data.KEY_STAT_COUNTS
+import dev.jyotiraditya.dmt.data.KEY_STAT_TOTAL
+import dev.jyotiraditya.dmt.data.dmtStore
+import dev.jyotiraditya.dmt.data.encodeCounts
+import dev.jyotiraditya.dmt.data.toCounts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -59,6 +67,22 @@ class PlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        player.addAnalyticsListener(
+            PlaybackStatsListener(false) { eventTime, playbackStats ->
+                val playedMs = playbackStats.totalPlayTimeMs
+                if (playedMs < 5_000L || eventTime.timeline.isEmpty) {
+                    return@PlaybackStatsListener
+                }
+                val mediaId = runCatching {
+                    eventTime.timeline
+                        .getWindow(eventTime.windowIndex, Timeline.Window())
+                        .mediaItem
+                        .mediaId
+                        .toLongOrNull()
+                }.getOrNull()
+                recordStats(playedMs, mediaId)
+            }
+        )
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(SessionCallback())
             .setSessionActivity(
@@ -113,6 +137,19 @@ class PlaybackService : MediaSessionService() {
             }
 
             else -> super.onCustomCommand(session, controller, customCommand, args)
+        }
+    }
+
+    private fun recordStats(playedMs: Long, mediaId: Long?) {
+        scope.launch {
+            dmtStore.edit { prefs ->
+                prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
+                if (playedMs >= 30_000L && mediaId != null) {
+                    val counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts().toMutableMap()
+                    counts[mediaId] = (counts[mediaId] ?: 0) + 1
+                    prefs[KEY_STAT_COUNTS] = counts.encodeCounts()
+                }
+            }
         }
     }
 
