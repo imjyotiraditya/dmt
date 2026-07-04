@@ -24,6 +24,9 @@ this is the thank you note.
 - four accents (orange, moss, steel, mono) and the launcher icon follows
 - hooks into the system equalizer, media notification with album art
 - handles big libraries without falling over
+- lyrics read straight from the file tags (mp3, flac, m4a), supporting synced
+  apple ttml (line and word timing, background vocals, multiple singers) and
+  lrc, with a karaoke view in the player
 
 ## building
 

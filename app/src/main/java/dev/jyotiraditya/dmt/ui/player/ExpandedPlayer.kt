@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +65,7 @@ fun ExpandedPlayer(
 ) {
     val configuration = LocalConfiguration.current
     val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -74,9 +76,13 @@ fun ExpandedPlayer(
             .padding(horizontal = 20.dp)
     ) {
         if (landscape) {
-            LandscapePlayer(state, dispatch, onInfo, onQueue)
+            LandscapePlayer(state, dispatch, onInfo, onQueue, showLyrics) {
+                showLyrics = !showLyrics
+            }
         } else {
-            PortraitPlayer(state, dispatch, onInfo, onQueue)
+            PortraitPlayer(state, dispatch, onInfo, onQueue, showLyrics) {
+                showLyrics = !showLyrics
+            }
         }
     }
 }
@@ -87,13 +93,21 @@ private fun PortraitPlayer(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
     onQueue: () -> Unit,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        PlayerHeader(dispatch, onInfo)
+        PlayerHeader(
+            dispatch = dispatch,
+            onInfo = onInfo,
+            hasLyrics = state.lyrics != null,
+            showLyrics = showLyrics,
+            onToggleLyrics = onToggleLyrics
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        CoverPanel(state, Modifier.padding(top = 14.dp))
+        ArtSlot(state, dispatch, showLyrics, Modifier.padding(top = 14.dp))
         TrackMeta(state)
         SeekRow(state, dispatch)
         TransportRow(state, dispatch)
@@ -111,6 +125,8 @@ private fun LandscapePlayer(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
     onQueue: () -> Unit,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -120,14 +136,20 @@ private fun LandscapePlayer(
                 .padding(vertical = 16.dp)
                 .aspectRatio(1f, matchHeightConstraintsFirst = true)
         ) {
-            CoverPanel(state)
+            ArtSlot(state, dispatch, showLyrics)
         }
         Spacer(modifier = Modifier.width(20.dp))
         Column(modifier = Modifier
             .weight(1f)
             .fillMaxHeight()
         ) {
-            PlayerHeader(dispatch, onInfo)
+            PlayerHeader(
+                dispatch = dispatch,
+                onInfo = onInfo,
+                hasLyrics = state.lyrics != null,
+                showLyrics = showLyrics,
+                onToggleLyrics = onToggleLyrics
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -144,7 +166,13 @@ private fun LandscapePlayer(
 }
 
 @Composable
-private fun PlayerHeader(dispatch: (DmtAction) -> Unit, onInfo: () -> Unit) {
+private fun PlayerHeader(
+    dispatch: (DmtAction) -> Unit,
+    onInfo: () -> Unit,
+    hasLyrics: Boolean,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -159,7 +187,39 @@ private fun PlayerHeader(dispatch: (DmtAction) -> Unit, onInfo: () -> Unit) {
             color = TuiDim
         )
         Spacer(modifier = Modifier.weight(1f))
+        if (hasLyrics) {
+            TuiKey(
+                label = stringResource(R.string.lyrics_key),
+                bright = showLyrics,
+                onClick = onToggleLyrics
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
         TuiKey(stringResource(R.string.info), onClick = onInfo)
+    }
+}
+
+@Composable
+private fun ArtSlot(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    showLyrics: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val lyrics = state.lyrics
+    if (showLyrics && lyrics != null) {
+        val aspect = state.cover?.let { it.width.toFloat() / it.height } ?: 1f
+        LyricsPanel(
+            lyrics = lyrics,
+            positionMs = state.positionMs,
+            durationMs = state.durationMs,
+            isPlaying = state.isPlaying,
+            contentAspect = aspect,
+            onSeekFraction = { dispatch(DmtAction.Seek(it)) },
+            modifier = modifier
+        )
+    } else {
+        CoverPanel(state, modifier)
     }
 }
 

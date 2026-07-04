@@ -31,6 +31,7 @@
     <string name="no_cover">[ no cover ]</string>
     <string name="close">v</string>
     <string name="info">i</string>
+    <string name="lyrics_key">lyr</string>
     <string name="back">../</string>
     <string name="queue_key">[ queue %1$d/%2$d ]</string>
     <string name="next_up">next: %1$s</string>

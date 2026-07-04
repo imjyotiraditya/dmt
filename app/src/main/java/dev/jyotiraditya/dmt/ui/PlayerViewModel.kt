@@ -46,6 +46,9 @@ import dev.jyotiraditya.dmt.data.Track
 import dev.jyotiraditya.dmt.data.toAlbums
 import dev.jyotiraditya.dmt.data.toCounts
 import dev.jyotiraditya.dmt.data.toFolders
+import dev.jyotiraditya.dmt.data.lyrics.Lyrics
+import dev.jyotiraditya.dmt.data.lyrics.LyricsExtractor
+import dev.jyotiraditya.dmt.data.lyrics.LyricsParser
 import dev.jyotiraditya.dmt.player.asKHz
 import dev.jyotiraditya.dmt.player.asMB
 import dev.jyotiraditya.dmt.player.codecLabel
@@ -104,6 +107,7 @@ data class DmtState(
     val album: String = "",
     val cover: Bitmap? = null,
     val artRaw: Bitmap? = null,
+    val lyrics: Lyrics? = null,
     val expanded: Boolean = false,
     val sleepMinutes: Int = 0,
     val sleepLeftMs: Long = 0L,
@@ -301,6 +305,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         restoreSpeed(c)
         loadCover(c.currentMediaItem)
         loadTech(c.currentMediaItem)
+        loadLyrics(c.currentMediaItem)
         restoreSession()
         while (isActive) {
             val position = c.currentPosition.coerceAtLeast(0L)
@@ -335,6 +340,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(nowPlayingId = mediaItem?.mediaId, error = null) }
             loadCover(mediaItem)
             loadTech(mediaItem)
+            loadLyrics(mediaItem)
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -451,6 +457,21 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             val (queue, startIndex) = windowQueue(existing, index)
             c.setMediaItems(queue.map { it.toMediaItem() }, startIndex, position)
             c.prepare()
+        }
+    }
+
+    private fun loadLyrics(mediaItem: MediaItem?) {
+        val forId = mediaItem?.mediaId
+        viewModelScope.launch {
+            val track = _state.value.tracks.find { it.id.toString() == forId }
+            val lyrics = track?.let {
+                withContext(Dispatchers.IO) {
+                    LyricsExtractor.extract(it.path, it.mime)?.let(LyricsParser::parse)
+                }
+            }
+            _state.update {
+                if (it.nowPlayingId != forId) it else it.copy(lyrics = lyrics)
+            }
         }
     }
 
