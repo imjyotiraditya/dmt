@@ -1,0 +1,55 @@
+<resources>
+    <string name="app_name">dmt</string>
+    <string name="tagline">dear music, thanks</string>
+
+    <string name="tab_library">1:library</string>
+    <string name="tab_albums">2:albums</string>
+    <string name="cfg">cfg</string>
+
+    <string name="search_tracks_hint">search %1$d tracks</string>
+    <string name="search_albums_hint">search %1$d albums</string>
+    <string name="clear">[x]</string>
+    <string name="scanning">scanning library...</string>
+    <string name="no_match">no match</string>
+    <string name="no_audio">no audio files found on this device</string>
+    <string name="no_albums">no albums</string>
+
+    <string name="permission_title">! audio permission needed</string>
+    <string name="permission_body">dmt reads the music stored on this device. nothing leaves your phone.</string>
+    <string name="grant">[ grant ]</string>
+    <string name="rescan">[ rescan ]</string>
+
+    <string name="now_playing">now playing</string>
+    <string name="no_cover">[ no cover ]</string>
+    <string name="close">v</string>
+    <string name="info">i</string>
+    <string name="back">../</string>
+    <string name="queue_key">[ queue %1$d/%2$d ]</string>
+    <string name="next_up">next: %1$s</string>
+    <string name="end_of_queue">end of queue</string>
+    <string name="queue_title">queue · tap to jump</string>
+    <string name="track_info">track info</string>
+
+    <string name="config">config</string>
+    <string name="set_wave">cover wave effect</string>
+    <string name="set_detail">cover detail</string>
+    <string name="set_detail_value">%1$d col</string>
+    <string name="set_specs">format chips</string>
+    <string name="set_raw">raw artwork</string>
+    <string name="set_accent">accent</string>
+    <string name="set_rescan">rescan library</string>
+    <string name="run">run</string>
+    <string name="on">on</string>
+    <string name="off">off</string>
+    <string name="about">about</string>
+    <string name="about_title">dmt · dear music, thanks</string>
+    <string name="about_body">a tui-inspired local music player.\nmusic helped a lot; this is the thank-you note.</string>
+    <string name="version">v1.0</string>
+
+
+    <string name="info_title">title</string>
+    <string name="info_artist">artist</string>
+    <string name="info_album">album</string>
+    <string name="info_duration">duration</string>
+    <string name="info_uri">uri</string>
+</resources>

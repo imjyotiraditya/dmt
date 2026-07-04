@@ -1,0 +1,61 @@
+package dev.jyotiraditya.dmt.data
+
+import android.content.ContentUris
+import android.content.Context
+import android.database.Cursor
+import android.provider.MediaStore
+
+object MediaLibrary {
+
+    private val projection = arrayOf(
+        MediaStore.Audio.Media._ID,
+        MediaStore.Audio.Media.TITLE,
+        MediaStore.Audio.Media.ARTIST,
+        MediaStore.Audio.Media.ALBUM,
+        MediaStore.Audio.Media.ALBUM_ID,
+        MediaStore.Audio.Media.DURATION,
+        MediaStore.Audio.Media.MIME_TYPE,
+        MediaStore.Audio.Media.BITRATE,
+        MediaStore.Audio.Media.SIZE,
+    )
+
+    fun scan(context: Context): List<Track> = buildList {
+        runCatching {
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                "${MediaStore.Audio.Media.IS_MUSIC} != 0",
+                null,
+                "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC"
+            )?.use { cursor ->
+                while (cursor.moveToNext()) add(cursor.toTrack())
+            }
+        }
+    }
+}
+
+private fun Cursor.text(column: String, fallback: String): String =
+    getString(getColumnIndexOrThrow(column)).orUnknown(fallback)
+
+private fun Cursor.long(column: String): Long = getLong(getColumnIndexOrThrow(column))
+
+private fun Cursor.int(column: String): Int = getInt(getColumnIndexOrThrow(column))
+
+private fun Cursor.toTrack(): Track {
+    val id = long(MediaStore.Audio.Media._ID)
+    return Track(
+        id = id,
+        uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id),
+        title = text(MediaStore.Audio.Media.TITLE, "unknown title"),
+        artist = text(MediaStore.Audio.Media.ARTIST, "unknown artist"),
+        album = text(MediaStore.Audio.Media.ALBUM, "unknown album"),
+        albumId = long(MediaStore.Audio.Media.ALBUM_ID),
+        durationMs = long(MediaStore.Audio.Media.DURATION),
+        mime = text(MediaStore.Audio.Media.MIME_TYPE, "audio/?"),
+        bitrate = int(MediaStore.Audio.Media.BITRATE),
+        size = long(MediaStore.Audio.Media.SIZE),
+    )
+}
+
+fun String?.orUnknown(fallback: String): String =
+    if (isNullOrBlank() || this == "<unknown>") fallback else this
