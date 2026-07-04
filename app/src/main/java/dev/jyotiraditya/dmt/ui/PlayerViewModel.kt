@@ -401,6 +401,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadCover(mediaItem: MediaItem?) {
         val uri: Uri? = mediaItem?.localConfiguration?.uri
+        val forId = mediaItem?.mediaId
         viewModelScope.launch {
             val raw = uri?.let {
                 withContext(Dispatchers.IO) {
@@ -415,7 +416,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     runCatching { it.toAsciiBitmap(_state.value.settings.cols) }.getOrNull()
                 }
             }
-            _state.update { it.copy(cover = cover, artRaw = raw) }
+            _state.update {
+                if (it.nowPlayingId != forId) it else it.copy(cover = cover, artRaw = raw)
+            }
         }
     }
 
@@ -428,7 +431,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     buildTech(it, _state.value.tracks.find { t -> t.id.toString() == id })
                 }
             }.orEmpty()
-            _state.update { it.copy(tech = tech) }
+            _state.update {
+                if (it.nowPlayingId != id) it else it.copy(tech = tech)
+            }
         }
     }
 
@@ -490,8 +495,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         pendingShuffle = false
-        c.setMediaItems(tracks.map { it.toMediaItem() }, tracks.indices.random(), 0L)
-        c.shuffleModeEnabled = true
+        c.setMediaItems(tracks.shuffled().map { it.toMediaItem() }, 0, 0L)
+        c.shuffleModeEnabled = false
         c.prepare()
         c.play()
         _state.update { it.copy(expanded = true, error = null) }
