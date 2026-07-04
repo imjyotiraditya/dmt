@@ -84,6 +84,10 @@ fun DmtScreen(
         keyboard?.hide()
     }
 
+    LaunchedEffect(state.queue.isEmpty()) {
+        if (state.queue.isEmpty()) showQueueSheet = false
+    }
+
     val backHandled = state.expanded ||
         (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
         (state.view == DmtView.FILES && state.openFolder != null) ||
@@ -161,7 +165,7 @@ fun DmtScreen(
             TuiSheet(onDismiss = { showQueueSheet = false }) {
                 SheetHeader(
                     title = stringResource(R.string.queue_title),
-                    meta = "${state.queueIndex + 1}/${state.queue.size}"
+                    meta = "${(state.queueIndex + 1).coerceAtMost(state.queue.size)}/${state.queue.size}"
                 )
                 QueueList(
                     state = state,
