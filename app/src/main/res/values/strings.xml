@@ -37,6 +37,9 @@
     <string name="set_specs">format chips</string>
     <string name="set_raw">raw artwork</string>
     <string name="set_accent">accent</string>
+    <string name="set_eq">equalizer</string>
+    <string name="set_eq_open">open</string>
+    <string name="no_eq">no equalizer app found</string>
     <string name="set_rescan">rescan library</string>
     <string name="run">run</string>
     <string name="on">on</string>

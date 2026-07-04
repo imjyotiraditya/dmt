@@ -65,6 +65,9 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 )
             )
         }
+        SettingRow(stringResource(R.string.set_eq), stringResource(R.string.set_eq_open)) {
+            dispatch(DmtAction.OpenEqualizer)
+        }
         SettingRow(stringResource(R.string.set_rescan), stringResource(R.string.run)) {
             dispatch(DmtAction.Rescan)
         }

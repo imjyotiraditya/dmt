@@ -3,6 +3,8 @@ package dev.jyotiraditya.dmt.ui
 import android.Manifest
 import android.app.Application
 import android.content.ComponentName
+import android.content.Intent
+import android.media.audiofx.AudioEffect
 import android.os.Bundle
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -42,6 +44,7 @@ import dev.jyotiraditya.dmt.player.codecLabel
 import dev.jyotiraditya.dmt.player.cycleRepeat
 import dev.jyotiraditya.dmt.player.mediaController
 import dev.jyotiraditya.dmt.player.queueLabels
+import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import dev.jyotiraditya.dmt.player.await
 import dev.jyotiraditya.dmt.player.toMediaItem
@@ -119,6 +122,7 @@ sealed interface DmtAction {
     data class RemoveAt(val index: Int) : DmtAction
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
+    data object OpenEqualizer : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction
 }
 
@@ -227,6 +231,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
+            DmtAction.OpenEqualizer -> openEqualizer()
 
             is DmtAction.Config -> {
                 val old = _state.value.settings
@@ -442,6 +447,30 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             channels?.let { add(Spec("CH", if (it == 2) "ST" else "$it")) }
             if (bitrate > 0) add(Spec("KBPS", "${bitrate / 1000}", hot = true))
             track?.size?.takeIf { it > 0 }?.let { add(Spec("SIZE", it.asMB())) }
+        }
+    }
+
+    private fun openEqualizer() {
+        val c = controller ?: return
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val sessionId = runCatching {
+                c.sendCustomCommand(PlaybackService.CMD_AUDIO_SESSION, Bundle.EMPTY)
+                    .await()
+                    .extras
+                    .getInt(PlaybackService.KEY_AUDIO_SESSION)
+            }.getOrDefault(0)
+            val intent = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
+                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, app.packageName)
+                putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (intent.resolveActivity(app.packageManager) != null) {
+                app.startActivity(intent)
+            } else {
+                notify(app.getString(R.string.no_eq))
+            }
         }
     }
 

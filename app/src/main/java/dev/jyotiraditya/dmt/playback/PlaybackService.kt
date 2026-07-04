@@ -29,8 +29,11 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         const val KEY_END_AT = "end_at"
+        const val KEY_AUDIO_SESSION = "audio_session"
         val CMD_SLEEP_SET = SessionCommand("dev.jyotiraditya.dmt.command.SLEEP_SET", Bundle.EMPTY)
         val CMD_SLEEP_GET = SessionCommand("dev.jyotiraditya.dmt.command.SLEEP_GET", Bundle.EMPTY)
+        val CMD_AUDIO_SESSION =
+            SessionCommand("dev.jyotiraditya.dmt.command.AUDIO_SESSION", Bundle.EMPTY)
     }
 
     private var mediaSession: MediaSession? = null
@@ -80,6 +83,7 @@ class PlaybackService : MediaSessionService() {
                 .buildUpon()
                 .add(CMD_SLEEP_SET)
                 .add(CMD_SLEEP_GET)
+                .add(CMD_AUDIO_SESSION)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(commands)
@@ -99,6 +103,12 @@ class PlaybackService : MediaSessionService() {
 
             CMD_SLEEP_GET.customAction -> {
                 val extras = Bundle().apply { putLong(KEY_END_AT, sleepEndAt ?: 0L) }
+                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+            }
+
+            CMD_AUDIO_SESSION.customAction -> {
+                val id = (mediaSession?.player as? ExoPlayer)?.audioSessionId ?: 0
+                val extras = Bundle().apply { putInt(KEY_AUDIO_SESSION, id) }
                 Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
             }
 
