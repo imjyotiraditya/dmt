@@ -5,6 +5,7 @@
 
     <string name="tab_library">1:library</string>
     <string name="tab_albums">2:albums</string>
+    <string name="tab_files">3:files</string>
     <string name="cfg">cfg</string>
 
     <string name="search_tracks_hint">search %1$d tracks</string>
@@ -14,6 +15,8 @@
     <string name="no_match">no match</string>
     <string name="no_audio">no audio files found on this device</string>
     <string name="no_albums">no albums</string>
+    <string name="no_files">no folders</string>
+    <string name="search_folders_hint">search %1$d folders</string>
 
     <string name="permission_title">! audio permission needed</string>
     <string name="permission_body">dmt reads the music stored on this device. nothing leaves your phone.</string>

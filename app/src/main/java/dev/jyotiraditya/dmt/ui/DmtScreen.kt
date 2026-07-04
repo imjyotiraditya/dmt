@@ -48,6 +48,7 @@ import dev.jyotiraditya.dmt.ui.player.QueueList
 import dev.jyotiraditya.dmt.ui.player.SheetHeader
 import dev.jyotiraditya.dmt.ui.player.TuiSheet
 import dev.jyotiraditya.dmt.ui.screens.AlbumsPane
+import dev.jyotiraditya.dmt.ui.screens.FilesPane
 import dev.jyotiraditya.dmt.ui.screens.LibraryPane
 import dev.jyotiraditya.dmt.ui.screens.PermissionPane
 import dev.jyotiraditya.dmt.ui.screens.SettingsPane
@@ -74,6 +75,7 @@ fun DmtScreen(
 
     val backHandled = state.expanded ||
         (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
+        (state.view == DmtView.FILES && state.openFolder != null) ||
         state.view != DmtView.LIBRARY
     BackHandler(enabled = backHandled) {
         when {
@@ -81,6 +83,9 @@ fun DmtScreen(
 
             state.view == DmtView.ALBUMS && state.openAlbum != null ->
                 dispatch(DmtAction.OpenAlbum(null))
+
+            state.view == DmtView.FILES && state.openFolder != null ->
+                dispatch(DmtAction.OpenFolder(null))
 
             else -> dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
@@ -106,7 +111,8 @@ fun DmtScreen(
                     !state.hasPermission -> PermissionPane(dispatch, onRequestPermission)
                     state.scanning -> Caption(stringResource(R.string.scanning))
                     state.view == DmtView.LIBRARY -> LibraryPane(state, dispatch)
-                    else -> AlbumsPane(state, dispatch)
+                    state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
+                    else -> FilesPane(state, dispatch)
                 }
             }
 
@@ -196,6 +202,10 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         Spacer(modifier = Modifier.width(8.dp))
         TuiTab(stringResource(R.string.tab_albums), state.view == DmtView.ALBUMS) {
             dispatch(DmtAction.Show(DmtView.ALBUMS))
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        TuiTab(stringResource(R.string.tab_files), state.view == DmtView.FILES) {
+            dispatch(DmtAction.Show(DmtView.FILES))
         }
     }
 }

@@ -33,10 +33,12 @@ import dev.jyotiraditya.dmt.data.KEY_SPEED
 import dev.jyotiraditya.dmt.data.KEY_SPECS
 import dev.jyotiraditya.dmt.data.KEY_WAVE
 import dev.jyotiraditya.dmt.data.MediaLibrary
+import dev.jyotiraditya.dmt.data.Folder
 import dev.jyotiraditya.dmt.data.dmtStore
 import dev.jyotiraditya.dmt.data.Spec
 import dev.jyotiraditya.dmt.data.Track
 import dev.jyotiraditya.dmt.data.toAlbums
+import dev.jyotiraditya.dmt.data.toFolders
 import dev.jyotiraditya.dmt.player.asKHz
 import dev.jyotiraditya.dmt.player.asKbps
 import dev.jyotiraditya.dmt.player.asMB
@@ -60,7 +62,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class DmtView { LIBRARY, ALBUMS, SETTINGS }
+enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS }
 
 data class DmtSettings(
     val wave: Boolean = true,
@@ -78,8 +80,11 @@ data class DmtState(
     val query: String = "",
     val filtered: List<Track> = emptyList(),
     val filteredAlbums: List<Album> = emptyList(),
+    val folders: List<Folder> = emptyList(),
+    val filteredFolders: List<Folder> = emptyList(),
     val view: DmtView = DmtView.LIBRARY,
     val openAlbum: String? = null,
+    val openFolder: String? = null,
     val nowPlayingId: String? = null,
     val title: String = "",
     val artist: String = "",
@@ -109,6 +114,7 @@ sealed interface DmtAction {
     data class Query(val value: String) : DmtAction
     data class Show(val view: DmtView) : DmtAction
     data class OpenAlbum(val name: String?) : DmtAction
+    data class OpenFolder(val path: String?) : DmtAction
     data class PlayAt(val list: List<Track>, val index: Int) : DmtAction
     data class Enqueue(val list: List<Track>, val label: String) : DmtAction
     data class Jump(val index: Int) : DmtAction
@@ -172,6 +178,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             it.name.contains(query, true) || it.artist.contains(query, true)
         }
 
+    private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
+        if (query.isBlank()) folders else folders.filter { it.name.contains(query, true) }
+
     fun dispatch(action: DmtAction) {
         val c = controller
         when (action) {
@@ -186,10 +195,12 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     query = action.value,
                     filtered = filter(it.tracks, action.value),
                     filteredAlbums = filterAlbums(it.albums, action.value),
+                    filteredFolders = filterFolders(it.folders, action.value),
                 )
             }
             is DmtAction.Show -> _state.update { it.copy(view = action.view) }
             is DmtAction.OpenAlbum -> _state.update { it.copy(openAlbum = action.name) }
+            is DmtAction.OpenFolder -> _state.update { it.copy(openFolder = action.path) }
 
             is DmtAction.PlayAt -> c?.run {
                 _state.update { it.copy(error = null) }
@@ -367,6 +378,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 filtered = filter(tracks, it.query),
                 albums = tracks.toAlbums(),
                 filteredAlbums = filterAlbums(tracks.toAlbums(), it.query),
+                folders = tracks.toFolders(),
+                filteredFolders = filterFolders(tracks.toFolders(), it.query),
             )
         }
         if (pendingShuffle) shuffleAll()

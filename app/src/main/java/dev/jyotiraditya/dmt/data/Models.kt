@@ -9,6 +9,7 @@ data class Track(
     val artist: String,
     val album: String,
     val albumId: Long,
+    val path: String,
     val durationMs: Long,
     val mime: String,
     val bitrate: Int,
@@ -20,6 +21,24 @@ data class Album(
     val artist: String,
     val tracks: List<Track>,
 )
+
+data class Folder(
+    val name: String,
+    val path: String,
+    val tracks: List<Track>,
+)
+
+fun List<Track>.toFolders(): List<Folder> = asSequence()
+    .filter { it.path.isNotEmpty() }
+    .groupBy { it.path.substringBeforeLast('/') }
+    .map { (dir, tracks) ->
+        Folder(
+            name = dir.removePrefix("/storage/emulated/0/").ifEmpty { "/" },
+            path = dir,
+            tracks = tracks,
+        )
+    }
+    .sortedBy { it.name.lowercase() }
 
 data class Spec(
     val label: String,
