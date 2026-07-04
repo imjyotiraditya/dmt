@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: set up jdk
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: set up gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: decode keystore
+        if: github.event_name != 'pull_request'
+        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
+
+      - name: build
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleDebug assembleRelease
+
+      - name: upload debug apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmt-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: upload release apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmt-release
+          path: app/build/outputs/apk/release/*.apk

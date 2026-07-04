@@ -1,6 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val appVersionName = "1.0"
+
+val keystoreProps: Properties? = rootProject.file("keystore.properties")
+    .takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
+
+fun signingValue(propertyKey: String, envKey: String): String? =
+    keystoreProps?.getProperty(propertyKey) ?: System.getenv(envKey)
+
+base {
+    archivesName.set("dmt-$appVersionName")
 }
 
 android {
@@ -14,9 +29,21 @@ android {
         minSdk = 36
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = signingValue("storeFile", "SIGNING_KEYSTORE_PATH")
+            if (storePath != null && rootProject.file(storePath).exists()) {
+                storeFile = rootProject.file(storePath)
+                storePassword = signingValue("storePassword", "SIGNING_STORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "SIGNING_KEY_ALIAS") ?: "dmt"
+                keyPassword = signingValue("keyPassword", "SIGNING_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -24,6 +51,8 @@ android {
             optimization {
                 enable = true
             }
+            signingConfig = signingConfigs.getByName("release")
+                .takeIf { it.storeFile != null }
         }
     }
     compileOptions {
