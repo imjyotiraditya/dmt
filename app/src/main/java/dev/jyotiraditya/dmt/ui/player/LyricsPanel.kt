@@ -318,17 +318,6 @@ private fun LyricRunText(
         else -> TuiDim
     }
 
-    val alreadyParenthesized = run.text.startsWith("(") && run.text.endsWith(")")
-    val display = if (run.background && !alreadyParenthesized) {
-        buildAnnotatedString {
-            append("(")
-            append(annotated)
-            append(")")
-        }
-    } else {
-        annotated
-    }
-
     val baseStyle = if (run.background) {
         MaterialTheme.typography.labelSmall
     } else {
@@ -337,7 +326,7 @@ private fun LyricRunText(
     val arabic = remember(run.text) { isArabicScript(run.text) }
 
     Text(
-        text = display,
+        text = annotated,
         style = baseStyle.copy(
             fontSize = if (arabic) baseStyle.fontSize.scaledBy(1.18f) else baseStyle.fontSize,
             fontWeight = if (runState == LineState.ACTIVE && !run.background) {
