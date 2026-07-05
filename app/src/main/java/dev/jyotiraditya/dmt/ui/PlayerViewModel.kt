@@ -14,7 +14,6 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Size
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -614,7 +613,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val endAt = if (next == 0) 0L else System.currentTimeMillis() + next * 60_000L
         c.sendCustomCommand(
             PlaybackService.CMD_SLEEP_SET,
-            bundleOf(PlaybackService.KEY_END_AT to endAt)
+            Bundle().apply { putLong(PlaybackService.KEY_END_AT, endAt) }
         )
         sleepEndAt = endAt.takeIf { it > 0L }
         _state.update {
