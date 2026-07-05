@@ -216,8 +216,19 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        line.transliteration?.let { SecondaryLyricText(it.text, align) }
-        line.translation?.let { SecondaryLyricText(it, align) }
+        line.transliteration?.let {
+            LyricRunText(
+                run = LyricRun(background = true, text = it.text, words = it.words),
+                state = state,
+                positionMs = positionMs,
+                singerColor = singerColor,
+                hasSinger = hasSinger,
+                align = align,
+            )
+        }
+        line.translation
+            ?.takeIf { !it.equals(line.text, ignoreCase = true) }
+            ?.let { SecondaryLyricText(it, align) }
     }
 }
 
