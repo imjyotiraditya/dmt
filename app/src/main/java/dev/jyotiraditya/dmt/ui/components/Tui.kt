@@ -1,6 +1,10 @@
 package dev.jyotiraditya.dmt.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -44,6 +48,26 @@ import dev.jyotiraditya.dmt.ui.theme.TuiLine
 import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+@Composable
+fun rememberCursorAlpha(periodMs: Int = 1060): Float {
+    val transition = rememberInfiniteTransition(label = "cursor")
+    val alpha by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = periodMs
+                1f at 0
+                1f at periodMs / 2
+                0f at periodMs / 2 + 1
+                0f at periodMs
+            }
+        ),
+        label = "cursorAlpha"
+    )
+    return alpha
+}
 
 private class PressFlash(private val scope: CoroutineScope) {
     private val flash = Animatable(0f)

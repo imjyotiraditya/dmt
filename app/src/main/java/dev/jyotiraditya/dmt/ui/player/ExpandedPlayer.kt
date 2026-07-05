@@ -42,7 +42,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -54,6 +57,7 @@ import dev.jyotiraditya.dmt.ui.AsciiCover
 import dev.jyotiraditya.dmt.ui.DmtAction
 import dev.jyotiraditya.dmt.ui.DmtState
 import dev.jyotiraditya.dmt.ui.components.ThinSlider
+import dev.jyotiraditya.dmt.ui.components.rememberCursorAlpha
 import dev.jyotiraditya.dmt.ui.components.TuiChip
 import dev.jyotiraditya.dmt.ui.components.TuiKey
 import dev.jyotiraditya.dmt.ui.components.TuiPanel
@@ -334,8 +338,15 @@ private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
 
 @Composable
 private fun TrackMeta(state: DmtState) {
+    val cursorAlpha = rememberCursorAlpha()
+    val accent = LocalAccent.current
     Text(
-        text = "${state.title}_",
+        text = buildAnnotatedString {
+            append(state.title)
+            withStyle(SpanStyle(color = accent.copy(alpha = cursorAlpha))) {
+                append("_")
+            }
+        },
         style = MaterialTheme.typography.titleLarge,
         color = TuiBright,
         maxLines = 1,

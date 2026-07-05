@@ -16,13 +16,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.player.asTime
 import dev.jyotiraditya.dmt.ui.DmtAction
 import dev.jyotiraditya.dmt.ui.DmtState
 import dev.jyotiraditya.dmt.ui.components.Hairline
 import dev.jyotiraditya.dmt.ui.components.TuiKey
+import dev.jyotiraditya.dmt.ui.components.rememberCursorAlpha
+import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
@@ -64,8 +69,15 @@ fun MiniPlayer(
                     .weight(1f)
                     .padding(end = 10.dp)
             ) {
+                val cursorAlpha = rememberCursorAlpha()
+                val accent = LocalAccent.current
                 Text(
-                    text = "${state.title}_",
+                    text = buildAnnotatedString {
+                        append(state.title)
+                        withStyle(SpanStyle(color = accent.copy(alpha = cursorAlpha))) {
+                            append("_")
+                        }
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = TuiBright,
                     maxLines = 1,
