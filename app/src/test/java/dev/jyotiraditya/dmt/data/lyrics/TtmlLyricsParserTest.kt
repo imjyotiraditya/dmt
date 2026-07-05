@@ -1,6 +1,8 @@
 package dev.jyotiraditya.dmt.data.lyrics
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,5 +48,28 @@ class TtmlLyricsParserTest {
 
         val distinctSingers = lyrics.lines.map { it.singer }.filter { it >= 0 }.toSet()
         assertTrue(distinctSingers.size > 1)
+    }
+
+    @Test
+    fun `translations block is attached to its matching line by itunes key`() {
+        val lyrics = parseTtml(fixture("ttml_single.ttml"))
+        assertNotNull(lyrics)
+
+        val first = lyrics!!.lines.first { it.startMs == 2_344L }
+        assertEquals("This song is all, it's about you, baby", first.translation)
+        assertNull(first.transliteration)
+    }
+
+    @Test
+    fun `transliterations block is attached with its own word timing`() {
+        val lyrics = parseTtml(fixture("ttml_transliteration.ttml"))
+        assertNotNull(lyrics)
+
+        val first = lyrics!!.lines.first { it.startMs == 1_594L }
+        val transliteration = first.transliteration
+        assertNotNull(transliteration)
+        assertEquals("shizumu you ni tokete yuku you ni", transliteration!!.text)
+        assertEquals(7, transliteration.words.size)
+        assertNull(first.translation)
     }
 }

@@ -44,6 +44,63 @@ private class SpanFrame(
     var hadChild = false
 }
 
+private fun readTimedText(parser: XmlPullParser): Pair<String, List<LyricWord>> {
+    val text = StringBuilder()
+    val words = mutableListOf<LyricWord>()
+    val spanStack = ArrayDeque<SpanFrame>()
+    var pendingSpace = false
+    var pendingNewline = false
+
+    fun flushSpace() {
+        if (pendingSpace && !pendingNewline && text.isNotEmpty()) text.append(' ')
+        pendingSpace = false
+        pendingNewline = false
+    }
+
+    var depth = 1
+    var event = parser.next()
+    while (depth > 0) {
+        when (event) {
+            XmlPullParser.START_TAG -> {
+                depth++
+                if (parser.name == "span") {
+                    flushSpace()
+                    spanStack.addLast(
+                        SpanFrame(
+                            beginMs = parseTtmlTime(parser.attr("begin")),
+                            endMs = parseTtmlTime(parser.attr("end")),
+                            textStart = text.length,
+                            background = false,
+                        )
+                    )
+                }
+            }
+
+            XmlPullParser.TEXT -> parser.text.forEach { c ->
+                if (c.isWhitespace()) {
+                    pendingSpace = true
+                    if (c == '\n' || c == '\r') pendingNewline = true
+                } else {
+                    flushSpace()
+                    text.append(c)
+                }
+            }
+
+            XmlPullParser.END_TAG -> {
+                depth--
+                if (parser.name == "span" && spanStack.isNotEmpty()) {
+                    val frame = spanStack.removeLast()
+                    if (frame.beginMs >= 0 && text.length > frame.textStart) {
+                        words += LyricWord(frame.beginMs, frame.endMs, frame.textStart, text.length, background = false)
+                    }
+                }
+            }
+        }
+        if (depth > 0) event = parser.next()
+    }
+    return text.toString().trim() to words
+}
+
 private class TtmlAgents {
     private val types = mutableMapOf<String, String>()
     private val order = mutableListOf<String>()
@@ -83,6 +140,14 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
     var divAgent: String? = null
     var pendingSpace = false
     var pendingNewline = false
+    var lineKey: String? = null
+
+    val translations = mutableMapOf<String, String>()
+    val transliterations = mutableMapOf<String, Transliteration>()
+    var inTranslation = false
+    var inTransliteration = false
+    var capturedTranslation = false
+    var capturedTransliteration = false
 
     val text = StringBuilder()
     val words = mutableListOf<LyricWord>()
@@ -133,11 +198,33 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
                     pendingNewline = false
                     lineBegin = parseTtmlTime(parser.attr("begin"))
                     lineEnd = parseTtmlTime(parser.attr("end"))
+                    lineKey = parser.attr("itunes:key")
                     val agentId = parser.attr("ttm:agent") ?: divAgent
                     lineVoice = agents.voiceFor(agentId)
                     lineSinger = agents.singerFor(agentId)
                     lineSection = newSection
                     newSection = false
+                }
+
+                "translation" -> if (!capturedTranslation) {
+                    inTranslation = true
+                    capturedTranslation = true
+                }
+
+                "transliteration" -> if (!capturedTransliteration) {
+                    inTransliteration = true
+                    capturedTransliteration = true
+                }
+
+                "text" -> {
+                    val forKey = parser.attr("for")
+                    if (forKey != null && inTranslation) {
+                        val (content, _) = readTimedText(parser)
+                        if (content.isNotBlank()) translations[forKey] = content
+                    } else if (forKey != null && inTransliteration) {
+                        val (content, spanWords) = readTimedText(parser)
+                        if (content.isNotBlank()) transliterations[forKey] = Transliteration(content, spanWords)
+                    }
                 }
 
                 "span" -> if (inLine) {
@@ -159,6 +246,9 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
             XmlPullParser.TEXT -> if (inLine) appendLyricText(parser.text)
 
             XmlPullParser.END_TAG -> when (parser.name) {
+                "translation" -> inTranslation = false
+                "transliteration" -> inTransliteration = false
+
                 "span" -> if (inLine && spanStack.isNotEmpty()) {
                     val frame = spanStack.removeLast()
                     val isWord = !frame.hadChild &&
@@ -195,6 +285,8 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
                             voice = lineVoice,
                             singer = lineSinger,
                             sectionStart = lineSection,
+                            translation = lineKey?.let { translations[it] },
+                            transliteration = lineKey?.let { transliterations[it] },
                         )
                     }
                 }
