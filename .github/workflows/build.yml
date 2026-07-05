@@ -26,13 +26,17 @@ jobs:
         if: github.event_name != 'pull_request'
         run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
 
+      - name: resolve version
+        id: version
+        run: echo "name=unreleased-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: build
         env:
           SIGNING_KEYSTORE_PATH: dmt.keystore
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew assembleDebug assembleRelease
+        run: ./gradlew assembleDebug assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
 
       - name: upload debug apk
         uses: actions/upload-artifact@v4
