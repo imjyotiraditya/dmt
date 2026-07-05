@@ -1,5 +1,7 @@
 package dev.jyotiraditya.dmt.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,12 +24,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
@@ -38,6 +42,28 @@ import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
 import dev.jyotiraditya.dmt.ui.theme.TuiSurface
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
+private class PressFlash(private val scope: CoroutineScope) {
+    private val flash = Animatable(0f)
+
+    val value: Float
+        get() = flash.value
+
+    fun click() {
+        scope.launch {
+            flash.snapTo(1f)
+            flash.animateTo(0f, tween(220))
+        }
+    }
+}
+
+@Composable
+private fun rememberPressFlash(): PressFlash {
+    val scope = rememberCoroutineScope()
+    return remember { PressFlash(scope) }
+}
 
 fun Modifier.tuiClickable(onClick: () -> Unit): Modifier = this.clickable(
     interactionSource = null,
@@ -71,19 +97,28 @@ fun TuiKey(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val inverted = bright != pressed
+    val flash = rememberPressFlash()
+    val press = if (pressed) 1f else flash.value
+    val restText = if (bright) TuiBg else TuiFg
+    val restBorder = if (bright) TuiFg else TuiLine
+    val restBg = if (bright) TuiFg else TuiSurface.copy(alpha = 0.4f)
+    val pressText = if (bright) TuiFg else TuiBg
+    val pressBorder = if (bright) TuiLine else TuiFg
+    val pressBg = if (bright) TuiSurface.copy(alpha = 0.4f) else TuiFg
     Text(
         text = label,
         style = MaterialTheme.typography.labelLarge,
-        color = if (inverted) TuiBg else TuiFg,
+        color = lerp(restText, pressText, press),
         modifier = Modifier
-            .border(1.dp, if (inverted) TuiFg else TuiLine)
-            .background(if (inverted) TuiFg else TuiSurface.copy(alpha = 0.4f))
+            .border(1.dp, lerp(restBorder, pressBorder, press))
+            .background(lerp(restBg, pressBg, press))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
-            )
+            ) {
+                flash.click()
+                onClick()
+            }
             .padding(
                 horizontal = if (big) 22.dp else 14.dp,
                 vertical = if (big) 15.dp else 11.dp
@@ -121,16 +156,21 @@ fun TuiChip(text: String) {
 fun TuiStatus(label: String, value: String, on: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val flash = rememberPressFlash()
+    val press = if (pressed) 1f else flash.value
+    val restText = if (on) TuiBright else TuiDim
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .border(1.dp, if (pressed) TuiFg else TuiLine)
-            .background(if (pressed) TuiFg else TuiSurface.copy(alpha = 0.4f))
+            .border(1.dp, lerp(TuiLine, TuiFg, press))
+            .background(lerp(TuiSurface.copy(alpha = 0.4f), TuiFg, press))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
-            )
+            ) {
+                flash.click()
+                onClick()
+            }
             .padding(horizontal = 12.dp, vertical = 11.dp)
     ) {
         Box(
@@ -141,11 +181,7 @@ fun TuiStatus(label: String, value: String, on: Boolean, onClick: () -> Unit) {
         Text(
             text = " $label:$value",
             style = MaterialTheme.typography.labelMedium,
-            color = when {
-                pressed -> TuiBg
-                on -> TuiBright
-                else -> TuiDim
-            }
+            color = lerp(restText, TuiBg, press)
         )
     }
 }
