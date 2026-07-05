@@ -111,13 +111,15 @@ private fun readId3(file: File): String? = file.inputStream().buffered().use { i
 
 private val WORD_TIMED_TAG = Regex("""<\d+:\d{1,2}""")
 private val LINE_TIMED_TAG = Regex("""\[\d+:\d{1,2}""")
+private val ENRICHED_TAG = Regex("""\[bg:|]\s*v\d+:""", RegexOption.IGNORE_CASE)
 
 private fun isLyricsKey(key: String): Boolean =
     key == "LYRICS" || key == "UNSYNCEDLYRICS" || key == "UNSYNCED LYRICS" ||
         key == "ELRC" || key == "LRC" || key.startsWith("LYRICS-")
 
 private fun contentRank(text: String): Int = when {
-    text.startsWith("<") && text.contains("<tt") -> 3
+    text.startsWith("<") && text.contains("<tt") -> 4
+    WORD_TIMED_TAG.containsMatchIn(text) && ENRICHED_TAG.containsMatchIn(text) -> 3
     WORD_TIMED_TAG.containsMatchIn(text) -> 2
     LINE_TIMED_TAG.containsMatchIn(text) -> 1
     else -> 0
