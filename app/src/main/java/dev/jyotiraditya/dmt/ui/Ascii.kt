@@ -127,7 +127,7 @@ fun AsciiCover(
     if (playing && wave) {
         WaveCover(image, aspect, modifier)
     } else {
-        Canvas(modifier = modifier.fillMaxWidth().aspectRatio(aspect)) {
+        Canvas(modifier = modifier.aspectRatio(aspect)) {
             drawImage(
                 image = image,
                 dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
@@ -155,7 +155,6 @@ private fun WaveCover(image: ImageBitmap, aspect: Float, modifier: Modifier) {
     )
     Canvas(
         modifier = modifier
-            .fillMaxWidth()
             .aspectRatio(aspect)
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     ) {

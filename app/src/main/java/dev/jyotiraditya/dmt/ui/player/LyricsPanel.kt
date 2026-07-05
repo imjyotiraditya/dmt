@@ -77,7 +77,6 @@ fun LyricsPanel(
     TuiPanel(modifier = modifier) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .aspectRatio(contentAspect)
         ) {
             LazyColumn(state = listState) {

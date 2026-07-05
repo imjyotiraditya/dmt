@@ -107,7 +107,15 @@ private fun PortraitPlayer(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        ArtSlot(state, dispatch, showLyrics, Modifier.padding(top = 14.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .padding(top = 14.dp)
+                .fillMaxWidth()
+                .aspectRatio(1f)
+        ) {
+            ArtSlot(state, dispatch, showLyrics)
+        }
         TrackMeta(state)
         SeekRow(state, dispatch)
         TransportRow(state, dispatch)
@@ -241,7 +249,7 @@ private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
                         .aspectRatio(rawArt.width.toFloat() / rawArt.height)
                 )
             }
@@ -250,7 +258,8 @@ private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
                 AsciiCover(
                     cover = state.cover,
                     playing = state.isPlaying,
-                    wave = state.settings.wave
+                    wave = state.settings.wave,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
 
