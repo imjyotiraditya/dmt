@@ -5,11 +5,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,9 +27,11 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,7 +41,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -46,6 +57,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -68,6 +80,9 @@ import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
+import dev.jyotiraditya.dmt.ui.theme.TuiFg
+import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import kotlinx.coroutines.launch
 
 @Composable
@@ -115,26 +130,37 @@ fun ExpandedPlayer(
                 )
             }
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(horizontal = 20.dp)
+            .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
     ) {
-        if (landscape) {
-            LandscapePlayer(
-                state = state,
-                dispatch = dispatch,
-                onInfo = onInfo,
-                onQueue = onQueue,
-                showLyrics = showLyrics,
-                onToggleLyrics = { showLyrics = !showLyrics }
-            )
-        } else {
-            PortraitPlayer(
-                state = state,
-                dispatch = dispatch,
-                onInfo = onInfo,
-                onQueue = onQueue,
-                showLyrics = showLyrics,
-                onToggleLyrics = { showLyrics = !showLyrics }
-            )
+        val fitScale =
+            if (landscape) {
+                (configuration.screenHeightDp / 480f).coerceIn(0.6f, 1f)
+            } else {
+                val neededDp = configuration.screenWidthDp + 560f
+                (configuration.screenHeightDp / neededDp).coerceIn(0.75f, 1f)
+            }
+        CompositionLocalProvider(
+            LocalDensity provides Density(density.density * fitScale, density.fontScale)
+        ) {
+            if (landscape) {
+                LandscapePlayer(
+                    state = state,
+                    dispatch = dispatch,
+                    onInfo = onInfo,
+                    onQueue = onQueue,
+                    showLyrics = showLyrics,
+                    onToggleLyrics = { showLyrics = !showLyrics }
+                )
+            } else {
+                PortraitPlayer(
+                    state = state,
+                    dispatch = dispatch,
+                    onInfo = onInfo,
+                    onQueue = onQueue,
+                    showLyrics = showLyrics,
+                    onToggleLyrics = { showLyrics = !showLyrics }
+                )
+            }
         }
     }
 }
@@ -157,21 +183,21 @@ private fun PortraitPlayer(
             onToggleLyrics = onToggleLyrics
         )
 
-        Spacer(modifier = Modifier.weight(1f))
-
         Box(
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.BottomCenter,
             modifier = Modifier
+                .weight(5f)
                 .padding(top = 14.dp)
                 .fillMaxWidth()
-                .aspectRatio(1f)
         ) {
-            ArtSlot(state, dispatch, showLyrics)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.aspectRatio(1f)
+            ) {
+                ArtSlot(state, dispatch, showLyrics)
+            }
         }
-        TrackMeta(state)
-        SeekRow(state, dispatch)
-        TransportRow(state, dispatch)
-        StatusRow(state, dispatch)
+        ControlsBlock(state, dispatch)
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -190,10 +216,10 @@ private fun LandscapePlayer(
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Box(
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.TopCenter,
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(vertical = 16.dp)
+                .padding(top = 12.dp)
                 .aspectRatio(1f, matchHeightConstraintsFirst = true)
         ) {
             ArtSlot(state, dispatch, showLyrics)
@@ -211,18 +237,29 @@ private fun LandscapePlayer(
                 onToggleLyrics = onToggleLyrics
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                ControlsBlock(state, dispatch)
+            }
 
-            TrackMeta(state)
-            SeekRow(state, dispatch)
-            TransportRow(state, dispatch)
-            StatusRow(state, dispatch, singleRow = true)
-
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(12.dp))
 
             QueueFooter(state, onQueue)
         }
     }
+}
+
+@Composable
+private fun ControlsBlock(state: DmtState, dispatch: (DmtAction) -> Unit) {
+    TrackMeta(state)
+    SeekRow(state, dispatch)
+    TransportRow(state, dispatch)
+    StatusRow(state, dispatch)
 }
 
 @Composable
@@ -366,11 +403,34 @@ private fun TrackMeta(state: DmtState) {
         modifier = Modifier.padding(top = 3.dp)
     )
     if (state.settings.listSpecs && state.tech.isNotEmpty()) {
+        val chipScroll = rememberScrollState()
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .padding(top = 12.dp)
-                .horizontalScroll(rememberScrollState())
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    if (chipScroll.canScrollForward) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                0.88f to Color.White,
+                                1f to Color.Transparent
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+                    if (chipScroll.canScrollBackward) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                0f to Color.Transparent,
+                                0.12f to Color.White
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+                }
+                .horizontalScroll(chipScroll)
         ) {
             state.tech.forEach { spec ->
                 TuiChip("${spec.label}:${spec.value}".lowercase())
@@ -444,11 +504,11 @@ private fun SeekRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
 @Composable
 private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 2.dp)
+            .padding(top = 6.dp)
     ) {
         TuiKey(
             label = "|<<",
@@ -472,13 +532,16 @@ private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StatusRow(
-    state: DmtState,
-    dispatch: (DmtAction) -> Unit,
-    singleRow: Boolean = false,
-) {
-    val shuffle: @Composable () -> Unit = {
+private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp)
+    ) {
         TuiStatus(
             label = "shf",
             value = if (state.shuffle) "on" else "off",
@@ -486,8 +549,6 @@ private fun StatusRow(
         ) {
             dispatch(DmtAction.ToggleShuffle)
         }
-    }
-    val repeat: @Composable () -> Unit = {
         TuiStatus(
             label = "rpt",
             value = when (state.repeat) {
@@ -499,8 +560,6 @@ private fun StatusRow(
         ) {
             dispatch(DmtAction.CycleRepeat)
         }
-    }
-    val sleep: @Composable () -> Unit = {
         TuiStatus(
             label = "slp",
             value = if (state.sleepMinutes == 0) {
@@ -512,82 +571,42 @@ private fun StatusRow(
         ) {
             dispatch(DmtAction.CycleSleep)
         }
-    }
-    val speed: @Composable () -> Unit = {
         TuiStatus(
             label = "spd",
-            value = when {
-                kotlin.math.abs(state.speed - 1f) < 0.01f -> "1.0x"
-                kotlin.math.abs(state.speed - 0.75f) < 0.01f -> "0.75x"
-                kotlin.math.abs(state.speed - 1.25f) < 0.01f -> "1.25x"
-                kotlin.math.abs(state.speed - 1.5f) < 0.01f -> "1.5x"
-                else -> "2.0x"
-            },
-            on = kotlin.math.abs(state.speed - 1f) > 0.01f
+            value = "${state.speed}x",
+            on = abs(state.speed - 1f) > 0.01f
         ) {
             dispatch(DmtAction.CycleSpeed)
-        }
-    }
-
-    if (singleRow) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        ) {
-            shuffle()
-            repeat()
-            sleep()
-            speed()
-        }
-    } else {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-        ) {
-            shuffle()
-            repeat()
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        ) {
-            sleep()
-            speed()
         }
     }
 }
 
 @Composable
 private fun QueueFooter(state: DmtState, onQueue: () -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        TuiKey(
-            label = stringResource(R.string.queue_key, state.queueIndex + 1, state.queue.size),
-            onClick = onQueue
-        )
-    }
     val next = state.queue.getOrNull(state.queueIndex + 1)
-    Text(
-        text = next?.let { stringResource(R.string.next_up, it).lowercase() }
-            ?: stringResource(R.string.end_of_queue),
-        style = MaterialTheme.typography.labelSmall,
-        color = TuiFaint,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
-    )
-    Spacer(modifier = Modifier.height(16.dp))
+            .border(1.dp, TuiLine)
+            .background(TuiSurface.copy(alpha = 0.4f))
+            .tuiClickable(onQueue)
+            .padding(horizontal = 12.dp, vertical = 11.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.queue_key, state.queueIndex + 1, state.queue.size),
+            style = MaterialTheme.typography.labelMedium,
+            color = TuiFg
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = next?.let { stringResource(R.string.next_up, it).lowercase() }
+                ?: stringResource(R.string.end_of_queue),
+            style = MaterialTheme.typography.labelSmall,
+            color = TuiFaint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+    }
 }
