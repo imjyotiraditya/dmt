@@ -2,6 +2,8 @@ package dev.jyotiraditya.dmt.data.lyrics
 
 private val LRC_TIME = Regex("""\[(\d+):(\d{1,2})(?:[.:](\d{1,3}))?]""")
 private val WORD_TIME = Regex("""<(\d+):(\d{1,2})(?:[.:](\d{1,3}))?>""")
+private val VOICE_PREFIX = Regex("""^v\d+:""")
+private val BG_LINE = Regex("""^\[bg:(.*)]$""", RegexOption.IGNORE_CASE)
 
 private fun MatchResult.toMs(): Long {
     val minutes = groupValues[1].toLongOrNull() ?: return -1L
@@ -35,15 +37,26 @@ private fun parseWordTags(text: String): Pair<String, List<LyricWord>> {
             words += LyricWord(tag.toMs(), next.toMs(), wordStart, wordStart + trimmedLen, background = false)
         }
     }
-    return plain.toString() to words
+    return plain.toString().trimEnd() to words
 }
 
 fun parseLrc(raw: String): Lyrics? {
     val lines = mutableListOf<LyricLine>()
     raw.lines().forEach { line ->
+        val trimmedLine = line.trim()
+        val bg = BG_LINE.matchEntire(trimmedLine)
+        if (bg != null) {
+            val (text, words) = parseWordTags(bg.groupValues[1])
+            if (text.isNotBlank() && words.isNotEmpty()) {
+                val bgWords = words.map { it.copy(background = true) }
+                lines += LyricLine(bgWords.first().startMs, bgWords.last().endMs, text, bgWords)
+            }
+            return@forEach
+        }
+
         val stamps = LRC_TIME.findAll(line).toList()
         if (stamps.isEmpty()) return@forEach
-        val rawText = line.substring(stamps.last().range.last + 1).trim()
+        val rawText = VOICE_PREFIX.replaceFirst(line.substring(stamps.last().range.last + 1).trim(), "")
         if (rawText.isEmpty()) return@forEach
         val (text, words) = parseWordTags(rawText)
         if (text.isBlank()) return@forEach
