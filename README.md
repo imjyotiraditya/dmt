@@ -15,7 +15,8 @@ this is the thank you note.
 - cover art rendered as colored ascii with a light sweep while playing.
   tracks without art get a generated ascii pattern of their own.
   there is a raw artwork toggle if ascii is not your thing
-- full screen player with a proper landscape layout, mini player everywhere else
+- full screen player with a proper landscape layout, mini player everywhere else,
+  swipe down to dismiss
 - queue and track info live in bottom sheets, queue items can be removed one by one
 - sleep timer (15/30/60), playback speed (0.75x to 2x), shuffle and repeat
 - listening stats: time listened, play counts, most played with accent bars
@@ -29,7 +30,10 @@ this is the thank you note.
 - handles big libraries without falling over
 - lyrics read straight from the file tags (mp3, flac, m4a), supporting synced
   apple ttml (line and word timing, background vocals, multiple singers) and
-  lrc, with a karaoke view in the player
+  lrc, with a karaoke view in the player, plus translation and transliteration
+  where the file has them
+- shows up in external media widgets (kustom and the like) so they can read
+  what's playing
 
 ## building
 
