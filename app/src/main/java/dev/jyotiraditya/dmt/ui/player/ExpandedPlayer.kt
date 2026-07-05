@@ -173,29 +173,34 @@ private fun PlayerHeader(
     showLyrics: Boolean,
     onToggleLyrics: () -> Unit,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
     ) {
-        TuiKey(stringResource(R.string.close)) { dispatch(DmtAction.Expand(false)) }
-        Spacer(modifier = Modifier.weight(1f))
+        Box(modifier = Modifier.align(Alignment.CenterStart)) {
+            TuiKey(stringResource(R.string.close)) { dispatch(DmtAction.Expand(false)) }
+        }
         Text(
             text = stringResource(R.string.now_playing),
             style = MaterialTheme.typography.labelMedium,
-            color = TuiDim
+            color = TuiDim,
+            modifier = Modifier.align(Alignment.Center)
         )
-        Spacer(modifier = Modifier.weight(1f))
-        if (hasLyrics) {
-            TuiKey(
-                label = stringResource(R.string.lyrics_key),
-                bright = showLyrics,
-                onClick = onToggleLyrics
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            if (hasLyrics) {
+                TuiKey(
+                    label = stringResource(R.string.lyrics_key),
+                    bright = showLyrics,
+                    onClick = onToggleLyrics
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            TuiKey(stringResource(R.string.info), onClick = onInfo)
         }
-        TuiKey(stringResource(R.string.info), onClick = onInfo)
     }
 }
 
