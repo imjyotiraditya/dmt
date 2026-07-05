@@ -109,6 +109,20 @@ private fun readId3(file: File): String? = file.inputStream().buffered().use { i
     null
 }
 
+private val WORD_TIMED_TAG = Regex("""<\d+:\d{1,2}""")
+private val LINE_TIMED_TAG = Regex("""\[\d+:\d{1,2}""")
+
+private fun isLyricsKey(key: String): Boolean =
+    key == "LYRICS" || key == "UNSYNCEDLYRICS" || key == "UNSYNCED LYRICS" ||
+        key == "ELRC" || key == "LRC" || key.startsWith("LYRICS-")
+
+private fun contentRank(text: String): Int = when {
+    text.startsWith("<") && text.contains("<tt") -> 3
+    WORD_TIMED_TAG.containsMatchIn(text) -> 2
+    LINE_TIMED_TAG.containsMatchIn(text) -> 1
+    else -> 0
+}
+
 private fun parseVorbisComment(block: ByteArray): String? {
     var offset = 0
     if (block.size < 8) return null
@@ -117,6 +131,8 @@ private fun parseVorbisComment(block: ByteArray): String? {
     if (offset + 4 > block.size) return null
     val count = leInt(block, offset)
     offset += 4
+    var best: String? = null
+    var bestRank = -1
     repeat(count) {
         if (offset + 4 > block.size) return null
         val length = leInt(block, offset)
@@ -127,12 +143,17 @@ private fun parseVorbisComment(block: ByteArray): String? {
         val separator = entry.indexOf('=')
         if (separator > 0) {
             val key = entry.substring(0, separator).uppercase()
-            if (key == "LYRICS" || key == "UNSYNCEDLYRICS" || key == "UNSYNCED LYRICS") {
-                return entry.substring(separator + 1).trim()
+            val value = entry.substring(separator + 1).trim()
+            if (isLyricsKey(key) && value.isNotEmpty()) {
+                val rank = contentRank(value)
+                if (rank > bestRank) {
+                    best = value
+                    bestRank = rank
+                }
             }
         }
     }
-    return null
+    return best
 }
 
 private fun readFlac(file: File): String? = file.inputStream().buffered().use { input ->
