@@ -226,8 +226,12 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        if (!line.translation.joinToString(" ").equals(line.text, ignoreCase = true)) {
-            line.translation.forEach { segment -> SecondaryLyricText(segment, align) }
+        val originals = if (runs.size == line.translation.size) runs.map { it.text } else null
+        line.translation.forEachIndexed { i, segment ->
+            val original = originals?.get(i) ?: line.text
+            if (!segment.equals(original, ignoreCase = true)) {
+                SecondaryLyricText(segment, align)
+            }
         }
     }
 }
