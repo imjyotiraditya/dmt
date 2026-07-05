@@ -216,7 +216,20 @@ private fun LyricLineRows(
                 align = align,
             )
         }
+        line.transliteration?.let { SecondaryLyricText(it.text, align) }
+        line.translation?.let { SecondaryLyricText(it, align) }
     }
+}
+
+@Composable
+private fun SecondaryLyricText(text: String, align: TextAlign) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = TuiDim,
+        textAlign = align,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable
