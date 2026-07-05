@@ -4,6 +4,26 @@ private val LRC_TIME = Regex("""\[(\d+):(\d{1,2})(?:[.:](\d{1,3}))?]""")
 private val WORD_TIME = Regex("""<(\d+):(\d{1,2})(?:[.:](\d{1,3}))?>""")
 private val VOICE_PREFIX = Regex("""^v\d+:""")
 private val BG_LINE = Regex("""^\[bg:(.*)]$""", RegexOption.IGNORE_CASE)
+private val LEADING_TIME = Regex("""^\[\d+:\d{1,2}(?:[.:]\d{1,3})?]""")
+
+private fun stripLinePrefix(text: String): String =
+    VOICE_PREFIX.replaceFirst(LEADING_TIME.replaceFirst(text.trim(), ""), "").trimStart()
+
+private fun scriptOf(text: String): String? = text.firstNotNullOfOrNull { c ->
+    when {
+        c.code in 0x3040..0x30FF || c.code in 0x4E00..0x9FFF -> "cjk"
+        c.code in 0x0600..0x06FF -> "arabic"
+        c.code in 0x0400..0x04FF -> "cyrillic"
+        c.isLetter() && c.code < 128 -> "latin"
+        else -> null
+    }
+}
+
+private fun isTransliterationOf(mainText: String, bgText: String): Boolean {
+    val main = scriptOf(mainText)
+    val bg = scriptOf(bgText)
+    return main != null && bg != null && main != bg
+}
 
 private fun MatchResult.toMs(): Long {
     val minutes = groupValues[1].toLongOrNull() ?: return -1L
@@ -46,17 +66,22 @@ fun parseLrc(raw: String): Lyrics? {
         val trimmedLine = line.trim()
         val bg = BG_LINE.matchEntire(trimmedLine)
         if (bg != null) {
-            val (text, words) = parseWordTags(bg.groupValues[1])
+            val (text, words) = parseWordTags(stripLinePrefix(bg.groupValues[1]))
             if (text.isNotBlank() && words.isNotEmpty()) {
-                val bgWords = words.map { it.copy(background = true) }
-                lines += LyricLine(bgWords.first().startMs, bgWords.last().endMs, text, bgWords)
+                val precedingMain = lines.lastOrNull()
+                if (precedingMain != null && isTransliterationOf(precedingMain.text, text)) {
+                    lines[lines.size - 1] = precedingMain.copy(transliteration = Transliteration(text, words))
+                } else {
+                    val bgWords = words.map { it.copy(background = true) }
+                    lines += LyricLine(bgWords.first().startMs, bgWords.last().endMs, text, bgWords)
+                }
             }
             return@forEach
         }
 
         val stamps = LRC_TIME.findAll(line).toList()
         if (stamps.isEmpty()) return@forEach
-        val rawText = VOICE_PREFIX.replaceFirst(line.substring(stamps.last().range.last + 1).trim(), "")
+        val rawText = stripLinePrefix(line.substring(stamps.last().range.last + 1))
         if (rawText.isEmpty()) return@forEach
         val (text, words) = parseWordTags(rawText)
         if (text.isBlank()) return@forEach

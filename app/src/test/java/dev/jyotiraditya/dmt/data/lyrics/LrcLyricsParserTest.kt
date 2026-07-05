@@ -62,6 +62,25 @@ class LrcLyricsParserTest {
     }
 
     @Test
+    fun `bg lines with a duplicated nested timestamp and voice prefix are cleaned`() {
+        val lyrics = parseLrc(fixture("voice_bg_nested.lrc"))
+        assertNotNull(lyrics)
+        assertTrue(lyrics!!.synced)
+
+        // neither the outer nor the nested "[mm:ss.xxx]v1:" prefix should leak into any text
+        assertTrue(lyrics.lines.none { it.text.contains("v1:") || it.text.contains("[") })
+
+        // the bg line here is romaji of the same line (different script), so it's a
+        // transliteration attached to the main line, not a separate background line
+        val main = lyrics.lines.first { it.startMs == 373L }
+        assertEquals("まる で 御伽 の 話", main.text)
+        val transliteration = main.transliteration
+        assertNotNull(transliteration)
+        assertEquals("Maru de otogi no hanashi", transliteration!!.text)
+        assertTrue(lyrics.lines.none { it.words.any { w -> w.background } })
+    }
+
+    @Test
     fun `isLrc detects bracket timestamps only`() {
         assertTrue(isLrc(fixture("plain.lrc")))
         assertTrue(isLrc(fixture("enhanced.lrc")))
