@@ -12,7 +12,13 @@ object LyricsParser {
                 lines = trimmed.lines()
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
-                    .map { LyricLine(-1L, -1L, it) },
+                    .map {
+                        LyricLine(
+                            startMs = -1L,
+                            endMs = -1L,
+                            text = it,
+                        )
+                    },
                 synced = false,
             )
         }

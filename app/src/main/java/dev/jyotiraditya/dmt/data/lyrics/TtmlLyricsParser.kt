@@ -91,7 +91,13 @@ private fun readTimedText(parser: XmlPullParser): Pair<String, List<LyricWord>> 
                 if (parser.name == "span" && spanStack.isNotEmpty()) {
                     val frame = spanStack.removeLast()
                     if (frame.beginMs >= 0 && text.length > frame.textStart) {
-                        words += LyricWord(frame.beginMs, frame.endMs, frame.textStart, text.length, background = false)
+                        words += LyricWord(
+                            startMs = frame.beginMs,
+                            endMs = frame.endMs,
+                            start = frame.textStart,
+                            end = text.length,
+                            background = false,
+                        )
                     }
                 }
             }
@@ -290,7 +296,12 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
                         if (segments.isNotEmpty()) translations[forKey] = segments
                     } else if (forKey != null && inTransliteration) {
                         val (content, spanWords) = readTimedText(parser)
-                        if (content.isNotBlank()) transliterations[forKey] = Transliteration(content, spanWords)
+                        if (content.isNotBlank()) {
+                            transliterations[forKey] = Transliteration(
+                                text = content,
+                                words = spanWords,
+                            )
+                        }
                     }
                 }
 
@@ -364,7 +375,12 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
 
     if (lines.isEmpty()) return null
     val synced = lines.all { it.startMs >= 0 }
-    if (!synced) return Lyrics(lines, false)
+    if (!synced) {
+        return Lyrics(
+            lines = lines,
+            synced = false,
+        )
+    }
     Lyrics(
         lines = lines.sortedBy { it.startMs }
             .fillLineEnds()

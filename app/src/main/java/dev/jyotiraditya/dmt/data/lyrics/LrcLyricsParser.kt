@@ -54,7 +54,13 @@ private fun parseWordTags(text: String): Pair<String, List<LyricWord>> {
         val next = tags.getOrNull(index + 1)
         val trimmedLen = gap.trimEnd().length
         if (next != null && trimmedLen > 0) {
-            words += LyricWord(tag.toMs(), next.toMs(), wordStart, wordStart + trimmedLen, background = false)
+            words += LyricWord(
+                startMs = tag.toMs(),
+                endMs = next.toMs(),
+                start = wordStart,
+                end = wordStart + trimmedLen,
+                background = false,
+            )
         }
     }
     return plain.toString().trimEnd() to words
@@ -70,10 +76,20 @@ fun parseLrc(raw: String): Lyrics? {
             if (text.isNotBlank() && words.isNotEmpty()) {
                 val precedingMain = lines.lastOrNull()
                 if (precedingMain != null && isTransliterationOf(precedingMain.text, text)) {
-                    lines[lines.size - 1] = precedingMain.copy(transliteration = Transliteration(text, words))
+                    lines[lines.size - 1] = precedingMain.copy(
+                        transliteration = Transliteration(
+                            text = text,
+                            words = words,
+                        )
+                    )
                 } else {
                     val bgWords = words.map { it.copy(background = true) }
-                    lines += LyricLine(bgWords.first().startMs, bgWords.last().endMs, text, bgWords)
+                    lines += LyricLine(
+                        startMs = bgWords.first().startMs,
+                        endMs = bgWords.last().endMs,
+                        text = text,
+                        words = bgWords,
+                    )
                 }
             }
             return@forEach
@@ -88,11 +104,19 @@ fun parseLrc(raw: String): Lyrics? {
         stamps.forEach { match ->
             val startMs = match.toMs()
             if (startMs < 0) return@forEach
-            lines += LyricLine(startMs, -1L, text, words)
+            lines += LyricLine(
+                startMs = startMs,
+                endMs = -1L,
+                text = text,
+                words = words,
+            )
         }
     }
     if (lines.isEmpty()) return null
-    return Lyrics(lines.sortedBy { it.startMs }.fillLineEnds(), synced = true)
+    return Lyrics(
+        lines = lines.sortedBy { it.startMs }.fillLineEnds(),
+        synced = true,
+    )
 }
 
 fun isLrc(raw: String): Boolean = LRC_TIME.containsMatchIn(raw)

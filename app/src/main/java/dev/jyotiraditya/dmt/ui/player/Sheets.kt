@@ -145,16 +145,36 @@ fun QueueList(
 fun InfoContent(state: DmtState) {
     val track: Track? = state.tracks.find { it.id.toString() == state.nowPlayingId }
 
-    InfoRow(stringResource(R.string.info_title), state.title)
-    InfoRow(stringResource(R.string.info_artist), state.artist.lowercase())
+    InfoRow(
+        label = stringResource(R.string.info_title),
+        value = state.title
+    )
+    InfoRow(
+        label = stringResource(R.string.info_artist),
+        value = state.artist.lowercase()
+    )
     if (state.album.isNotBlank()) {
-        InfoRow(stringResource(R.string.info_album), state.album.lowercase())
+        InfoRow(
+            label = stringResource(R.string.info_album),
+            value = state.album.lowercase()
+        )
     }
-    InfoRow(stringResource(R.string.info_duration), state.durationMs.asTime())
+    InfoRow(
+        label = stringResource(R.string.info_duration),
+        value = state.durationMs.asTime()
+    )
     state.tech.forEach { spec ->
-        InfoRow(spec.label.lowercase(), spec.value.lowercase())
+        InfoRow(
+            label = spec.label.lowercase(),
+            value = spec.value.lowercase()
+        )
     }
-    track?.let { InfoRow(stringResource(R.string.info_uri), it.uri.toString()) }
+    track?.let {
+        InfoRow(
+            label = stringResource(R.string.info_uri),
+            value = it.uri.toString()
+        )
+    }
 }
 
 @Composable

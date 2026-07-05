@@ -113,7 +113,15 @@ private data class LyricRun(
 )
 
 private fun buildRuns(line: LyricLine): List<LyricRun> {
-    if (line.words.isEmpty()) return listOf(LyricRun(background = false, line.text, emptyList()))
+    if (line.words.isEmpty()) {
+        return listOf(
+            LyricRun(
+                background = false,
+                text = line.text,
+                words = emptyList(),
+            )
+        )
+    }
 
     val groups = mutableListOf<MutableList<LyricWord>>()
     line.words.sortedBy { it.start }.forEach { word ->
@@ -144,7 +152,11 @@ private fun buildRuns(line: LyricLine): List<LyricRun> {
                 end = (word.end - shift).coerceIn(0, trimmed.length),
             )
         }
-        runs += LyricRun(group.first().background, trimmed, words)
+        runs += LyricRun(
+            background = group.first().background,
+            text = trimmed,
+            words = words,
+        )
         boundary = runEnd
     }
     return runs
@@ -217,7 +229,11 @@ private fun LyricLineRows(
         }
         line.transliteration?.let {
             LyricRunText(
-                run = LyricRun(background = true, text = it.text, words = it.words),
+                run = LyricRun(
+                    background = true,
+                    text = it.text,
+                    words = it.words,
+                ),
                 state = state,
                 positionMs = positionMs,
                 singerColor = singerColor,
@@ -300,9 +316,17 @@ private fun LyricRunText(
     val runState = runState(run, positionMs, state)
     val karaoke = runState == LineState.ACTIVE && run.words.isNotEmpty()
     val track = if (run.background) {
-        Track(sung = TuiFg, sweepTail = TuiDim, unsung = TuiFaint)
+        Track(
+            sung = TuiFg,
+            sweepTail = TuiDim,
+            unsung = TuiFaint,
+        )
     } else {
-        Track(sung = singerColor, sweepTail = TuiFg, unsung = TuiDim)
+        Track(
+            sung = singerColor,
+            sweepTail = TuiFg,
+            unsung = TuiDim,
+        )
     }
 
     val annotated: AnnotatedString = if (karaoke) {

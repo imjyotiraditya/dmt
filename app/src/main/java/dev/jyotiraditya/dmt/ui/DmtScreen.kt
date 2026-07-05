@@ -163,9 +163,10 @@ fun DmtScreen(
 
         if (showQueueSheet) {
             TuiSheet(onDismiss = { showQueueSheet = false }) {
+                val position = (state.queueIndex + 1).coerceAtMost(state.queue.size)
                 SheetHeader(
                     title = stringResource(R.string.queue_title),
-                    meta = "${(state.queueIndex + 1).coerceAtMost(state.queue.size)}/${state.queue.size}"
+                    meta = "$position/${state.queue.size}"
                 )
                 QueueList(
                     state = state,
@@ -203,7 +204,10 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
-            TuiTab(stringResource(R.string.cfg), inConfig) {
+            TuiTab(
+                label = stringResource(R.string.cfg),
+                active = inConfig
+            ) {
                 dispatch(
                     DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS)
                 )
@@ -215,15 +219,24 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
 @Composable
 private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     Row(modifier = Modifier.padding(vertical = 8.dp)) {
-        TuiTab(stringResource(R.string.tab_library), state.view == DmtView.LIBRARY) {
+        TuiTab(
+            label = stringResource(R.string.tab_library),
+            active = state.view == DmtView.LIBRARY
+        ) {
             dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
         Spacer(modifier = Modifier.width(8.dp))
-        TuiTab(stringResource(R.string.tab_albums), state.view == DmtView.ALBUMS) {
+        TuiTab(
+            label = stringResource(R.string.tab_albums),
+            active = state.view == DmtView.ALBUMS
+        ) {
             dispatch(DmtAction.Show(DmtView.ALBUMS))
         }
         Spacer(modifier = Modifier.width(8.dp))
-        TuiTab(stringResource(R.string.tab_files), state.view == DmtView.FILES) {
+        TuiTab(
+            label = stringResource(R.string.tab_files),
+            active = state.view == DmtView.FILES
+        ) {
             dispatch(DmtAction.Show(DmtView.FILES))
         }
     }

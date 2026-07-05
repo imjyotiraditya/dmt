@@ -150,7 +150,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(
         DmtState(
             hasPermission = ContextCompat.checkSelfPermission(
-                app, Manifest.permission.READ_MEDIA_AUDIO
+                app,
+                Manifest.permission.READ_MEDIA_AUDIO
             ) == PackageManager.PERMISSION_GRANTED
         )
     )
@@ -234,7 +235,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             is DmtAction.PlayAt -> c?.run {
                 _state.update { it.copy(error = null) }
                 val (queue, startIndex) = windowQueue(action.list, action.index)
-                setMediaItems(queue.map { it.toMediaItem() }, startIndex, 0L)
+                setMediaItems(
+                    queue.map { it.toMediaItem() },
+                    startIndex,
+                    0L
+                )
                 prepare()
                 play()
             }
@@ -402,7 +407,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val query = _state.value.query
         val (tracks, albums, folders) = withContext(Dispatchers.IO) {
             val scanned = MediaLibrary.scan(getApplication())
-            Triple(scanned, scanned.toAlbums(), scanned.toFolders())
+            Triple(
+                scanned,
+                scanned.toAlbums(),
+                scanned.toFolders(),
+            )
         }
         val (filteredTracks, filteredAlbums, filteredFolders) = withContext(Dispatchers.Default) {
             Triple(
@@ -454,7 +463,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 position = 0L
             }
             val (queue, startIndex) = windowQueue(existing, index)
-            c.setMediaItems(queue.map { it.toMediaItem() }, startIndex, position)
+            c.setMediaItems(
+                queue.map { it.toMediaItem() },
+                startIndex,
+                position
+            )
             c.prepare()
         }
     }
@@ -558,12 +571,55 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         return buildList {
-            if (mime.isNotEmpty()) add(Spec("FMT", mime.codecLabel()))
-            bits?.let { add(Spec("BIT", "$it")) }
-            sampleRate?.let { add(Spec("RATE", it.asKHz())) }
-            channels?.let { add(Spec("CH", if (it == 2) "ST" else "$it")) }
-            if (bitrate > 0) add(Spec("KBPS", "${bitrate / 1000}", hot = true))
-            track?.size?.takeIf { it > 0 }?.let { add(Spec("SIZE", it.asMB())) }
+            if (mime.isNotEmpty()) {
+                add(
+                    Spec(
+                        label = "FMT",
+                        value = mime.codecLabel(),
+                    )
+                )
+            }
+            bits?.let {
+                add(
+                    Spec(
+                        label = "BIT",
+                        value = "$it",
+                    )
+                )
+            }
+            sampleRate?.let {
+                add(
+                    Spec(
+                        label = "RATE",
+                        value = it.asKHz(),
+                    )
+                )
+            }
+            channels?.let {
+                add(
+                    Spec(
+                        label = "CH",
+                        value = if (it == 2) "ST" else "$it",
+                    )
+                )
+            }
+            if (bitrate > 0) {
+                add(
+                    Spec(
+                        label = "KBPS",
+                        value = "${bitrate / 1000}",
+                        hot = true,
+                    )
+                )
+            }
+            track?.size?.takeIf { it > 0 }?.let {
+                add(
+                    Spec(
+                        label = "SIZE",
+                        value = it.asMB(),
+                    )
+                )
+            }
         }
     }
 

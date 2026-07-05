@@ -114,13 +114,23 @@ fun ExpandedPlayer(
             .padding(horizontal = 20.dp)
     ) {
         if (landscape) {
-            LandscapePlayer(state, dispatch, onInfo, onQueue, showLyrics) {
-                showLyrics = !showLyrics
-            }
+            LandscapePlayer(
+                state = state,
+                dispatch = dispatch,
+                onInfo = onInfo,
+                onQueue = onQueue,
+                showLyrics = showLyrics,
+                onToggleLyrics = { showLyrics = !showLyrics }
+            )
         } else {
-            PortraitPlayer(state, dispatch, onInfo, onQueue, showLyrics) {
-                showLyrics = !showLyrics
-            }
+            PortraitPlayer(
+                state = state,
+                dispatch = dispatch,
+                onInfo = onInfo,
+                onQueue = onQueue,
+                showLyrics = showLyrics,
+                onToggleLyrics = { showLyrics = !showLyrics }
+            )
         }
     }
 }
@@ -245,7 +255,10 @@ private fun PlayerHeader(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            TuiKey(stringResource(R.string.info), onClick = onInfo)
+            TuiKey(
+                label = stringResource(R.string.info),
+                onClick = onInfo
+            )
         }
     }
 }
@@ -426,7 +439,12 @@ private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             .fillMaxWidth()
             .padding(top = 2.dp)
     ) {
-        TuiKey("|<<", big = true) { dispatch(DmtAction.Prev) }
+        TuiKey(
+            label = "|<<",
+            big = true
+        ) {
+            dispatch(DmtAction.Prev)
+        }
         TuiKey(
             label = if (state.isPlaying) "  ||  " else "  |>  ",
             bright = true,
@@ -434,7 +452,12 @@ private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.TogglePlay)
         }
-        TuiKey(">>|", big = true) { dispatch(DmtAction.Next) }
+        TuiKey(
+            label = ">>|",
+            big = true
+        ) {
+            dispatch(DmtAction.Next)
+        }
     }
 }
 
@@ -445,7 +468,11 @@ private fun StatusRow(
     singleRow: Boolean = false,
 ) {
     val shuffle: @Composable () -> Unit = {
-        TuiStatus("shf", if (state.shuffle) "on" else "off", state.shuffle) {
+        TuiStatus(
+            label = "shf",
+            value = if (state.shuffle) "on" else "off",
+            on = state.shuffle
+        ) {
             dispatch(DmtAction.ToggleShuffle)
         }
     }

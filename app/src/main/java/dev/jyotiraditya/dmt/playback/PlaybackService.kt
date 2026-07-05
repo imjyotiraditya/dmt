@@ -232,9 +232,19 @@ class PlaybackService : MediaLibraryService() {
         val tracks = library()
         return when {
             parentId == ROOT_ID -> listOf(
-                browsableItem(TRACKS_ID, getString(R.string.auto_tracks)),
-                browsableItem(ALBUMS_ID, getString(R.string.auto_albums), childrenAsGrid = true),
-                browsableItem(FOLDERS_ID, getString(R.string.auto_folders)),
+                browsableItem(
+                    id = TRACKS_ID,
+                    title = getString(R.string.auto_tracks),
+                ),
+                browsableItem(
+                    id = ALBUMS_ID,
+                    title = getString(R.string.auto_albums),
+                    childrenAsGrid = true,
+                ),
+                browsableItem(
+                    id = FOLDERS_ID,
+                    title = getString(R.string.auto_folders),
+                ),
             )
 
             parentId == TRACKS_ID -> tracks.map { it.toMediaItem() }
@@ -343,7 +353,10 @@ class PlaybackService : MediaLibraryService() {
             params: LibraryParams?,
         ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(
             LibraryResult.ofItem(
-                browsableItem(ROOT_ID, getString(R.string.app_name)),
+                browsableItem(
+                    id = ROOT_ID,
+                    title = getString(R.string.app_name),
+                ),
                 params
             )
         )
@@ -379,7 +392,12 @@ class PlaybackService : MediaLibraryService() {
             params: LibraryParams?,
         ): ListenableFuture<LibraryResult<Void>> = scope.future {
             val count = searchLibrary(library(), query).size
-            session.notifySearchResultChanged(browser, query, count, params)
+            session.notifySearchResultChanged(
+                browser,
+                query,
+                count,
+                params
+            )
             LibraryResult.ofVoid()
         }
 

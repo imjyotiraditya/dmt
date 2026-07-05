@@ -188,8 +188,17 @@ fun TuiStatus(label: String, value: String, on: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun Hairline(fraction: Float, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.fillMaxWidth().height(2.dp)) {
-        drawLine(TuiFaint, Offset(0f, 1.dp.toPx()), Offset(size.width, 1.dp.toPx()), 2.dp.toPx())
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(2.dp)
+    ) {
+        drawLine(
+            TuiFaint,
+            Offset(0f, 1.dp.toPx()),
+            Offset(size.width, 1.dp.toPx()),
+            2.dp.toPx()
+        )
         drawLine(
             TuiFg,
             Offset(0f, 1.dp.toPx()),

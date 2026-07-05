@@ -49,6 +49,10 @@ data class Spec(
 fun List<Track>.toAlbums(): List<Album> = groupBy { it.album }
     .map { (name, tracks) ->
         val artists = tracks.map { it.artist }.distinct()
-        Album(name, artists.singleOrNull() ?: "various artists", tracks)
+        Album(
+            name = name,
+            artist = artists.singleOrNull() ?: "various artists",
+            tracks = tracks,
+        )
     }
     .sortedBy { it.name.lowercase() }

@@ -28,7 +28,11 @@ fun PermissionPane(dispatch: (DmtAction) -> Unit, onRequestPermission: () -> Uni
             modifier = Modifier.padding(bottom = 12.dp)
         )
         Row {
-            TuiKey(stringResource(R.string.grant), bright = true, onClick = onRequestPermission)
+            TuiKey(
+                label = stringResource(R.string.grant),
+                bright = true,
+                onClick = onRequestPermission
+            )
             Spacer(modifier = Modifier.width(10.dp))
             TuiKey(stringResource(R.string.rescan)) { dispatch(DmtAction.Rescan) }
         }

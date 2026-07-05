@@ -41,7 +41,10 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Caption(stringResource(R.string.config))
 
-        SettingRow(stringResource(R.string.set_wave), if (settings.wave) on else off) {
+        SettingRow(
+            label = stringResource(R.string.set_wave),
+            value = if (settings.wave) on else off
+        ) {
             dispatch(DmtAction.Config(settings.copy(wave = !settings.wave)))
         }
         SettingRow(
@@ -55,10 +58,16 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             }
             dispatch(DmtAction.Config(settings.copy(cols = next)))
         }
-        SettingRow(stringResource(R.string.set_raw), if (settings.rawArt) on else off) {
+        SettingRow(
+            label = stringResource(R.string.set_raw),
+            value = if (settings.rawArt) on else off
+        ) {
             dispatch(DmtAction.Config(settings.copy(rawArt = !settings.rawArt)))
         }
-        SettingRow(stringResource(R.string.set_specs), if (settings.listSpecs) on else off) {
+        SettingRow(
+            label = stringResource(R.string.set_specs),
+            value = if (settings.listSpecs) on else off
+        ) {
             dispatch(DmtAction.Config(settings.copy(listSpecs = !settings.listSpecs)))
         }
         SettingRow(
@@ -72,13 +81,22 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             )
         }
         Caption(stringResource(R.string.tools))
-        SettingRow(stringResource(R.string.set_eq), stringResource(R.string.set_eq_open)) {
+        SettingRow(
+            label = stringResource(R.string.set_eq),
+            value = stringResource(R.string.set_eq_open)
+        ) {
             dispatch(DmtAction.OpenEqualizer)
         }
-        SettingRow(stringResource(R.string.stats), stringResource(R.string.stat_view)) {
+        SettingRow(
+            label = stringResource(R.string.stats),
+            value = stringResource(R.string.stat_view)
+        ) {
             dispatch(DmtAction.Show(DmtView.STATS))
         }
-        SettingRow(stringResource(R.string.set_rescan), stringResource(R.string.run)) {
+        SettingRow(
+            label = stringResource(R.string.set_rescan),
+            value = stringResource(R.string.run)
+        ) {
             dispatch(DmtAction.Rescan)
         }
 
@@ -143,7 +161,10 @@ private fun SettingRow(label: String, value: String, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = TuiFg
             )
-            TuiKey("[ $value ]", onClick = onClick)
+            TuiKey(
+                label = "[ $value ]",
+                onClick = onClick
+            )
         }
         Box(
             modifier = Modifier

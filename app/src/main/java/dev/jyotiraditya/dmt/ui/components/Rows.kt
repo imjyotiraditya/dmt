@@ -149,7 +149,11 @@ fun ListRow(
                     ),
                     color = if (current) TuiBg else TuiFg,
                     maxLines = 1,
-                    modifier = if (current) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
+                    modifier = if (current) {
+                        Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+                    } else {
+                        Modifier
+                    }
                 )
                 if (line2.isNotEmpty()) {
                     Text(
