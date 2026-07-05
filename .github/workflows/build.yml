@@ -22,6 +22,9 @@ jobs:
       - name: set up gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: run unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: decode keystore
         if: github.event_name != 'pull_request'
         run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
@@ -39,13 +42,13 @@ jobs:
         run: ./gradlew assembleDebug assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
 
       - name: upload debug apk
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dmt-debug
           path: app/build/outputs/apk/debug/*.apk
 
       - name: upload release apk
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dmt-release
           path: app/build/outputs/apk/release/*.apk
