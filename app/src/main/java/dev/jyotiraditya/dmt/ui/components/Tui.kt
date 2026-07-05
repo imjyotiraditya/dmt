@@ -1,5 +1,7 @@
 package dev.jyotiraditya.dmt.ui.components
 
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -36,6 +38,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
@@ -240,6 +244,15 @@ fun ThinSlider(
     modifier: Modifier = Modifier,
 ) {
     val accent = LocalAccent.current
+    val filledColor = TuiFg
+    val emptyColor = TuiFaint
+    val paint = remember {
+        Paint().apply {
+            typeface = Typeface.MONOSPACE
+            isAntiAlias = true
+            textSize = 28f
+        }
+    }
     Box(
         modifier = modifier
             .height(40.dp)
@@ -266,27 +279,27 @@ fun ThinSlider(
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val y = size.height / 2
-            val x = size.width * fraction.coerceIn(0f, 1f)
-            drawLine(
-                color = TuiFaint,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = 2.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 9f))
-            )
-            drawLine(
-                color = TuiFg,
-                start = Offset(0f, y),
-                end = Offset(x, y),
-                strokeWidth = 2.dp.toPx()
-            )
-            val knob = 8.dp.toPx()
-            drawRect(
-                color = accent,
-                topLeft = Offset((x - knob / 2).coerceIn(0f, size.width - knob), y - knob / 2),
-                size = Size(knob, knob)
-            )
+            val advance = paint.measureText("█")
+            val cols = (size.width / advance).toInt().coerceAtLeast(1)
+            val filledCols = (cols * fraction.coerceIn(0f, 1f)).toInt()
+            val baseline = size.height / 2 + paint.textSize * 0.35f
+            drawContext.canvas.nativeCanvas.apply {
+                for (col in 0 until cols) {
+                    val filled = col < filledCols
+                    val glyph = if (filled) "█" else "░"
+                    paint.color = when {
+                        col == filledCols - 1 -> accent.toArgb()
+                        filled -> filledColor.toArgb()
+                        else -> emptyColor.toArgb()
+                    }
+                    drawText(
+                        glyph,
+                        col * advance,
+                        baseline,
+                        paint
+                    )
+                }
+            }
         }
     }
 }
