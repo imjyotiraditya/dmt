@@ -56,8 +56,20 @@ class TtmlLyricsParserTest {
         assertNotNull(lyrics)
 
         val first = lyrics!!.lines.first { it.startMs == 2_344L }
-        assertEquals("This song is all, it's about you, baby", first.translation)
+        assertEquals(listOf("This song is all, it's about you, baby"), first.translation)
         assertNull(first.transliteration)
+    }
+
+    @Test
+    fun `translation with an x-bg clause splits into separate segments`() {
+        val lyrics = parseTtml(fixture("ttml_single.ttml"))
+        assertNotNull(lyrics)
+
+        val line = lyrics!!.lines.first { it.startMs == 93_775L }
+        assertEquals(
+            listOf("(They keep on asking me, \"Who is he?\")", "You show up, no matter how busy you are"),
+            line.translation,
+        )
     }
 
     @Test
@@ -70,6 +82,6 @@ class TtmlLyricsParserTest {
         assertNotNull(transliteration)
         assertEquals("shizumu you ni tokete yuku you ni", transliteration!!.text)
         assertEquals(7, transliteration.words.size)
-        assertNull(first.translation)
+        assertTrue(first.translation.isEmpty())
     }
 }

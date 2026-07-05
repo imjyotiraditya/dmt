@@ -101,6 +101,73 @@ private fun readTimedText(parser: XmlPullParser): Pair<String, List<LyricWord>> 
     return text.toString().trim() to words
 }
 
+private fun readTranslationSegments(parser: XmlPullParser): List<String> {
+    val segments = mutableListOf<String>()
+    val current = StringBuilder()
+    val bgStack = ArrayDeque<Boolean>()
+    var currentBg = false
+    var pendingSpace = false
+    var pendingNewline = false
+
+    fun flushSpace() {
+        if (pendingSpace && !pendingNewline && current.isNotEmpty()) current.append(' ')
+        pendingSpace = false
+        pendingNewline = false
+    }
+
+    fun cutSegment() {
+        val text = current.toString().trim()
+        if (text.isNotEmpty()) segments += text
+        current.clear()
+        pendingSpace = false
+        pendingNewline = false
+    }
+
+    var depth = 1
+    var event = parser.next()
+    while (depth > 0) {
+        when (event) {
+            XmlPullParser.START_TAG -> {
+                depth++
+                if (parser.name == "span") {
+                    val isBg = currentBg || parser.attr("ttm:role") == "x-bg"
+                    if (isBg != currentBg) {
+                        cutSegment()
+                        currentBg = isBg
+                    }
+                    bgStack.addLast(currentBg)
+                    flushSpace()
+                }
+            }
+
+            XmlPullParser.TEXT -> parser.text.forEach { c ->
+                if (c.isWhitespace()) {
+                    pendingSpace = true
+                    if (c == '\n' || c == '\r') pendingNewline = true
+                } else {
+                    flushSpace()
+                    current.append(c)
+                }
+            }
+
+            XmlPullParser.END_TAG -> {
+                depth--
+                if (parser.name == "span" && bgStack.isNotEmpty()) {
+                    bgStack.removeLast()
+                    val outerBg = bgStack.lastOrNull() ?: false
+                    if (outerBg != currentBg) {
+                        cutSegment()
+                        currentBg = outerBg
+                    }
+                }
+            }
+        }
+        if (depth > 0) event = parser.next()
+    }
+    cutSegment()
+    return segments
+}
+
 private class TtmlAgents {
     private val types = mutableMapOf<String, String>()
     private val order = mutableListOf<String>()
@@ -142,7 +209,7 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
     var pendingNewline = false
     var lineKey: String? = null
 
-    val translations = mutableMapOf<String, String>()
+    val translations = mutableMapOf<String, List<String>>()
     val transliterations = mutableMapOf<String, Transliteration>()
     var inTranslation = false
     var inTransliteration = false
@@ -219,8 +286,8 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
                 "text" -> {
                     val forKey = parser.attr("for")
                     if (forKey != null && inTranslation) {
-                        val (content, _) = readTimedText(parser)
-                        if (content.isNotBlank()) translations[forKey] = content
+                        val segments = readTranslationSegments(parser)
+                        if (segments.isNotEmpty()) translations[forKey] = segments
                     } else if (forKey != null && inTransliteration) {
                         val (content, spanWords) = readTimedText(parser)
                         if (content.isNotBlank()) transliterations[forKey] = Transliteration(content, spanWords)
@@ -285,7 +352,7 @@ fun parseTtml(raw: String): Lyrics? = runCatching {
                             voice = lineVoice,
                             singer = lineSinger,
                             sectionStart = lineSection,
-                            translation = lineKey?.let { translations[it] },
+                            translation = lineKey?.let { translations[it] } ?: emptyList(),
                             transliteration = lineKey?.let { transliterations[it] },
                         )
                     }

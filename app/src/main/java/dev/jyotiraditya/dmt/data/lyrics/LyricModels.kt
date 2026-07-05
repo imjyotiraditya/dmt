@@ -26,7 +26,7 @@ data class LyricLine(
     val singer: Int = 0,
     val sectionStart: Boolean = false,
     val interlude: Boolean = false,
-    val translation: String? = null,
+    val translation: List<String> = emptyList(),
     val transliteration: Transliteration? = null,
 )
 

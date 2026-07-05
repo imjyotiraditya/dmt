@@ -226,9 +226,9 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        line.translation
-            ?.takeIf { !it.equals(line.text, ignoreCase = true) }
-            ?.let { SecondaryLyricText(it, align) }
+        if (!line.translation.joinToString(" ").equals(line.text, ignoreCase = true)) {
+            line.translation.forEach { segment -> SecondaryLyricText(segment, align) }
+        }
     }
 }
 
