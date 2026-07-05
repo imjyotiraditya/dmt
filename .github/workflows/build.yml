@@ -46,9 +46,11 @@ jobs:
         with:
           name: dmt-debug
           path: app/build/outputs/apk/debug/*.apk
+          archive: false
 
       - name: upload release apk
         uses: actions/upload-artifact@v7
         with:
           name: dmt-release
           path: app/build/outputs/apk/release/*.apk
+          archive: false
