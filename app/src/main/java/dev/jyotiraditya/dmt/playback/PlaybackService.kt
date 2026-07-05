@@ -2,6 +2,7 @@ package dev.jyotiraditya.dmt.playback
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
@@ -11,10 +12,13 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Timeline
+import androidx.media3.common.util.BitmapLoader
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSourceBitmapLoader
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.common.Player
+import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
@@ -26,6 +30,7 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 import dev.jyotiraditya.dmt.MainActivity
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.data.KEY_LAST_INDEX
@@ -134,6 +139,7 @@ class PlaybackService : MediaLibraryService() {
             }
         })
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
+            .setBitmapLoader(FreshCopyBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader(this))))
             .setSessionActivity(
                 PendingIntent.getActivity(
                     this,
@@ -494,6 +500,25 @@ class PlaybackService : MediaLibraryService() {
                 sleepEndAt = null
             }
         }
+    }
+
+    @OptIn(UnstableApi::class)
+    private class FreshCopyBitmapLoader(private val delegate: BitmapLoader) : BitmapLoader {
+        override fun supportsMimeType(mimeType: String): Boolean =
+            delegate.supportsMimeType(mimeType)
+
+        override fun decodeBitmap(data: ByteArray): ListenableFuture<Bitmap> =
+            fresh(delegate.decodeBitmap(data))
+
+        override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> =
+            fresh(delegate.loadBitmap(uri))
+
+        private fun fresh(future: ListenableFuture<Bitmap>): ListenableFuture<Bitmap> =
+            Futures.transform(
+                future,
+                { it.copy(it.config ?: Bitmap.Config.ARGB_8888, false) ?: it },
+                MoreExecutors.directExecutor()
+            )
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
