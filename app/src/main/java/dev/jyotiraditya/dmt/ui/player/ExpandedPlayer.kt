@@ -1,8 +1,11 @@
 package dev.jyotiraditya.dmt.ui.player
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
@@ -27,19 +31,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import dev.jyotiraditya.dmt.player.asTime
 import dev.jyotiraditya.dmt.ui.AsciiCover
 import dev.jyotiraditya.dmt.ui.DmtAction
@@ -55,6 +64,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
+import kotlinx.coroutines.launch
 
 @Composable
 fun ExpandedPlayer(
@@ -67,11 +77,39 @@ fun ExpandedPlayer(
     val landscape = configuration.screenWidthDp > configuration.screenHeightDp
     var showLyrics by rememberSaveable { mutableStateOf(false) }
 
+    val density = LocalDensity.current
+    val dismissThreshold = with(density) { 120.dp.toPx() }
+    val dragOffset = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(TuiBg)
             .tuiClickable {}
+            .offset { IntOffset(0, dragOffset.value.roundToInt()) }
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        scope.launch {
+                            val next = (dragOffset.value + dragAmount).coerceAtLeast(0f)
+                            dragOffset.snapTo(next)
+                        }
+                    },
+                    onDragEnd = {
+                        scope.launch {
+                            if (dragOffset.value > dismissThreshold) {
+                                dispatch(DmtAction.Expand(false))
+                            }
+                            dragOffset.animateTo(0f, tween(200))
+                        }
+                    },
+                    onDragCancel = {
+                        scope.launch { dragOffset.animateTo(0f, tween(200)) }
+                    }
+                )
+            }
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(horizontal = 20.dp)
     ) {
