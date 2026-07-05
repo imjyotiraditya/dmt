@@ -318,7 +318,8 @@ private fun LyricRunText(
         else -> TuiDim
     }
 
-    val display = if (run.background) {
+    val alreadyParenthesized = run.text.startsWith("(") && run.text.endsWith(")")
+    val display = if (run.background && !alreadyParenthesized) {
         buildAnnotatedString {
             append("(")
             append(annotated)
