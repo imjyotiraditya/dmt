@@ -1,6 +1,5 @@
 package dev.jyotiraditya.dmt
 
-import android.Manifest
 import android.content.Intent
 import android.media.audiofx.AudioEffect
 import android.os.Bundle
@@ -34,6 +33,8 @@ import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
 import dev.jyotiraditya.dmt.ui.theme.DMTTheme
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.color
+import dev.jyotiraditya.dmt.util.audioPermission
+import dev.jyotiraditya.dmt.util.runtimePermissions
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -66,18 +67,11 @@ class MainActivity : ComponentActivity() {
                         ActivityResultContracts.RequestMultiplePermissions(),
                     ) { grants ->
                         playerViewModel.onIntent(
-                            DmtAction.Permission(
-                                grants[Manifest.permission.READ_MEDIA_AUDIO] == true,
-                            ),
+                            DmtAction.Permission(grants[audioPermission] == true),
                         )
                     }
                     val requestPermissions = {
-                        launcher.launch(
-                            arrayOf(
-                                Manifest.permission.READ_MEDIA_AUDIO,
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            ),
-                        )
+                        launcher.launch(runtimePermissions)
                     }
                     CompositionLocalProvider(
                         LocalAccent provides state.settings.accent.color,

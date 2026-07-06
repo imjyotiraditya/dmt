@@ -1,6 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.player
 
-import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
@@ -34,6 +33,7 @@ import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import dev.jyotiraditya.dmt.util.DispatcherProvider
+import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.await
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
@@ -70,7 +70,7 @@ class PlayerViewModel @Inject constructor(
     DmtState(
         hasPermission = ContextCompat.checkSelfPermission(
             context,
-            Manifest.permission.READ_MEDIA_AUDIO,
+            audioPermission,
         ) == PackageManager.PERMISSION_GRANTED,
     ),
 ) {
