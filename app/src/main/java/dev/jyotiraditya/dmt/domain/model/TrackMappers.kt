@@ -20,7 +20,7 @@ fun List<Track>.toAlbums(): List<Album> =
             Album(
                 name = name,
                 artist = artists.singleOrNull() ?: "various artists",
-                tracks = tracks,
+                tracks = tracks.sortedBy { it.trackNumber },
             )
         }
         .sortedBy { it.name.lowercase() }

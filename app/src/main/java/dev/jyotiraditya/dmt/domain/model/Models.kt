@@ -14,6 +14,7 @@ data class Track(
     val mime: String,
     val bitrate: Int,
     val size: Long,
+    val trackNumber: Int,
 )
 
 data class Album(

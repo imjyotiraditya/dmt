@@ -26,6 +26,7 @@ class MediaRepositoryImpl @Inject constructor(
         MediaStore.Audio.Media.MIME_TYPE,
         MediaStore.Audio.Media.BITRATE,
         MediaStore.Audio.Media.SIZE,
+        MediaStore.Audio.Media.TRACK,
     )
 
     override fun scan(): List<Track> =
@@ -65,6 +66,7 @@ private fun Cursor.toTrack(): Track {
         mime = text(MediaStore.Audio.Media.MIME_TYPE, "audio/?"),
         bitrate = int(MediaStore.Audio.Media.BITRATE),
         size = long(MediaStore.Audio.Media.SIZE),
+        trackNumber = int(MediaStore.Audio.Media.TRACK),
     )
 }
 
