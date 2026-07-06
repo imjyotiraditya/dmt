@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.jyotiraditya.dmt.BuildConfig
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -111,7 +112,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             modifier = Modifier.padding(top = 4.dp),
         )
         Text(
-            text = stringResource(R.string.version),
+            text = "v${BuildConfig.VERSION_NAME}",
             style = MaterialTheme.typography.labelSmall,
             color = TuiFaint,
             modifier = Modifier.padding(top = 6.dp),

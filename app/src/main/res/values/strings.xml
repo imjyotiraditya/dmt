@@ -66,7 +66,6 @@
     <string name="about">about</string>
     <string name="about_title">dmt · dear music, thanks</string>
     <string name="about_body">a tui-inspired local music player.\nmusic helped a lot; this is the thank-you note.</string>
-    <string name="version">v1.0</string>
     <string name="credit">made by jyotiraditya panda</string>
     <string name="credit_url" translatable="false">https://github.com/imjyotiraditya</string>
 
