@@ -22,6 +22,9 @@ jobs:
       - name: set up gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: lint
+        run: ./gradlew :app:lintRelease
+
       - name: run unit tests
         run: ./gradlew testDebugUnitTest
 

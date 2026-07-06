@@ -13,13 +13,16 @@ val JetBrainsMono = FontFamily(
     Font(R.font.jetbrains_mono_bold, FontWeight.Bold),
 )
 
-private fun mono(size: Int, weight: FontWeight = FontWeight.Normal, tracking: Float = 0f) =
-    TextStyle(
-        fontFamily = JetBrainsMono,
-        fontSize = size.sp,
-        fontWeight = weight,
-        letterSpacing = tracking.sp,
-    )
+private fun mono(
+    size: Int,
+    weight: FontWeight = FontWeight.Normal,
+    tracking: Float = 0f,
+) = TextStyle(
+    fontFamily = JetBrainsMono,
+    fontSize = size.sp,
+    fontWeight = weight,
+    letterSpacing = tracking.sp,
+)
 
 val Typography = Typography(
     displaySmall = mono(26, FontWeight.Bold, 1f),

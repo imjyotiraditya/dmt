@@ -6,18 +6,17 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
-import androidx.datastore.preferences.core.edit
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.BitmapLoader
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSourceBitmapLoader
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
-import androidx.media3.common.Player
 import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
@@ -26,27 +25,24 @@ import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import dagger.hilt.android.AndroidEntryPoint
 import dev.jyotiraditya.dmt.MainActivity
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.data.KEY_LAST_INDEX
-import dev.jyotiraditya.dmt.data.KEY_LAST_POS
-import dev.jyotiraditya.dmt.data.KEY_LAST_QUEUE
-import dev.jyotiraditya.dmt.data.KEY_STAT_COUNTS
-import dev.jyotiraditya.dmt.data.KEY_STAT_TOTAL
-import dev.jyotiraditya.dmt.data.MediaLibrary
-import dev.jyotiraditya.dmt.data.Track
-import dev.jyotiraditya.dmt.data.dmtStore
-import dev.jyotiraditya.dmt.data.encodeCounts
-import dev.jyotiraditya.dmt.data.toAlbums
-import dev.jyotiraditya.dmt.data.toCounts
-import dev.jyotiraditya.dmt.data.toFolders
-import dev.jyotiraditya.dmt.player.albumArtUri
-import dev.jyotiraditya.dmt.player.toMediaItem
+import dev.jyotiraditya.dmt.domain.model.LastSession
+import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.toAlbums
+import dev.jyotiraditya.dmt.domain.model.toFolders
+import dev.jyotiraditya.dmt.domain.repository.MediaRepository
+import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
+import dev.jyotiraditya.dmt.domain.repository.StatsRepository
+import dev.jyotiraditya.dmt.util.albumArtUri
+import dev.jyotiraditya.dmt.util.toMediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,6 +52,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val ROOT_ID = "root"
 private const val TRACKS_ID = "tracks"
@@ -64,7 +62,17 @@ private const val FOLDERS_ID = "folders"
 private const val ALBUM_PREFIX = "album/"
 private const val FOLDER_PREFIX = "folder/"
 
+@AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
+
+    @Inject
+    lateinit var mediaRepository: MediaRepository
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var statsRepository: StatsRepository
 
     companion object {
         const val KEY_END_AT = "end_at"
@@ -93,20 +101,22 @@ class PlaybackService : MediaLibraryService() {
         setMediaNotificationProvider(
             DefaultMediaNotificationProvider(this).apply {
                 setSmallIcon(R.drawable.ic_stat_dmt)
-            }
+            },
         )
+        val handleAudioFocus = true
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                     .build(),
-                true
+                handleAudioFocus,
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        val keepPlaybackHistory = false
         player.addAnalyticsListener(
-            PlaybackStatsListener(false) { eventTime, playbackStats ->
+            PlaybackStatsListener(keepPlaybackHistory) { eventTime, playbackStats ->
                 val playedMs = playbackStats.totalPlayTimeMs
                 if (playedMs < 5_000L || eventTime.timeline.isEmpty) {
                     return@PlaybackStatsListener
@@ -119,34 +129,34 @@ class PlaybackService : MediaLibraryService() {
                         .toLongOrNull()
                 }.getOrNull()
                 recordStats(playedMs, mediaId)
-            }
+            },
         )
-        player.addListener(object : Player.Listener {
-            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) =
-                publishButtons()
+        player.addListener(
+            object : Player.Listener {
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) =
+                    publishButtons()
 
-            override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
+                override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
 
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (!isPlaying) saveSession()
-            }
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    if (!isPlaying) saveSession()
+                }
 
-            override fun onMediaItemTransition(
-                mediaItem: androidx.media3.common.MediaItem?,
-                reason: Int,
-            ) {
-                saveSession()
-            }
-        })
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    saveSession()
+                }
+            },
+        )
+        val artworkLoader = DataSourceBitmapLoader.Builder(this).build()
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
-            .setBitmapLoader(FreshCopyBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader(this))))
+            .setBitmapLoader(FreshCopyBitmapLoader(CacheBitmapLoader(artworkLoader)))
             .setSessionActivity(
                 PendingIntent.getActivity(
                     this,
                     0,
                     Intent(this, MainActivity::class.java),
-                    PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
             .setMediaButtonPreferences(sessionButtons(player))
             .build()
@@ -184,7 +194,7 @@ class PlaybackService : MediaLibraryService() {
 
     private suspend fun library(): List<Track> =
         libraryCache ?: withContext(Dispatchers.IO) {
-            MediaLibrary.scan(this@PlaybackService)
+            mediaRepository.scan()
         }.also { libraryCache = it }
 
     private fun searchLibrary(tracks: List<Track>, query: String): List<Track> =
@@ -209,7 +219,7 @@ class PlaybackService : MediaLibraryService() {
                     MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
                 } else {
                     MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
-                }
+                },
             )
         }
         return MediaItem.Builder()
@@ -223,7 +233,7 @@ class PlaybackService : MediaLibraryService() {
                     .setIsPlayable(false)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
                     .setExtras(extras)
-                    .build()
+                    .build(),
             )
             .build()
     }
@@ -313,53 +323,55 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             customCommand: SessionCommand,
             args: Bundle,
-        ): ListenableFuture<SessionResult> = when (customCommand.customAction) {
-            CMD_SLEEP_SET.customAction -> {
-                scheduleSleep(args.getLong(KEY_END_AT))
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-            }
-
-            CMD_SLEEP_GET.customAction -> {
-                val extras = Bundle().apply { putLong(KEY_END_AT, sleepEndAt ?: 0L) }
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
-            }
-
-            CMD_AUDIO_SESSION.customAction -> {
-                val id = (mediaSession?.player as? ExoPlayer)?.audioSessionId ?: 0
-                val extras = Bundle().apply { putInt(KEY_AUDIO_SESSION, id) }
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
-            }
-
-            CMD_TOGGLE_SHUFFLE.customAction -> {
-                session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-            }
-
-            CMD_CYCLE_REPEAT.customAction -> {
-                session.player.repeatMode = when (session.player.repeatMode) {
-                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                    else -> Player.REPEAT_MODE_OFF
+        ): ListenableFuture<SessionResult> =
+            when (customCommand.customAction) {
+                CMD_SLEEP_SET.customAction -> {
+                    scheduleSleep(args.getLong(KEY_END_AT))
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                 }
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-            }
 
-            else -> super.onCustomCommand(session, controller, customCommand, args)
-        }
+                CMD_SLEEP_GET.customAction -> {
+                    val extras = Bundle().apply { putLong(KEY_END_AT, sleepEndAt ?: 0L) }
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+                }
+
+                CMD_AUDIO_SESSION.customAction -> {
+                    val id = (mediaSession?.player as? ExoPlayer)?.audioSessionId ?: 0
+                    val extras = Bundle().apply { putInt(KEY_AUDIO_SESSION, id) }
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+                }
+
+                CMD_TOGGLE_SHUFFLE.customAction -> {
+                    session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+
+                CMD_CYCLE_REPEAT.customAction -> {
+                    session.player.repeatMode = when (session.player.repeatMode) {
+                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                        else -> Player.REPEAT_MODE_OFF
+                    }
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+
+                else -> super.onCustomCommand(session, controller, customCommand, args)
+            }
 
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?,
-        ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(
-            LibraryResult.ofItem(
-                browsableItem(
-                    id = ROOT_ID,
-                    title = getString(R.string.app_name),
+        ): ListenableFuture<LibraryResult<MediaItem>> =
+            Futures.immediateFuture(
+                LibraryResult.ofItem(
+                    browsableItem(
+                        id = ROOT_ID,
+                        title = getString(R.string.app_name),
+                    ),
+                    params,
                 ),
-                params
             )
-        )
 
         override fun onGetChildren(
             session: MediaLibrarySession,
@@ -368,38 +380,41 @@ class PlaybackService : MediaLibraryService() {
             page: Int,
             pageSize: Int,
             params: LibraryParams?,
-        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = scope.future {
-            LibraryResult.ofItemList(childrenOf(parentId), params)
-        }
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+            scope.future {
+                LibraryResult.ofItemList(childrenOf(parentId), params)
+            }
 
         override fun onGetItem(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             mediaId: String,
-        ): ListenableFuture<LibraryResult<MediaItem>> = scope.future {
-            val track = library().find { it.id.toString() == mediaId }
-            if (track != null) {
-                LibraryResult.ofItem(track.toMediaItem(), null)
-            } else {
-                LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+        ): ListenableFuture<LibraryResult<MediaItem>> =
+            scope.future {
+                val track = library().find { it.id.toString() == mediaId }
+                if (track != null) {
+                    LibraryResult.ofItem(track.toMediaItem(), null)
+                } else {
+                    LibraryResult.ofError(SessionError.ERROR_BAD_VALUE)
+                }
             }
-        }
 
         override fun onSearch(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             query: String,
             params: LibraryParams?,
-        ): ListenableFuture<LibraryResult<Void>> = scope.future {
-            val count = searchLibrary(library(), query).size
-            session.notifySearchResultChanged(
-                browser,
-                query,
-                count,
-                params
-            )
-            LibraryResult.ofVoid()
-        }
+        ): ListenableFuture<LibraryResult<Void>> =
+            scope.future {
+                val count = searchLibrary(library(), query).size
+                session.notifySearchResultChanged(
+                    browser,
+                    query,
+                    count,
+                    params,
+                )
+                LibraryResult.ofVoid()
+            }
 
         override fun onGetSearchResult(
             session: MediaLibrarySession,
@@ -408,18 +423,20 @@ class PlaybackService : MediaLibraryService() {
             page: Int,
             pageSize: Int,
             params: LibraryParams?,
-        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = scope.future {
-            val results = searchLibrary(library(), query).map { it.toMediaItem() }
-            LibraryResult.ofItemList(results, params)
-        }
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+            scope.future {
+                val results = searchLibrary(library(), query).map { it.toMediaItem() }
+                LibraryResult.ofItemList(results, params)
+            }
 
         override fun onAddMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: List<MediaItem>,
-        ): ListenableFuture<List<MediaItem>> = scope.future {
-            resolveItems(mediaItems)
-        }
+        ): ListenableFuture<List<MediaItem>> =
+            scope.future {
+                resolveItems(mediaItems)
+            }
 
         override fun onSetMediaItems(
             mediaSession: MediaSession,
@@ -427,45 +444,46 @@ class PlaybackService : MediaLibraryService() {
             mediaItems: List<MediaItem>,
             startIndex: Int,
             startPositionMs: Long,
-        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
-            val tracks = library()
-            val single = mediaItems.singleOrNull()
-            val query = single?.requestMetadata?.searchQuery
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+            scope.future {
+                val tracks = library()
+                val single = mediaItems.singleOrNull()
+                val query = single?.requestMetadata?.searchQuery
 
-            when {
-                single != null && query != null -> {
-                    val matches = searchLibrary(tracks, query).ifEmpty { tracks }
-                    MediaSession.MediaItemsWithStartPosition(
-                        matches.map { it.toMediaItem() },
-                        0,
-                        0L
-                    )
-                }
-
-                single != null && single.localConfiguration == null -> {
-                    val index = tracks.indexOfFirst { it.id.toString() == single.mediaId }
-                    if (index >= 0) {
+                when {
+                    single != null && query != null -> {
+                        val matches = searchLibrary(tracks, query).ifEmpty { tracks }
                         MediaSession.MediaItemsWithStartPosition(
-                            tracks.map { it.toMediaItem() },
-                            index,
-                            startPositionMs
-                        )
-                    } else {
-                        MediaSession.MediaItemsWithStartPosition(
-                            resolveItems(mediaItems),
-                            startIndex,
-                            startPositionMs
+                            matches.map { it.toMediaItem() },
+                            0,
+                            0L,
                         )
                     }
-                }
 
-                else -> MediaSession.MediaItemsWithStartPosition(
-                    resolveItems(mediaItems),
-                    startIndex,
-                    startPositionMs
-                )
+                    single != null && single.localConfiguration == null -> {
+                        val index = tracks.indexOfFirst { it.id.toString() == single.mediaId }
+                        if (index >= 0) {
+                            MediaSession.MediaItemsWithStartPosition(
+                                tracks.map { it.toMediaItem() },
+                                index,
+                                startPositionMs,
+                            )
+                        } else {
+                            MediaSession.MediaItemsWithStartPosition(
+                                resolveItems(mediaItems),
+                                startIndex,
+                                startPositionMs,
+                            )
+                        }
+                    }
+
+                    else -> MediaSession.MediaItemsWithStartPosition(
+                        resolveItems(mediaItems),
+                        startIndex,
+                        startPositionMs,
+                    )
+                }
             }
-        }
 
         private suspend fun resolveItems(mediaItems: List<MediaItem>): List<MediaItem> {
             val tracks = library()
@@ -483,28 +501,20 @@ class PlaybackService : MediaLibraryService() {
         val player = mediaSession?.player ?: return
         if (player.mediaItemCount == 0) return
         val ids = (0 until player.mediaItemCount)
-            .joinToString(",") { player.getMediaItemAt(it).mediaId }
-        val index = player.currentMediaItemIndex
-        val position = player.currentPosition.coerceAtLeast(0L)
+            .mapNotNull { player.getMediaItemAt(it).mediaId.toLongOrNull() }
+        val session = LastSession(
+            queueIds = ids,
+            index = player.currentMediaItemIndex,
+            positionMs = player.currentPosition.coerceAtLeast(0L),
+        )
         scope.launch {
-            dmtStore.edit { prefs ->
-                prefs[KEY_LAST_QUEUE] = ids
-                prefs[KEY_LAST_INDEX] = index
-                prefs[KEY_LAST_POS] = position
-            }
+            settingsRepository.saveSession(session)
         }
     }
 
     private fun recordStats(playedMs: Long, mediaId: Long?) {
         scope.launch {
-            dmtStore.edit { prefs ->
-                prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
-                if (playedMs >= 30_000L && mediaId != null) {
-                    val counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts().toMutableMap()
-                    counts[mediaId] = (counts[mediaId] ?: 0) + 1
-                    prefs[KEY_STAT_COUNTS] = counts.encodeCounts()
-                }
-            }
+            statsRepository.recordPlayback(playedMs, mediaId)
         }
     }
 
@@ -513,7 +523,7 @@ class PlaybackService : MediaLibraryService() {
         sleepEndAt = endAt.takeIf { it > System.currentTimeMillis() }
         sleepJob = sleepEndAt?.let { end ->
             scope.launch {
-                delay(end - System.currentTimeMillis())
+                delay((end - System.currentTimeMillis()).milliseconds)
                 mediaSession?.player?.pause()
                 sleepEndAt = null
             }
@@ -535,7 +545,7 @@ class PlaybackService : MediaLibraryService() {
             Futures.transform(
                 future,
                 { it.copy(it.config ?: Bitmap.Config.ARGB_8888, false) ?: it },
-                MoreExecutors.directExecutor()
+                MoreExecutors.directExecutor(),
             )
     }
 

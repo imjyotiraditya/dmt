@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">dmt</string>
     <string name="tagline">dear music, thanks</string>
 
@@ -12,15 +12,12 @@
     <string name="auto_repeat">repeat</string>
     <string name="cfg">cfg</string>
 
-    <string name="search_tracks_hint">search %1$d tracks</string>
-    <string name="search_albums_hint">search %1$d albums</string>
     <string name="clear">[x]</string>
-    <string name="scanning">scanning library...</string>
+    <string name="scanning">scanning library&#8230;</string>
     <string name="no_match">no match</string>
     <string name="no_audio">no audio files found on this device</string>
     <string name="no_albums">no albums</string>
     <string name="no_files">no folders</string>
-    <string name="search_folders_hint">search %1$d folders</string>
 
     <string name="permission_title">! audio permission needed</string>
     <string name="permission_body">dmt reads the music stored on this device. nothing leaves your phone.</string>
@@ -43,13 +40,15 @@
     <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
     <string name="set_detail">cover detail</string>
-    <string name="set_detail_value">%1$d col</string>
+    <string name="set_detail_value" tools:ignore="PluralsCandidate">%1$d col</string>
     <string name="set_specs">format chips</string>
     <string name="set_raw">raw artwork</string>
     <string name="set_accent">accent</string>
     <string name="set_eq">equalizer</string>
     <string name="set_eq_open">open</string>
     <string name="no_eq">no equalizer app found</string>
+    <string name="queued">queued: %1$s</string>
+    <string name="playback_error">playback error: %1$s</string>
     <string name="set_rescan">rescan library</string>
     <string name="run">run</string>
     <string name="on">on</string>
@@ -77,4 +76,16 @@
     <string name="info_album">album</string>
     <string name="info_duration">duration</string>
     <string name="info_uri">uri</string>
+    <plurals name="search_tracks_hint">
+        <item quantity="one">search %1$d track</item>
+        <item quantity="other">search %1$d tracks</item>
+    </plurals>
+    <plurals name="search_albums_hint">
+        <item quantity="one">search %1$d album</item>
+        <item quantity="other">search %1$d albums</item>
+    </plurals>
+    <plurals name="search_folders_hint">
+        <item quantity="one">search %1$d folder</item>
+        <item quantity="other">search %1$d folders</item>
+    </plurals>
 </resources>

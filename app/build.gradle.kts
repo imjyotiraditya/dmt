@@ -3,18 +3,24 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 val appVersionName = (project.findProperty("versionOverride") as String?) ?: "1.0"
-val appVersionCode = appVersionName
-    .split(".")
-    .mapNotNull { it.toIntOrNull() }
-    .let { (it.getOrElse(0) { 0 } * 10_000) + (it.getOrElse(1) { 0 } * 100) + it.getOrElse(2) { 0 } }
-    .coerceAtLeast(1)
+val appVersionCode =
+    appVersionName
+        .split(".")
+        .mapNotNull { it.toIntOrNull() }
+        .let {
+            (it.getOrElse(0) { 0 } * 10_000) + (it.getOrElse(1) { 0 } * 100) + it.getOrElse(2) { 0 }
+        }.coerceAtLeast(1)
 
-val keystoreProps: Properties? = rootProject.file("keystore.properties")
-    .takeIf { it.exists() }
-    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
+val keystoreProps: Properties? =
+    rootProject
+        .file("keystore.properties")
+        .takeIf { it.exists() }
+        ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 fun signingValue(propertyKey: String, envKey: String): String? =
     keystoreProps?.getProperty(propertyKey) ?: System.getenv(envKey)
@@ -56,8 +62,10 @@ android {
             optimization {
                 enable = true
             }
-            signingConfig = signingConfigs.getByName("release")
-                .takeIf { it.storeFile != null }
+            signingConfig =
+                signingConfigs
+                    .getByName("release")
+                    .takeIf { it.storeFile != null }
         }
     }
     compileOptions {
@@ -83,6 +91,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     androidTestImplementation(platform(libs.androidx.compose.bom))

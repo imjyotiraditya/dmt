@@ -1,0 +1,104 @@
+package dev.jyotiraditya.dmt.data.repository
+
+import android.content.Context
+import androidx.datastore.preferences.core.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.data.source.local.KEY_ACCENT
+import dev.jyotiraditya.dmt.data.source.local.KEY_COLS
+import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
+import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
+import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
+import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
+import dev.jyotiraditya.dmt.data.source.local.KEY_SPECS
+import dev.jyotiraditya.dmt.data.source.local.KEY_SPEED
+import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_COUNTS
+import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_TOTAL
+import dev.jyotiraditya.dmt.data.source.local.KEY_WAVE
+import dev.jyotiraditya.dmt.data.source.local.dmtStore
+import dev.jyotiraditya.dmt.data.source.local.encodeCounts
+import dev.jyotiraditya.dmt.data.source.local.toCounts
+import dev.jyotiraditya.dmt.domain.model.Accent
+import dev.jyotiraditya.dmt.domain.model.DmtSettings
+import dev.jyotiraditya.dmt.domain.model.DmtStats
+import dev.jyotiraditya.dmt.domain.model.LastSession
+import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
+import dev.jyotiraditya.dmt.domain.repository.StatsRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
+
+private const val COUNTED_LISTEN_MS = 30_000L
+
+@Singleton
+class PreferencesRepositoryImpl @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) : SettingsRepository,
+    StatsRepository {
+
+    override val settings: Flow<DmtSettings> = context.dmtStore.data.map { prefs ->
+        DmtSettings(
+            wave = prefs[KEY_WAVE] ?: true,
+            cols = prefs[KEY_COLS] ?: 64,
+            listSpecs = prefs[KEY_SPECS] ?: true,
+            accent = Accent.fromOrdinal(prefs[KEY_ACCENT] ?: 0),
+            rawArt = prefs[KEY_RAW] ?: false,
+        )
+    }
+
+    override suspend fun save(settings: DmtSettings) {
+        context.dmtStore.edit {
+            it[KEY_WAVE] = settings.wave
+            it[KEY_COLS] = settings.cols
+            it[KEY_SPECS] = settings.listSpecs
+            it[KEY_ACCENT] = settings.accent.ordinal
+            it[KEY_RAW] = settings.rawArt
+        }
+    }
+
+    override suspend fun savedSpeed(): Float = context.dmtStore.data.first()[KEY_SPEED] ?: 1f
+
+    override suspend fun saveSpeed(speed: Float) {
+        context.dmtStore.edit { it[KEY_SPEED] = speed }
+    }
+
+    override suspend fun lastSession(): LastSession? {
+        val prefs = context.dmtStore.data.first()
+        val ids = (prefs[KEY_LAST_QUEUE] ?: "")
+            .split(',')
+            .mapNotNull { it.toLongOrNull() }
+        if (ids.isEmpty()) return null
+        return LastSession(
+            queueIds = ids,
+            index = prefs[KEY_LAST_INDEX] ?: 0,
+            positionMs = prefs[KEY_LAST_POS] ?: 0L,
+        )
+    }
+
+    override suspend fun saveSession(session: LastSession) {
+        context.dmtStore.edit { prefs ->
+            prefs[KEY_LAST_QUEUE] = session.queueIds.joinToString(",")
+            prefs[KEY_LAST_INDEX] = session.index
+            prefs[KEY_LAST_POS] = session.positionMs
+        }
+    }
+
+    override suspend fun recordPlayback(playedMs: Long, trackId: Long?) {
+        context.dmtStore.edit { prefs ->
+            prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
+            if (playedMs >= COUNTED_LISTEN_MS && trackId != null) {
+                val counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts().toMutableMap()
+                counts[trackId] = (counts[trackId] ?: 0) + 1
+                prefs[KEY_STAT_COUNTS] = counts.encodeCounts()
+            }
+        }
+    }
+
+    override val stats: Flow<DmtStats> = context.dmtStore.data.map { prefs ->
+        DmtStats(
+            totalMs = prefs[KEY_STAT_TOTAL] ?: 0L,
+            counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts(),
+        )
+    }
+}
