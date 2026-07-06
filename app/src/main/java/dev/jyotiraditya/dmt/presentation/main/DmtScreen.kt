@@ -11,9 +11,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -42,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
+import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
@@ -75,7 +79,6 @@ fun DmtScreen(
     val imeVisible = WindowInsets.isImeVisible
     val windowSize = LocalWindowInfo.current.containerSize
     val landscape = windowSize.width > windowSize.height
-    val hideChrome = imeVisible && landscape
 
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -113,39 +116,68 @@ fun DmtScreen(
             .fillMaxSize()
             .background(TuiBg),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(horizontal = 16.dp),
-        ) {
-            if (!hideChrome) {
-                Titlebar(state, dispatch)
-                TabsRow(state, dispatch)
-            }
+        if (landscape) {
+            val density = LocalDensity.current
+            val windowHeightDp = with(density) { windowSize.height.toDp().value }
+            val fitScale = (windowHeightDp / 400f).coerceIn(0.85f, 1f)
 
-            Column(modifier = Modifier.weight(1f)) {
-                when {
-                    state.view == DmtView.STATS -> StatsPane(state, dispatch)
-                    state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
-                    !state.hasPermission -> PermissionPane(dispatch, onRequestPermission)
-                    state.scanning -> Caption(stringResource(R.string.scanning))
-                    state.view == DmtView.LIBRARY -> LibraryPane(state, dispatch)
-                    state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
-                    else -> FilesPane(state, dispatch)
+            FitScaled(fitScale) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                        .padding(horizontal = 16.dp),
+                ) {
+                    SideRail(state, dispatch)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        PaneHost(
+                            state = state,
+                            dispatch = dispatch,
+                            onRequestPermission = onRequestPermission,
+                            modifier = Modifier.weight(1f),
+                        )
+
+                        NoticeLine(state)
+
+                        if (state.nowPlayingId != null && !imeVisible) {
+                            MiniPlayer(
+                                state = state,
+                                dispatch = dispatch,
+                                onLongPress = { showQueueSheet = true },
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
                 }
             }
-
-            NoticeLine(state)
-
-            if (state.nowPlayingId != null && !imeVisible) {
-                MiniPlayer(
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(horizontal = 16.dp),
+            ) {
+                Titlebar(state, dispatch)
+                TabsRow(state, dispatch)
+                PaneHost(
                     state = state,
                     dispatch = dispatch,
-                    onLongPress = { showQueueSheet = true },
+                    onRequestPermission = onRequestPermission,
+                    modifier = Modifier.weight(1f),
                 )
+
+                NoticeLine(state)
+
+                if (state.nowPlayingId != null && !imeVisible) {
+                    MiniPlayer(
+                        state = state,
+                        dispatch = dispatch,
+                        onLongPress = { showQueueSheet = true },
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
-            Spacer(modifier = Modifier.height(10.dp))
         }
 
         AnimatedVisibility(
@@ -182,6 +214,87 @@ fun DmtScreen(
                 InfoContent(state)
             }
         }
+    }
+}
+
+@Composable
+private fun PaneHost(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    onRequestPermission: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        when {
+            state.view == DmtView.STATS -> StatsPane(state, dispatch)
+            state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
+            !state.hasPermission -> PermissionPane(dispatch, onRequestPermission)
+            state.scanning -> Caption(stringResource(R.string.scanning))
+            state.view == DmtView.LIBRARY -> LibraryPane(state, dispatch)
+            state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
+            else -> FilesPane(state, dispatch)
+        }
+    }
+}
+
+@Composable
+private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(IntrinsicSize.Max)
+            .fillMaxHeight(),
+    ) {
+        TuiPanel(modifier = Modifier.padding(top = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .background(LocalAccent.current),
+                )
+                Text(
+                    text = " " + stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TuiBright,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        TuiTab(
+            label = stringResource(R.string.tab_library),
+            active = state.view == DmtView.LIBRARY,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dispatch(DmtAction.Show(DmtView.LIBRARY))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TuiTab(
+            label = stringResource(R.string.tab_albums),
+            active = state.view == DmtView.ALBUMS,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dispatch(DmtAction.Show(DmtView.ALBUMS))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TuiTab(
+            label = stringResource(R.string.tab_files),
+            active = state.view == DmtView.FILES,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dispatch(DmtAction.Show(DmtView.FILES))
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
+        TuiTab(
+            label = stringResource(R.string.cfg),
+            active = inConfig,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dispatch(DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS))
+        }
+        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 

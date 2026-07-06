@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +39,9 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
@@ -68,6 +72,15 @@ fun rememberCursorAlpha(periodMs: Int = 1060): Float {
         label = "cursorAlpha",
     )
     return alpha
+}
+
+@Composable
+fun FitScaled(fitScale: Float, content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(density.density * fitScale, density.fontScale),
+        content = content,
+    )
 }
 
 private class PressFlash(private val scope: CoroutineScope) {
@@ -119,6 +132,7 @@ fun TuiKey(
     label: String,
     bright: Boolean = false,
     big: Boolean = false,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -135,7 +149,8 @@ fun TuiKey(
         text = label,
         style = MaterialTheme.typography.labelLarge,
         color = lerp(restText, pressText, press),
-        modifier = Modifier
+        textAlign = TextAlign.Center,
+        modifier = modifier
             .border(1.dp, lerp(restBorder, pressBorder, press))
             .background(lerp(restBg, pressBg, press))
             .clickable(
@@ -156,13 +171,14 @@ fun TuiKey(
 fun TuiTab(
     label: String,
     active: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelMedium,
         color = if (active) TuiBg else TuiDim,
-        modifier = Modifier
+        modifier = modifier
             .border(1.dp, if (active) TuiFg else TuiLine)
             .background(if (active) TuiFg else TuiSurface.copy(alpha = 0.4f))
             .tuiClickable(onClick)

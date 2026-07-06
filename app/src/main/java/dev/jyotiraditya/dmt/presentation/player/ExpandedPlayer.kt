@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,7 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,14 +55,15 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.AsciiCover
+import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.ThinSlider
 import dev.jyotiraditya.dmt.core.common.TuiChip
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -138,9 +139,7 @@ fun ExpandedPlayer(
             } else {
                 (windowHeightDp / (windowWidthDp + 560f)).coerceIn(0.75f, 1f)
             }
-        CompositionLocalProvider(
-            LocalDensity provides Density(density.density * fitScale, density.fontScale),
-        ) {
+        FitScaled(fitScale) {
             if (landscape) {
                 LandscapePlayer(
                     state = state,
@@ -214,6 +213,14 @@ private fun LandscapePlayer(
     onToggleLyrics: () -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
+        PlayerRail(
+            dispatch = dispatch,
+            onInfo = onInfo,
+            hasLyrics = state.lyrics != null,
+            showLyrics = showLyrics,
+            onToggleLyrics = onToggleLyrics,
+        )
+        Spacer(modifier = Modifier.width(16.dp))
         Box(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier
@@ -229,19 +236,11 @@ private fun LandscapePlayer(
                 .weight(1f)
                 .fillMaxHeight(),
         ) {
-            PlayerHeader(
-                dispatch = dispatch,
-                onInfo = onInfo,
-                hasLyrics = state.lyrics != null,
-                showLyrics = showLyrics,
-                onToggleLyrics = onToggleLyrics,
-            )
-
             Column(
-                verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .padding(top = 12.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 ControlsBlock(state, dispatch)
@@ -250,6 +249,60 @@ private fun LandscapePlayer(
             Spacer(modifier = Modifier.height(12.dp))
 
             QueueFooter(state, onQueue)
+        }
+    }
+}
+
+@Composable
+private fun PlayerRail(
+    dispatch: (DmtAction) -> Unit,
+    onInfo: () -> Unit,
+    hasLyrics: Boolean,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(IntrinsicSize.Max)
+            .padding(top = 12.dp),
+    ) {
+        TuiKey(
+            label = stringResource(R.string.close),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
+            onClick = { dispatch(DmtAction.Expand(false)) },
+        )
+
+        Text(
+            text = stringResource(R.string.now_playing).replace(' ', '\n'),
+            style = MaterialTheme.typography.labelMedium,
+            color = TuiDim,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center),
+        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            if (hasLyrics) {
+                TuiKey(
+                    label = stringResource(R.string.lyrics_key),
+                    bright = showLyrics,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onToggleLyrics,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            TuiKey(
+                label = stringResource(R.string.info),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onInfo,
+            )
         }
     }
 }
@@ -276,7 +329,10 @@ private fun PlayerHeader(
             .padding(top = 12.dp),
     ) {
         Box(modifier = Modifier.align(Alignment.CenterStart)) {
-            TuiKey(stringResource(R.string.close)) { dispatch(DmtAction.Expand(false)) }
+            TuiKey(
+                label = stringResource(R.string.close),
+                onClick = { dispatch(DmtAction.Expand(false)) },
+            )
         }
         Text(
             text = stringResource(R.string.now_playing),
