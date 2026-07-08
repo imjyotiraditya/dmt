@@ -25,5 +25,7 @@ private val fixedSingerColors = listOf(
 @Composable
 fun rememberSingerPalette(): List<Color> {
     val accent = LocalAccent.current
-    return remember(accent) { listOf(accent) + fixedSingerColors }
+    return remember(accent) {
+        listOf(accent) + fixedSingerColors.filter { it != accent }
+    }
 }
