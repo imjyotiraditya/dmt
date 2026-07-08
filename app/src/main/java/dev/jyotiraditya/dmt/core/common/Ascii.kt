@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import androidx.core.graphics.scale
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
@@ -36,6 +37,60 @@ import android.graphics.Color as AndroidColor
 private const val RAMP =
     " .'`^\":;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@\$"
 
+private const val CELL_ASPECT = 0.6f
+private const val GLYPH_SIZE = 24f
+private const val BASELINE_SHIFT = 0.22f
+
+private fun gammaLift(channel: Int): Int {
+    val normalized = channel / 255f
+    val lifted = 255f * normalized.pow(0.7f)
+
+    return lifted.roundToInt()
+}
+
+private fun symbolFor(intensity: Float): Char {
+    val lastIndex = RAMP.length - 1
+    val index = (intensity * lastIndex)
+        .roundToInt()
+        .coerceIn(0, lastIndex)
+
+    return RAMP[index]
+}
+
+private fun renderAsciiGrid(
+    cols: Int,
+    rows: Int,
+    cell: (x: Int, y: Int, paint: Paint) -> Char,
+): Bitmap {
+    val paint = Paint().apply {
+        typeface = Typeface.MONOSPACE
+        isAntiAlias = true
+        textSize = GLYPH_SIZE
+    }
+    val advance = paint.measureText("M")
+    val lineH = paint.textSize
+    val width = (cols * advance).roundToInt()
+    val height = (rows * lineH).roundToInt()
+
+    val out = createBitmap(width, height)
+    val canvas = AndroidCanvas(out)
+    val glyph = CharArray(1)
+
+    for (y in 0 until rows) {
+        for (x in 0 until cols) {
+            val symbol = cell(x, y, paint)
+            if (symbol == ' ') continue
+
+            glyph[0] = symbol
+            val textX = x * advance
+            val baselineY = (y + 1) * lineH - lineH * BASELINE_SHIFT
+            canvas.drawText(glyph, 0, 1, textX, baselineY, paint)
+        }
+    }
+
+    return out
+}
+
 fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
     val mutable = false
     val safe = if (config == Bitmap.Config.HARDWARE) {
@@ -43,45 +98,30 @@ fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
     } else {
         this
     }
-    val rows = (cols.toFloat() * safe.height / safe.width * 0.6f).roundToInt().coerceIn(8, 96)
-    val small = safe.scale(width = cols, height = rows)
-    val paint = Paint().apply {
-        typeface = Typeface.MONOSPACE
-        isAntiAlias = true
-        textSize = 24f
-    }
-    val advance = paint.measureText("M")
-    val lineH = paint.textSize
-    val width = (cols * advance).roundToInt()
-    val height = (rows * lineH).roundToInt()
-    val out = createBitmap(width, height)
-    val canvas = AndroidCanvas(out)
-    val hsv = FloatArray(3)
-    for (y in 0 until rows) {
-        for (x in 0 until cols) {
-            val pixel = small[x, y]
-            val lum = (
-                    0.299f * AndroidColor.red(pixel) +
-                            0.587f * AndroidColor.green(pixel) +
-                            0.114f * AndroidColor.blue(pixel)
-                    ) / 255f
-            val symbol = RAMP[(lum * (RAMP.length - 1)).roundToInt().coerceIn(0, RAMP.length - 1)]
-            if (symbol == ' ') continue
-            AndroidColor.colorToHSV(pixel, hsv)
-            hsv[1] = (hsv[1] * 1.25f).coerceAtMost(1f)
-            hsv[2] = 0.3f + hsv[2] * 0.7f
-            paint.color = AndroidColor.HSVToColor(hsv)
+    val rawRows = cols.toFloat() * safe.height / safe.width * CELL_ASPECT
+    val rows = rawRows.roundToInt().coerceIn(8, 96)
+    val small = safe
+        .scale(width = cols * 2, height = rows * 2)
+        .scale(width = cols, height = rows)
 
-            val textX = x * advance
-            val baselineY = (y + 1) * lineH - lineH * 0.22f
-            canvas.drawText(symbol.toString(), textX, baselineY, paint)
+    return renderAsciiGrid(cols, rows) { x, y, paint ->
+        val pixel = small[x, y]
+        val red = gammaLift(AndroidColor.red(pixel))
+        val green = gammaLift(AndroidColor.green(pixel))
+        val blue = gammaLift(AndroidColor.blue(pixel))
+        val lum = (0.299f * red + 0.587f * green + 0.114f * blue) / 255f
+        val symbol = symbolFor(lum)
+
+        if (symbol != ' ') {
+            paint.color = AndroidColor.rgb(red, green, blue)
         }
+
+        symbol
     }
-    return out
 }
 
 fun generateAsciiPlaceholder(seed: Long, cols: Int = 64): Bitmap {
-    val rows = (cols * 0.6f).roundToInt()
+    val rows = (cols * CELL_ASPECT).roundToInt()
     val random = Random(seed)
     val f1 = 0.10f + random.nextFloat() * 0.25f
     val f2 = 0.10f + random.nextFloat() * 0.25f
@@ -90,40 +130,26 @@ fun generateAsciiPlaceholder(seed: Long, cols: Int = 64): Bitmap {
     val p2 = random.nextFloat() * 6.28f
     val p3 = random.nextFloat() * 6.28f
     val hue = random.nextFloat() * 360f
-
-    val paint = Paint().apply {
-        typeface = Typeface.MONOSPACE
-        isAntiAlias = true
-        textSize = 24f
-    }
-    val advance = paint.measureText("M")
-    val lineH = paint.textSize
-    val width = (cols * advance).roundToInt()
-    val height = (rows * lineH).roundToInt()
-    val out = createBitmap(width, height)
-    val canvas = AndroidCanvas(out)
     val hsv = FloatArray(3)
-    for (y in 0 until rows) {
-        for (x in 0 until cols) {
-            val v = (
-                    sin(x * f1 + p1) +
-                            sin(y * f2 + p2) +
-                            sin((x + y) * f3 + p3) +
-                            3f
-                    ) / 6f
-            val symbol = RAMP[(v * (RAMP.length - 1)).roundToInt().coerceIn(0, RAMP.length - 1)]
-            if (symbol == ' ') continue
+
+    return renderAsciiGrid(cols, rows) { x, y, paint ->
+        val v = (
+                sin(x * f1 + p1) +
+                        sin(y * f2 + p2) +
+                        sin((x + y) * f3 + p3) +
+                        3f
+                ) / 6f
+        val symbol = symbolFor(v)
+
+        if (symbol != ' ') {
             hsv[0] = hue
             hsv[1] = 0.30f
             hsv[2] = 0.20f + v * 0.45f
             paint.color = AndroidColor.HSVToColor(hsv)
-
-            val textX = x * advance
-            val baselineY = (y + 1) * lineH - lineH * 0.22f
-            canvas.drawText(symbol.toString(), textX, baselineY, paint)
         }
+
+        symbol
     }
-    return out
 }
 
 @Composable
