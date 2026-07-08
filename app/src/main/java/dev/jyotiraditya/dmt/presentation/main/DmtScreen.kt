@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
-import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.FilesPane
@@ -61,18 +60,20 @@ import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
 import dev.jyotiraditya.dmt.presentation.settings.SettingsPane
+import dev.jyotiraditya.dmt.presentation.settings.SourceLoginPane
+import dev.jyotiraditya.dmt.presentation.settings.SourcesPane
 import dev.jyotiraditya.dmt.presentation.settings.StatsPane
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
+import dev.jyotiraditya.dmt.ui.theme.TuiLine
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DmtScreen(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
-    onRequestPermission: () -> Unit,
 ) {
     var showQueueSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
@@ -92,14 +93,16 @@ fun DmtScreen(
     }
 
     val backHandled = state.expanded ||
-        (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
-        (state.view == DmtView.FILES && state.openFolder != null) ||
-        state.view != DmtView.LIBRARY
+            (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
+            (state.view == DmtView.FILES && state.openFolder != null) ||
+            state.view != DmtView.LIBRARY
     BackHandler(enabled = backHandled) {
         when {
             state.expanded -> dispatch(DmtAction.Expand(false))
 
             state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
+
+            state.view == DmtView.SOURCE_LOGIN -> dispatch(DmtAction.Show(DmtView.SOURCES))
 
             state.view == DmtView.ALBUMS && state.openAlbum != null ->
                 dispatch(DmtAction.OpenAlbum(null))
@@ -134,7 +137,6 @@ fun DmtScreen(
                         PaneHost(
                             state = state,
                             dispatch = dispatch,
-                            onRequestPermission = onRequestPermission,
                             modifier = Modifier.weight(1f),
                         )
 
@@ -163,7 +165,6 @@ fun DmtScreen(
                 PaneHost(
                     state = state,
                     dispatch = dispatch,
-                    onRequestPermission = onRequestPermission,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -221,14 +222,14 @@ fun DmtScreen(
 private fun PaneHost(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
-    onRequestPermission: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         when {
             state.view == DmtView.STATS -> StatsPane(state, dispatch)
             state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
-            !state.hasPermission -> PermissionPane(dispatch, onRequestPermission)
+            state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
+            state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
             state.scanning -> Caption(stringResource(R.string.scanning))
             state.view == DmtView.LIBRARY -> LibraryPane(state, dispatch)
             state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
@@ -244,20 +245,28 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
             .width(IntrinsicSize.Max)
             .fillMaxHeight(),
     ) {
-        TuiPanel(modifier = Modifier.padding(top = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(9.dp)
-                        .background(LocalAccent.current),
-                )
-                Text(
-                    text = " " + stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = TuiBright,
-                )
-            }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(9.dp)
+                    .background(LocalAccent.current),
+            )
+            Text(
+                text = " " + stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleMedium,
+                color = TuiBright,
+            )
         }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .height(1.dp)
+                .background(TuiLine),
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
         TuiTab(
@@ -286,6 +295,15 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
+        val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
+        TuiTab(
+            label = stringResource(R.string.tab_sources),
+            active = inSources,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            dispatch(DmtAction.Show(if (inSources) DmtView.LIBRARY else DmtView.SOURCES))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
         TuiTab(
             label = stringResource(R.string.cfg),
@@ -300,31 +318,47 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
 
 @Composable
 private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    TuiPanel(modifier = Modifier.padding(top = 12.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(9.dp)
+                .background(LocalAccent.current),
+        )
+        Text(
+            text = " " + stringResource(R.string.app_name) + " ",
+            style = MaterialTheme.typography.titleMedium,
+            color = TuiBright,
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(TuiLine),
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
+        TuiTab(
+            label = stringResource(R.string.tab_sources),
+            active = inSources,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(9.dp)
-                    .background(LocalAccent.current),
+            dispatch(
+                DmtAction.Show(if (inSources) DmtView.LIBRARY else DmtView.SOURCES),
             )
-            Text(
-                text = " " + stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleMedium,
-                color = TuiBright,
-                modifier = Modifier.weight(1f),
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
+        TuiTab(
+            label = stringResource(R.string.cfg),
+            active = inConfig,
+        ) {
+            dispatch(
+                DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS),
             )
-            val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
-            TuiTab(
-                label = stringResource(R.string.cfg),
-                active = inConfig,
-            ) {
-                dispatch(
-                    DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS),
-                )
-            }
         }
     }
 }

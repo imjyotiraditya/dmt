@@ -4,10 +4,8 @@ import android.content.Intent
 import android.media.audiofx.AudioEffect
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -33,8 +31,6 @@ import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
 import dev.jyotiraditya.dmt.ui.theme.DMTTheme
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.color
-import dev.jyotiraditya.dmt.util.audioPermission
-import dev.jyotiraditya.dmt.util.runtimePermissions
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -63,16 +59,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val launcher = rememberLauncherForActivityResult(
-                        ActivityResultContracts.RequestMultiplePermissions(),
-                    ) { grants ->
-                        playerViewModel.onIntent(
-                            DmtAction.Permission(grants[audioPermission] == true),
-                        )
-                    }
-                    val requestPermissions = {
-                        launcher.launch(runtimePermissions)
-                    }
                     CompositionLocalProvider(
                         LocalAccent provides state.settings.accent.color,
                     ) {
@@ -80,7 +66,6 @@ class MainActivity : ComponentActivity() {
                             DmtScreen(
                                 state = state,
                                 dispatch = playerViewModel::onIntent,
-                                onRequestPermission = requestPermissions,
                             )
                             AnimatedVisibility(
                                 visible = showSplash,

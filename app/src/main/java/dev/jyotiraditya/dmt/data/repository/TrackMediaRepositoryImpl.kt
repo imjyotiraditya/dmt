@@ -2,6 +2,7 @@ package dev.jyotiraditya.dmt.data.repository
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -10,10 +11,12 @@ import android.util.Size
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.TrackMediaRepository
 import dev.jyotiraditya.dmt.util.asKHz
 import dev.jyotiraditya.dmt.util.asMB
 import dev.jyotiraditya.dmt.util.codecLabel
+import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,11 +26,30 @@ class TrackMediaRepositoryImpl @Inject constructor(
 ) : TrackMediaRepository {
 
     override fun loadArt(uri: Uri): Bitmap? =
-        runCatching {
-            context.contentResolver.loadThumbnail(uri, Size(512, 512), null)
-        }.getOrNull()
+        if (uri.scheme == "http" || uri.scheme == "https") {
+            runCatching {
+                URL(uri.toString()).openStream().use(BitmapFactory::decodeStream)
+            }.getOrNull()
+        } else {
+            runCatching {
+                context.contentResolver.loadThumbnail(uri, Size(512, 512), null)
+            }.recoverCatching {
+                context.contentResolver.openInputStream(uri).use(BitmapFactory::decodeStream)
+            }.getOrNull()
+        }
 
     override fun techSpecs(uri: Uri, track: Track?): List<Spec> {
+        if (track?.source == TrackSource.JELLYFIN) {
+            return buildList {
+                if (track.mime.isNotEmpty()) {
+                    add(Spec(label = "FMT", value = track.mime.codecLabel()))
+                }
+                if (track.bitrate > 0) {
+                    add(Spec(label = "KBPS", value = "${track.bitrate / 1000}", hot = true))
+                }
+                track.size.takeIf { it > 0 }?.let { add(Spec(label = "SIZE", value = it.asMB())) }
+            }
+        }
         var mime = track?.mime.orEmpty()
         var bitrate = track?.bitrate ?: 0
         var sampleRate: Int? = null

@@ -5,10 +5,14 @@ import androidx.datastore.preferences.core.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.data.source.local.KEY_ACCENT
 import dev.jyotiraditya.dmt.data.source.local.KEY_COLS
+import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_TOKEN
+import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_URL
+import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_USER_ID
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
+import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPECS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPEED
 import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_COUNTS
@@ -21,6 +25,7 @@ import dev.jyotiraditya.dmt.domain.model.Accent
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.LastSession
+import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +49,11 @@ class PreferencesRepositoryImpl @Inject constructor(
             listSpecs = prefs[KEY_SPECS] ?: true,
             accent = Accent.fromOrdinal(prefs[KEY_ACCENT] ?: 0),
             rawArt = prefs[KEY_RAW] ?: false,
+            sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
+                ?: 0).mod(SourceMode.entries.size)],
+            jellyfinUrl = prefs[KEY_JELLYFIN_URL],
+            jellyfinUserId = prefs[KEY_JELLYFIN_USER_ID],
+            jellyfinToken = prefs[KEY_JELLYFIN_TOKEN],
         )
     }
 
@@ -54,6 +64,16 @@ class PreferencesRepositoryImpl @Inject constructor(
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ACCENT] = settings.accent.ordinal
             it[KEY_RAW] = settings.rawArt
+            it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal
+            settings.jellyfinUrl
+                ?.let { url -> it[KEY_JELLYFIN_URL] = url }
+                ?: it.remove(KEY_JELLYFIN_URL)
+            settings.jellyfinUserId
+                ?.let { userId -> it[KEY_JELLYFIN_USER_ID] = userId }
+                ?: it.remove(KEY_JELLYFIN_USER_ID)
+            settings.jellyfinToken
+                ?.let { token -> it[KEY_JELLYFIN_TOKEN] = token }
+                ?: it.remove(KEY_JELLYFIN_TOKEN)
         }
     }
 

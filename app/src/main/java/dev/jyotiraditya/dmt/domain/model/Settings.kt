@@ -14,12 +14,21 @@ enum class Accent(val label: String, val launcherAlias: String) {
     }
 }
 
+enum class SourceMode(val label: String) {
+    LOCAL("local"),
+    JELLYFIN("jellyfin"),
+}
+
 data class DmtSettings(
     val wave: Boolean = true,
     val cols: Int = 64,
     val listSpecs: Boolean = true,
     val accent: Accent = Accent.ORANGE,
     val rawArt: Boolean = false,
+    val sourceMode: SourceMode = SourceMode.LOCAL,
+    val jellyfinUrl: String? = null,
+    val jellyfinUserId: String? = null,
+    val jellyfinToken: String? = null,
 )
 
 data class LastSession(

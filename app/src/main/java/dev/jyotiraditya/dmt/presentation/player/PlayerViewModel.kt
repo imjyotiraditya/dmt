@@ -24,12 +24,14 @@ import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Accent
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Folder
+import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.GetCoverArtUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
+import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import dev.jyotiraditya.dmt.util.DispatcherProvider
@@ -62,6 +64,7 @@ class PlayerViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val statsRepository: StatsRepository,
     private val scanLibrary: ScanLibraryUseCase,
+    private val jellyfinLogin: JellyfinLoginUseCase,
     private val getLyrics: GetLyricsUseCase,
     private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
@@ -109,8 +112,8 @@ class PlayerViewModel @Inject constructor(
         } else {
             tracks.filter {
                 it.title.contains(query, true) ||
-                    it.artist.contains(query, true) ||
-                    it.album.contains(query, true)
+                        it.artist.contains(query, true) ||
+                        it.album.contains(query, true)
             }
         }
 
@@ -144,7 +147,7 @@ class PlayerViewModel @Inject constructor(
                 )
             }
 
-            is DmtAction.Show -> reduce { it.copy(view = intent.view) }
+            is DmtAction.Show -> reduce { it.copy(view = intent.view, error = null) }
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
             is DmtAction.OpenFolder -> reduce { it.copy(openFolder = intent.path) }
 
@@ -201,14 +204,54 @@ class PlayerViewModel @Inject constructor(
             is DmtAction.Config -> {
                 val old = currentState.settings
                 reduce { it.copy(settings = intent.settings) }
+                if (old.sourceMode != intent.settings.sourceMode) {
+                    c?.run {
+                        stop()
+                        clearMediaItems()
+                    }
+                }
                 viewModelScope.launch {
                     settingsRepository.save(intent.settings)
+                    if (old.sourceMode != intent.settings.sourceMode) scan()
                 }
                 if (old.cols != intent.settings.cols) loadCover(c?.currentMediaItem)
                 if (old.accent != intent.settings.accent) applyIcon(intent.settings.accent)
             }
+
+            is DmtAction.ShowLogin ->
+                reduce {
+                    it.copy(
+                        view = DmtView.SOURCE_LOGIN,
+                        loginSource = intent.mode,
+                        error = null,
+                    )
+                }
+
+            is DmtAction.SourceLogin -> when (intent.mode) {
+                SourceMode.JELLYFIN -> loginToJellyfin(intent)
+                SourceMode.LOCAL -> Unit
+            }
         }
     }
+
+    private fun loginToJellyfin(intent: DmtAction.SourceLogin) =
+        viewModelScope.launch {
+            reduce { it.copy(scanning = true, error = null) }
+            jellyfinLogin(intent.url, intent.username, intent.password)
+                .onSuccess {
+                    val settings = settingsRepository.settings.first()
+                    reduce { it.copy(settings = settings, view = DmtView.LIBRARY) }
+                    scan()
+                }
+                .onFailure {
+                    reduce {
+                        it.copy(
+                            scanning = false,
+                            error = context.getString(R.string.source_login_failed),
+                        )
+                    }
+                }
+        }
 
     private fun connect() =
         viewModelScope.launch {
@@ -320,7 +363,24 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             reduce { it.copy(scanning = true) }
             val query = currentState.query
-            val library = scanLibrary()
+            val library = runCatching { scanLibrary() }.getOrElse {
+                reduce { state ->
+                    state.copy(
+                        scanning = false,
+                        tracks = emptyList(),
+                        albums = emptyList(),
+                        folders = emptyList(),
+                        filtered = emptyList(),
+                        filteredAlbums = emptyList(),
+                        filteredFolders = emptyList(),
+                        error = context.getString(
+                            R.string.scan_failed,
+                            state.settings.sourceMode.label,
+                        ),
+                    )
+                }
+                return@launch
+            }
             val (filteredTracks, filteredAlbums, filteredFolders) = withContext(
                 dispatchers.default,
             ) {
@@ -339,6 +399,7 @@ class PlayerViewModel @Inject constructor(
                     filtered = filteredTracks,
                     filteredAlbums = filteredAlbums,
                     filteredFolders = filteredFolders,
+                    error = null,
                 )
             }
             restoreSession()
@@ -390,7 +451,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun loadCover(mediaItem: MediaItem?) {
-        val uri: Uri? = mediaItem?.localConfiguration?.uri
+        val uri: Uri? = mediaItem?.mediaMetadata?.artworkUri
         val forId = mediaItem?.mediaId
         viewModelScope.launch {
             val raw = uri?.let { getCoverArt(it) }

@@ -10,7 +10,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.SearchRow
-import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.util.asTime
@@ -18,8 +17,7 @@ import dev.jyotiraditya.dmt.util.asTime
 @Composable
 fun LibraryPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     if (state.tracks.isEmpty()) {
-        Caption(stringResource(R.string.no_audio))
-        TuiKey(stringResource(R.string.rescan)) { dispatch(DmtAction.Rescan) }
+        Caption(stringResource(R.string.no_audio, state.settings.sourceMode.label))
         return
     }
 

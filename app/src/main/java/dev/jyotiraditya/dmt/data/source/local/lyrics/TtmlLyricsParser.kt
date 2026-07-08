@@ -336,8 +336,8 @@ fun parseTtml(raw: String): Lyrics? =
                     "span" -> if (inLine && spanStack.isNotEmpty()) {
                         val frame = spanStack.removeLast()
                         val isWord = !frame.hadChild &&
-                            frame.beginMs >= 0 &&
-                            text.length > frame.textStart
+                                frame.beginMs >= 0 &&
+                                text.length > frame.textStart
                         if (isWord) {
                             words += LyricWord(
                                 startMs = frame.beginMs,

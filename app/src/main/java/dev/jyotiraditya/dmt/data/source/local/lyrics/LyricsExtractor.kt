@@ -32,21 +32,21 @@ private fun ByteArray.startsWith(prefix: String): Boolean =
 
 private fun syncsafe(bytes: ByteArray, offset: Int): Int =
     ((bytes[offset].toInt() and 0x7F) shl 21) or
-        ((bytes[offset + 1].toInt() and 0x7F) shl 14) or
-        ((bytes[offset + 2].toInt() and 0x7F) shl 7) or
-        (bytes[offset + 3].toInt() and 0x7F)
+            ((bytes[offset + 1].toInt() and 0x7F) shl 14) or
+            ((bytes[offset + 2].toInt() and 0x7F) shl 7) or
+            (bytes[offset + 3].toInt() and 0x7F)
 
 private fun beInt(bytes: ByteArray, offset: Int): Int =
     ((bytes[offset].toInt() and 0xFF) shl 24) or
-        ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
-        ((bytes[offset + 2].toInt() and 0xFF) shl 8) or
-        (bytes[offset + 3].toInt() and 0xFF)
+            ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
+            ((bytes[offset + 2].toInt() and 0xFF) shl 8) or
+            (bytes[offset + 3].toInt() and 0xFF)
 
 private fun leInt(bytes: ByteArray, offset: Int): Int =
     (bytes[offset].toInt() and 0xFF) or
-        ((bytes[offset + 1].toInt() and 0xFF) shl 8) or
-        ((bytes[offset + 2].toInt() and 0xFF) shl 16) or
-        ((bytes[offset + 3].toInt() and 0xFF) shl 24)
+            ((bytes[offset + 1].toInt() and 0xFF) shl 8) or
+            ((bytes[offset + 2].toInt() and 0xFF) shl 16) or
+            ((bytes[offset + 3].toInt() and 0xFF) shl 24)
 
 private fun decodeUslt(data: ByteArray): String? {
     if (data.size < 5) return null
@@ -119,11 +119,11 @@ private val ENRICHED_TAG = Regex("""\[bg:|]\s*v\d+:""", RegexOption.IGNORE_CASE)
 
 private fun isLyricsKey(key: String): Boolean =
     key == "LYRICS" ||
-        key == "UNSYNCEDLYRICS" ||
-        key == "UNSYNCED LYRICS" ||
-        key == "ELRC" ||
-        key == "LRC" ||
-        key.startsWith("LYRICS-")
+            key == "UNSYNCEDLYRICS" ||
+            key == "UNSYNCED LYRICS" ||
+            key == "ELRC" ||
+            key == "LRC" ||
+            key.startsWith("LYRICS-")
 
 private fun contentRank(text: String): Int =
     when {
@@ -181,8 +181,8 @@ private fun readFlac(file: File): String? =
             val isLastBlock = blockHeader[0].toInt() and 0x80 != 0
             val blockType = blockHeader[0].toInt() and 0x7F
             val size = ((blockHeader[1].toInt() and 0xFF) shl 16) or
-                ((blockHeader[2].toInt() and 0xFF) shl 8) or
-                (blockHeader[3].toInt() and 0xFF)
+                    ((blockHeader[2].toInt() and 0xFF) shl 8) or
+                    (blockHeader[3].toInt() and 0xFF)
 
             if (blockType == VORBIS_COMMENT_BLOCK) {
                 val block = ByteArray(size)

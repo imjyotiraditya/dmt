@@ -21,6 +21,10 @@ val KEY_STAT_COUNTS = stringPreferencesKey("stat_counts")
 val KEY_LAST_QUEUE = stringPreferencesKey("last_queue")
 val KEY_LAST_INDEX = intPreferencesKey("last_index")
 val KEY_LAST_POS = longPreferencesKey("last_pos")
+val KEY_SOURCE_MODE = intPreferencesKey("source_mode")
+val KEY_JELLYFIN_URL = stringPreferencesKey("jellyfin_url")
+val KEY_JELLYFIN_USER_ID = stringPreferencesKey("jellyfin_user_id")
+val KEY_JELLYFIN_TOKEN = stringPreferencesKey("jellyfin_token")
 
 fun String.toCounts(): Map<Long, Int> =
     split(';')

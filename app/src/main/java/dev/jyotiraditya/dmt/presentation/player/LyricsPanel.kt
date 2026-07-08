@@ -359,7 +359,7 @@ private fun LyricRunText(
                             ((positionMs - word.startMs).toFloat() / span).coerceIn(0f, 1f)
                         val length = word.end - word.start
                         val filled = word.start +
-                            ceil(fraction * length).toInt().coerceIn(1, length)
+                                ceil(fraction * length).toInt().coerceIn(1, length)
                         addStyle(SpanStyle(color = sweepColors.sung), word.start, filled)
                         if (filled < word.end) {
                             addStyle(SpanStyle(color = sweepColors.sweepTail), filled, word.end)

@@ -11,8 +11,16 @@ val audioPermission: String =
     }
 
 val runtimePermissions: Array<String> =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(audioPermission, Manifest.permission.POST_NOTIFICATIONS)
+    buildList {
+        add(audioPermission)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
+
+val localNetworkPermission: String? =
+    if (Build.VERSION.SDK_INT >= 37) {
+        Manifest.permission.ACCESS_LOCAL_NETWORK
     } else {
-        arrayOf(audioPermission)
+        null
     }

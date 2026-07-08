@@ -41,7 +41,7 @@ import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
-import dev.jyotiraditya.dmt.util.albumArtUri
+import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
 import dev.jyotiraditya.dmt.util.toMediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +66,7 @@ private const val FOLDER_PREFIX = "folder/"
 class PlaybackService : MediaLibraryService() {
 
     @Inject
-    lateinit var mediaRepository: MediaRepository
+    lateinit var mediaSourceProvider: MediaSourceProvider
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -94,6 +94,9 @@ class PlaybackService : MediaLibraryService() {
 
     @Volatile
     private var libraryCache: List<Track>? = null
+
+    @Volatile
+    private var libraryCacheSource: MediaRepository? = null
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -192,16 +195,22 @@ class PlaybackService : MediaLibraryService() {
         session.setMediaButtonPreferences(sessionButtons(session.player))
     }
 
-    private suspend fun library(): List<Track> =
-        libraryCache ?: withContext(Dispatchers.IO) {
-            mediaRepository.scan()
+    private suspend fun library(): List<Track> {
+        val source = mediaSourceProvider.current()
+        if (libraryCacheSource !== source) {
+            libraryCache = null
+            libraryCacheSource = source
+        }
+        return libraryCache ?: withContext(Dispatchers.IO) {
+            source.scan()
         }.also { libraryCache = it }
+    }
 
     private fun searchLibrary(tracks: List<Track>, query: String): List<Track> =
         tracks.filter {
             it.title.contains(query, true) ||
-                it.artist.contains(query, true) ||
-                it.album.contains(query, true)
+                    it.artist.contains(query, true) ||
+                    it.album.contains(query, true)
         }
 
     @OptIn(UnstableApi::class)
@@ -264,7 +273,7 @@ class PlaybackService : MediaLibraryService() {
                     id = ALBUM_PREFIX + album.name,
                     title = album.name,
                     subtitle = album.artist,
-                    artwork = album.tracks.firstOrNull()?.albumArtUri(),
+                    artwork = album.tracks.firstOrNull()?.coverUri,
                 )
             }
 

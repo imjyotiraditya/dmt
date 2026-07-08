@@ -1,10 +1,7 @@
 package dev.jyotiraditya.dmt.util
 
 import android.content.ComponentName
-import android.content.ContentUris
 import android.content.Context
-import android.net.Uri
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -34,10 +31,6 @@ suspend fun Context.mediaController(): MediaController =
         SessionToken(this, ComponentName(this, PlaybackService::class.java)),
     ).buildAsync().await()
 
-private val albumArtBase: Uri = "content://media/external/audio/albumart".toUri()
-
-fun Track.albumArtUri(): Uri = ContentUris.withAppendedId(albumArtBase, albumId)
-
 fun Track.toMediaItem(): MediaItem =
     MediaItem.Builder()
         .setMediaId(id.toString())
@@ -47,7 +40,7 @@ fun Track.toMediaItem(): MediaItem =
                 .setTitle(title)
                 .setArtist(artist)
                 .setAlbumTitle(album)
-                .setArtworkUri(albumArtUri())
+                .setArtworkUri(coverUri)
                 .setIsPlayable(true)
                 .setIsBrowsable(false)
                 .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)

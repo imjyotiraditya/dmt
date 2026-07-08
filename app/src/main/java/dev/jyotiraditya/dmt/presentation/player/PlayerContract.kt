@@ -7,14 +7,15 @@ import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.Lyrics
+import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 
-enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS, STATS }
+enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS, STATS, SOURCES, SOURCE_LOGIN }
 
 data class DmtState(
     val hasPermission: Boolean = false,
-    val scanning: Boolean = true,
+    val scanning: Boolean = false,
     val tracks: List<Track> = emptyList(),
     val albums: List<Album> = emptyList(),
     val query: String = "",
@@ -23,6 +24,7 @@ data class DmtState(
     val folders: List<Folder> = emptyList(),
     val filteredFolders: List<Folder> = emptyList(),
     val view: DmtView = DmtView.LIBRARY,
+    val loginSource: SourceMode = SourceMode.JELLYFIN,
     val openAlbum: String? = null,
     val openFolder: String? = null,
     val nowPlayingId: String? = null,
@@ -73,6 +75,13 @@ sealed interface DmtAction {
     data object OpenEqualizer : DmtAction
     data object NoEqualizer : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction
+    data class ShowLogin(val mode: SourceMode) : DmtAction
+    data class SourceLogin(
+        val mode: SourceMode,
+        val url: String,
+        val username: String,
+        val password: String,
+    ) : DmtAction
 }
 
 sealed interface PlayerEffect {

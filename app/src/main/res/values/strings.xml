@@ -11,18 +11,17 @@
     <string name="auto_shuffle">shuffle</string>
     <string name="auto_repeat">repeat</string>
     <string name="cfg">cfg</string>
+    <string name="tab_sources">src</string>
 
     <string name="clear">[x]</string>
     <string name="scanning">scanning library&#8230;</string>
     <string name="no_match">no match</string>
-    <string name="no_audio">no audio files found on this device</string>
+    <string name="no_audio">no tracks in %1$s - try rescanning from cfg</string>
+    <string name="scan_failed">could not reach %1$s - check connection and rescan</string>
     <string name="no_albums">no albums</string>
     <string name="no_files">no folders</string>
 
-    <string name="permission_title">! audio permission needed</string>
-    <string name="permission_body">dmt reads the music stored on this device. nothing leaves your phone.</string>
     <string name="grant">[ grant ]</string>
-    <string name="rescan">[ rescan ]</string>
 
     <string name="now_playing">now playing</string>
     <string name="no_cover">[ no cover ]</string>
@@ -51,9 +50,25 @@
     <string name="playback_error">playback error: %1$s</string>
     <string name="set_rescan">rescan library</string>
     <string name="run">run</string>
+    <string name="sources_title">sources</string>
+    <string name="sources_hint">(*) active source - tap to switch</string>
+    <string name="source_login">log in</string>
+    <string name="source_logout">log out</string>
+    <string name="source_login_title">connect to %1$s</string>
+    <string name="source_url_label">server</string>
+    <string name="source_url_hint">http://192.168.1.10:8096</string>
+    <string name="source_user_label">user</string>
+    <string name="source_user_hint">username</string>
+    <string name="source_pass_label">pass</string>
+    <string name="source_pass_hint">password</string>
+    <string name="source_login_cancel">esc</string>
+    <string name="source_connect">connect</string>
+    <string name="source_login_failed">could not connect - check url and credentials</string>
+    <string name="source_login_missing">fill server and user first</string>
     <string name="on">on</string>
     <string name="off">off</string>
     <string name="stats">stats</string>
+    <string name="stat_listening">listening</string>
     <string name="stat_time">time listened</string>
     <string name="stat_plays">plays</string>
     <string name="stat_top">most played</string>

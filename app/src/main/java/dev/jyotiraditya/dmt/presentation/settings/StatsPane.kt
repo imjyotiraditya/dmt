@@ -3,11 +3,9 @@ package dev.jyotiraditya.dmt.presentation.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,11 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
-import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
@@ -59,39 +59,29 @@ fun StatsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                     .padding(horizontal = 12.dp, vertical = 7.dp),
             )
 
-            TuiPanel(modifier = Modifier.padding(top = 12.dp)) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatBlock(
-                        label = stringResource(R.string.stat_time),
-                        value = formatListenTime(state.stats.totalMs),
-                        modifier = Modifier.weight(1f),
-                    )
-                    StatBlock(
-                        label = stringResource(R.string.stat_plays),
-                        value = "${state.stats.counts.values.sum()}",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+            Caption(stringResource(R.string.stat_listening))
+            StatRow(
+                label = stringResource(R.string.stat_time),
+                value = formatListenTime(state.stats.totalMs),
+            )
+            StatRow(
+                label = stringResource(R.string.stat_plays),
+                value = "${state.stats.counts.values.sum()}",
+            )
 
             Caption(stringResource(R.string.stat_library))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatBlock(
-                    label = stringResource(R.string.stat_tracks),
-                    value = "${state.tracks.size}",
-                    modifier = Modifier.weight(1f),
-                )
-                StatBlock(
-                    label = stringResource(R.string.stat_albums),
-                    value = "${state.albums.size}",
-                    modifier = Modifier.weight(1f),
-                )
-                StatBlock(
-                    label = stringResource(R.string.stat_folders),
-                    value = "${state.folders.size}",
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            StatRow(
+                label = stringResource(R.string.stat_tracks),
+                value = "${state.tracks.size}",
+            )
+            StatRow(
+                label = stringResource(R.string.stat_albums),
+                value = "${state.albums.size}",
+            )
+            StatRow(
+                label = stringResource(R.string.stat_folders),
+                value = "${state.folders.size}",
+            )
 
             Caption(stringResource(R.string.stat_top))
             if (top.isEmpty()) {
@@ -115,21 +105,33 @@ fun StatsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-private fun StatBlock(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = TuiBright,
-        )
+private fun StatRow(label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+    ) {
         Text(
             text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = TuiFg,
+        )
+        Text(
+            text = ".".repeat(200),
             style = MaterialTheme.typography.labelSmall,
-            color = TuiDim,
+            color = TuiFaint,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = TuiBright,
         )
     }
 }
@@ -171,20 +173,17 @@ private fun TopTrackRow(
                 color = TuiDim,
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 5.dp)
-                .height(5.dp)
-                .background(TuiLine),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction.coerceIn(0.02f, 1f))
-                    .height(5.dp)
-                    .background(accent),
-            )
-        }
+        val cols = 28
+        val filled = (fraction.coerceIn(0f, 1f) * cols).toInt().coerceAtLeast(1)
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(color = accent)) { append("█".repeat(filled)) }
+                withStyle(SpanStyle(color = TuiFaint)) { append("░".repeat(cols - filled)) }
+            },
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 3.dp),
+        )
     }
 }
 

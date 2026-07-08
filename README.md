@@ -5,12 +5,15 @@
 
 dear music, thanks.
 
-a tui-inspired local music player for android. music helped me through a lot,
+a tui-inspired music player for android. music helped me through a lot,
 this is the thank you note.
 
 ## what it does
 
-- plays the music on your phone, nothing leaves the device
+- plays the music on your phone, and can stream from a self-hosted jellyfin
+  server instead: sources get their own screen, tap to switch, log in once
+  and it remembers the server and token (never the password). covers, lyrics
+  and format info come from the server too
 - library, albums and folders tabs, all searchable, long-press anything to queue it
 - cover art rendered as colored ascii with a light sweep while playing.
   tracks without art get a generated ascii pattern of their own.
@@ -45,4 +48,5 @@ ci builds signed debug and release apks on every push.
 
 kotlin, compose, media3, datastore. single state + actions, no magic.
 
-no ads, no analytics, no network permission. it just plays music.
+no ads, no analytics. the network is only ever used to talk to your own
+jellyfin server, and only if you connect one. it just plays music.

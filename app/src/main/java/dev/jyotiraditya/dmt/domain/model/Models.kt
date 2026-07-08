@@ -2,19 +2,23 @@ package dev.jyotiraditya.dmt.domain.model
 
 import android.net.Uri
 
+enum class TrackSource { LOCAL, JELLYFIN }
+
 data class Track(
     val id: Long,
     val uri: Uri,
     val title: String,
     val artist: String,
     val album: String,
-    val albumId: Long,
     val path: String,
     val durationMs: Long,
     val mime: String,
     val bitrate: Int,
     val size: Long,
     val trackNumber: Int,
+    val coverUri: Uri? = null,
+    val source: TrackSource = TrackSource.LOCAL,
+    val remoteId: String? = null,
 )
 
 data class Album(

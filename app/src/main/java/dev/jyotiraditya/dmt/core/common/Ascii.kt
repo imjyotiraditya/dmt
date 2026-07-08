@@ -61,10 +61,10 @@ fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
         for (x in 0 until cols) {
             val pixel = small[x, y]
             val lum = (
-                0.299f * AndroidColor.red(pixel) +
-                    0.587f * AndroidColor.green(pixel) +
-                    0.114f * AndroidColor.blue(pixel)
-                ) / 255f
+                    0.299f * AndroidColor.red(pixel) +
+                            0.587f * AndroidColor.green(pixel) +
+                            0.114f * AndroidColor.blue(pixel)
+                    ) / 255f
             val symbol = RAMP[(lum * (RAMP.length - 1)).roundToInt().coerceIn(0, RAMP.length - 1)]
             if (symbol == ' ') continue
             AndroidColor.colorToHSV(pixel, hsv)
@@ -106,11 +106,11 @@ fun generateAsciiPlaceholder(seed: Long, cols: Int = 64): Bitmap {
     for (y in 0 until rows) {
         for (x in 0 until cols) {
             val v = (
-                sin(x * f1 + p1) +
-                    sin(y * f2 + p2) +
-                    sin((x + y) * f3 + p3) +
-                    3f
-                ) / 6f
+                    sin(x * f1 + p1) +
+                            sin(y * f2 + p2) +
+                            sin((x + y) * f3 + p3) +
+                            3f
+                    ) / 6f
             val symbol = RAMP[(v * (RAMP.length - 1)).roundToInt().coerceIn(0, RAMP.length - 1)]
             if (symbol == ' ') continue
             hsv[0] = hue

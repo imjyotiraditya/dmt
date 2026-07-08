@@ -3,9 +3,12 @@ package dev.jyotiraditya.dmt.data.repository
 import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
+import android.net.Uri
 import android.provider.MediaStore
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,7 +32,7 @@ class MediaRepositoryImpl @Inject constructor(
         MediaStore.Audio.Media.TRACK,
     )
 
-    override fun scan(): List<Track> =
+    override suspend fun scan(): List<Track> =
         buildList {
             runCatching {
                 context.contentResolver.query(
@@ -52,21 +55,25 @@ private fun Cursor.long(column: String): Long = getLong(getColumnIndexOrThrow(co
 
 private fun Cursor.int(column: String): Int = getInt(getColumnIndexOrThrow(column))
 
+private val albumArtBase: Uri = "content://media/external/audio/albumart".toUri()
+
 private fun Cursor.toTrack(): Track {
     val id = long(MediaStore.Audio.Media._ID)
+    val albumId = long(MediaStore.Audio.Media.ALBUM_ID)
     return Track(
         id = id,
         uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id),
         title = text(MediaStore.Audio.Media.TITLE, "unknown title"),
         artist = text(MediaStore.Audio.Media.ARTIST, "unknown artist"),
         album = text(MediaStore.Audio.Media.ALBUM, "unknown album"),
-        albumId = long(MediaStore.Audio.Media.ALBUM_ID),
         path = getString(getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)).orEmpty(),
         durationMs = long(MediaStore.Audio.Media.DURATION),
         mime = text(MediaStore.Audio.Media.MIME_TYPE, "audio/?"),
         bitrate = int(MediaStore.Audio.Media.BITRATE),
         size = long(MediaStore.Audio.Media.SIZE),
         trackNumber = int(MediaStore.Audio.Media.TRACK),
+        coverUri = ContentUris.withAppendedId(albumArtBase, albumId),
+        source = TrackSource.LOCAL,
     )
 }
 
