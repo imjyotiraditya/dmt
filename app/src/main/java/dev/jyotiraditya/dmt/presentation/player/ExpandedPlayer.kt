@@ -375,6 +375,7 @@ private fun ArtSlot(
             positionMs = state.positionMs,
             durationMs = state.durationMs,
             isPlaying = state.isPlaying,
+            romanized = state.settings.romanizedLyrics,
             contentAspect = aspect,
             onSeekFraction = { dispatch(DmtAction.Seek(it)) },
             modifier = modifier,

@@ -12,6 +12,7 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
+import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPECS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPEED
@@ -47,6 +48,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             wave = prefs[KEY_WAVE] ?: true,
             cols = prefs[KEY_COLS] ?: 64,
             listSpecs = prefs[KEY_SPECS] ?: true,
+            romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
             accent = Accent.fromOrdinal(prefs[KEY_ACCENT] ?: 0),
             rawArt = prefs[KEY_RAW] ?: false,
             sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
@@ -62,6 +64,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             it[KEY_WAVE] = settings.wave
             it[KEY_COLS] = settings.cols
             it[KEY_SPECS] = settings.listSpecs
+            it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics
             it[KEY_ACCENT] = settings.accent.ordinal
             it[KEY_RAW] = settings.rawArt
             it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal

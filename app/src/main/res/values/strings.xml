@@ -42,6 +42,9 @@
     <string name="set_detail_value" tools:ignore="PluralsCandidate">%1$d col</string>
     <string name="set_specs">format chips</string>
     <string name="set_raw">raw artwork</string>
+    <string name="set_lyrics_script">lyrics script</string>
+    <string name="lyrics_script_original">original</string>
+    <string name="lyrics_script_romanized">romanized</string>
     <string name="set_accent">accent</string>
     <string name="set_eq">equalizer</string>
     <string name="set_eq_open">open</string>

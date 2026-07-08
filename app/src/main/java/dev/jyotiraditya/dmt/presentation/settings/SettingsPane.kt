@@ -64,6 +64,22 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             dispatch(DmtAction.Config(settings.copy(rawArt = !settings.rawArt)))
         }
         SettingRow(
+            label = stringResource(R.string.set_lyrics_script),
+            value = stringResource(
+                if (settings.romanizedLyrics) {
+                    R.string.lyrics_script_romanized
+                } else {
+                    R.string.lyrics_script_original
+                },
+            ),
+        ) {
+            dispatch(
+                DmtAction.Config(
+                    settings.copy(romanizedLyrics = !settings.romanizedLyrics),
+                ),
+            )
+        }
+        SettingRow(
             label = stringResource(R.string.set_specs),
             value = if (settings.listSpecs) on else off,
         ) {

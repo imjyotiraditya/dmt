@@ -34,6 +34,7 @@ import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
+import dev.jyotiraditya.dmt.domain.model.Transliteration
 import dev.jyotiraditya.dmt.domain.model.Voice
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
@@ -49,6 +50,7 @@ fun LyricsPanel(
     positionMs: Long,
     durationMs: Long,
     isPlaying: Boolean,
+    romanized: Boolean,
     contentAspect: Float,
     onSeekFraction: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -81,6 +83,7 @@ fun LyricsPanel(
                 itemsIndexed(lyrics.lines) { _, line ->
                     LyricLineRows(
                         line = line,
+                        romanized = romanized,
                         state = lineState(line, position, lyrics.synced),
                         positionMs = position,
                         palette = palette,
@@ -188,15 +191,30 @@ private fun singerColorFor(line: LyricLine, palette: List<Color>): Color =
 @Composable
 private fun LyricLineRows(
     line: LyricLine,
+    romanized: Boolean,
     state: LineState,
     positionMs: Long,
     palette: List<Color>,
     seekable: Boolean,
     onClick: () -> Unit,
 ) {
-    val singerColor = singerColorFor(line, palette)
-    val hasSinger = !line.interlude && line.singer >= 0
-    val align = when (line.voice) {
+    val translit = line.transliteration
+    val shown = if (romanized && translit != null) {
+        line.copy(
+            text = translit.text,
+            words = translit.words,
+            transliteration = Transliteration(
+                text = line.text,
+                words = line.words,
+            ),
+        )
+    } else {
+        line
+    }
+
+    val singerColor = singerColorFor(shown, palette)
+    val hasSinger = !shown.interlude && shown.singer >= 0
+    val align = when (shown.voice) {
         Voice.SECONDARY -> TextAlign.End
         Voice.GROUP -> TextAlign.Center
         else -> TextAlign.Start
@@ -206,24 +224,24 @@ private fun LyricLineRows(
         .fillMaxWidth()
         .let { if (seekable) it.tuiClickable(onClick) else it }
 
-    if (line.interlude) {
+    if (shown.interlude) {
         InterludeRow(
-            line = line,
+            line = shown,
             state = state,
             positionMs = positionMs,
             accent = palette.first(),
             modifier = rowModifier.padding(
-                top = if (line.sectionStart) 18.dp else 6.dp,
+                top = if (shown.sectionStart) 18.dp else 6.dp,
                 bottom = 6.dp,
             ),
         )
         return
     }
 
-    val runs = remember(line) { buildRuns(line) }
+    val runs = remember(shown) { buildRuns(shown) }
     Column(
         modifier = rowModifier
-            .padding(top = if (line.sectionStart) 18.dp else 6.dp, bottom = 6.dp),
+            .padding(top = if (shown.sectionStart) 18.dp else 6.dp, bottom = 6.dp),
     ) {
         runs.forEach { run ->
             LyricRunText(
@@ -235,7 +253,7 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        line.transliteration?.let {
+        shown.transliteration?.let {
             LyricRunText(
                 run = LyricRun(
                     background = true,
@@ -249,9 +267,9 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        val originals = if (runs.size == line.translation.size) runs.map { it.text } else null
-        line.translation.forEachIndexed { i, segment ->
-            val original = originals?.get(i) ?: line.text
+        val originals = if (runs.size == shown.translation.size) runs.map { it.text } else null
+        shown.translation.forEachIndexed { i, segment ->
+            val original = originals?.get(i) ?: shown.text
             if (!segment.equals(original, ignoreCase = true)) {
                 SecondaryLyricText(segment, align)
             }

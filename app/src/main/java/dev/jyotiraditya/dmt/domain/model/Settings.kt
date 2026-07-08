@@ -23,6 +23,7 @@ data class DmtSettings(
     val wave: Boolean = true,
     val cols: Int = 64,
     val listSpecs: Boolean = true,
+    val romanizedLyrics: Boolean = false,
     val accent: Accent = Accent.ORANGE,
     val rawArt: Boolean = false,
     val sourceMode: SourceMode = SourceMode.LOCAL,
