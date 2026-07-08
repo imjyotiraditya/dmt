@@ -90,4 +90,23 @@ class TtmlLyricsParserTest {
         assertEquals(7, transliteration.words.size)
         assertTrue(first.translation.isEmpty())
     }
+
+    @Test
+    fun `spans split across source lines keep their word spacing`() {
+        val lyrics = parseTtml(fixture("ttml_pretty_printed.ttml"))
+        assertNotNull(lyrics)
+        assertTrue(lyrics!!.synced)
+
+        val sung = lyrics.lines.filter { !it.interlude }
+        assertEquals(48, sung.size)
+        assertEquals("Pour pint of that dirty", sung.first().text)
+
+        val second = sung[1]
+        assertEquals("Double me cup, I sip 'til I'm blurry", second.text)
+        val wordTexts = second.words.map { second.text.substring(it.start, it.end) }
+        assertEquals(
+            listOf("Double", "me", "cup", ",", "I", "sip", "'til", "I'm", "blurry"),
+            wordTexts,
+        )
+    }
 }

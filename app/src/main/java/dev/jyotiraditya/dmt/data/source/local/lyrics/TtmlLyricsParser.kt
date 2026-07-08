@@ -49,17 +49,20 @@ private class SpanFrame(
     var hadChild = false
 }
 
+private fun isFormattingOnly(chunk: String): Boolean =
+    chunk.isNotEmpty() &&
+            chunk.all { it.isWhitespace() } &&
+            chunk.any { it == '\n' || it == '\r' }
+
 private fun readTimedText(parser: XmlPullParser): Pair<String, List<LyricWord>> {
     val text = StringBuilder()
     val words = mutableListOf<LyricWord>()
     val spanStack = ArrayDeque<SpanFrame>()
     var pendingSpace = false
-    var pendingNewline = false
 
     fun flushSpace() {
-        if (pendingSpace && !pendingNewline && text.isNotEmpty()) text.append(' ')
+        if (pendingSpace && text.isNotEmpty() && text.last() != '\n') text.append(' ')
         pendingSpace = false
-        pendingNewline = false
     }
 
     var depth = 1
@@ -81,13 +84,14 @@ private fun readTimedText(parser: XmlPullParser): Pair<String, List<LyricWord>> 
                 }
             }
 
-            XmlPullParser.TEXT -> parser.text.forEach { c ->
-                if (c.isWhitespace()) {
-                    pendingSpace = true
-                    if (c == '\n' || c == '\r') pendingNewline = true
-                } else {
-                    flushSpace()
-                    text.append(c)
+            XmlPullParser.TEXT -> if (!isFormattingOnly(parser.text)) {
+                parser.text.forEach { c ->
+                    if (c.isWhitespace()) {
+                        pendingSpace = true
+                    } else {
+                        flushSpace()
+                        text.append(c)
+                    }
                 }
             }
 
@@ -118,12 +122,10 @@ private fun readTranslationSegments(parser: XmlPullParser): List<String> {
     val bgStack = ArrayDeque<Boolean>()
     var currentBg = false
     var pendingSpace = false
-    var pendingNewline = false
 
     fun flushSpace() {
-        if (pendingSpace && !pendingNewline && current.isNotEmpty()) current.append(' ')
+        if (pendingSpace && current.isNotEmpty() && current.last() != '\n') current.append(' ')
         pendingSpace = false
-        pendingNewline = false
     }
 
     fun cutSegment() {
@@ -131,7 +133,6 @@ private fun readTranslationSegments(parser: XmlPullParser): List<String> {
         if (text.isNotEmpty()) segments += text
         current.clear()
         pendingSpace = false
-        pendingNewline = false
     }
 
     var depth = 1
@@ -151,13 +152,14 @@ private fun readTranslationSegments(parser: XmlPullParser): List<String> {
                 }
             }
 
-            XmlPullParser.TEXT -> parser.text.forEach { c ->
-                if (c.isWhitespace()) {
-                    pendingSpace = true
-                    if (c == '\n' || c == '\r') pendingNewline = true
-                } else {
-                    flushSpace()
-                    current.append(c)
+            XmlPullParser.TEXT -> if (!isFormattingOnly(parser.text)) {
+                parser.text.forEach { c ->
+                    if (c.isWhitespace()) {
+                        pendingSpace = true
+                    } else {
+                        flushSpace()
+                        current.append(c)
+                    }
                 }
             }
 
@@ -218,7 +220,6 @@ fun parseTtml(raw: String): Lyrics? =
         var newSection = false
         var divAgent: String? = null
         var pendingSpace = false
-        var pendingNewline = false
         var lineKey: String? = null
 
         val translations = mutableMapOf<String, List<String>>()
@@ -233,16 +234,15 @@ fun parseTtml(raw: String): Lyrics? =
         val spanStack = ArrayDeque<SpanFrame>()
 
         fun flushSpace() {
-            if (pendingSpace && !pendingNewline && text.isNotEmpty()) text.append(' ')
+            if (pendingSpace && text.isNotEmpty() && text.last() != '\n') text.append(' ')
             pendingSpace = false
-            pendingNewline = false
         }
 
         fun appendLyricText(chunk: String) {
+            if (isFormattingOnly(chunk)) return
             chunk.forEach { c ->
                 if (c.isWhitespace()) {
                     pendingSpace = true
-                    if (c == '\n' || c == '\r') pendingNewline = true
                 } else {
                     flushSpace()
                     text.append(c)
@@ -264,7 +264,6 @@ fun parseTtml(raw: String): Lyrics? =
 
                     "br" -> if (inLine) {
                         pendingSpace = false
-                        pendingNewline = false
                         text.append('\n')
                     }
 
@@ -274,7 +273,6 @@ fun parseTtml(raw: String): Lyrics? =
                         words.clear()
                         spanStack.clear()
                         pendingSpace = false
-                        pendingNewline = false
                         lineBegin = parseTtmlTime(parser.attr("begin"))
                         lineEnd = parseTtmlTime(parser.attr("end"))
                         lineKey = parser.attr("itunes:key")
