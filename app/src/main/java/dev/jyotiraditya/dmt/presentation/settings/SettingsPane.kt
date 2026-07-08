@@ -32,7 +32,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
 
-private val COVER_COLS_STEPS = listOf(48, 64, 80)
+private val COVER_COLS_STEPS = listOf(48, 64, 80, 96)
 
 @Composable
 fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
