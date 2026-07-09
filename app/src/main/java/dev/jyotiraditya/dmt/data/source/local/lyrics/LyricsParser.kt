@@ -8,24 +8,36 @@ object LyricsParser {
 
     fun parse(raw: String): Lyrics? {
         val trimmed = raw.trim()
+
         return when {
             trimmed.isEmpty() -> null
-            trimmed.startsWith("<") && trimmed.contains("<tt") -> parseTtml(trimmed)
-            isLrc(trimmed) -> parseLrc(trimmed)
-            else -> Lyrics(
-                lines = trimmed.lines()
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                    .map {
-                        LyricLine(
-                            startMs = -1L,
-                            endMs = -1L,
-                            text = it,
-                        )
-                    },
-                synced = false,
-            )
+
+            trimmed.startsWith("<") && trimmed.contains("<tt") ->
+                TtmlLyricsParser.parse(trimmed)
+
+            LrcLyricsParser.matches(trimmed) ->
+                LrcLyricsParser.parse(trimmed)
+
+            else -> parsePlain(trimmed)
         }
+    }
+
+    private fun parsePlain(trimmed: String): Lyrics {
+        val lines = trimmed.lines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map { text ->
+                LyricLine(
+                    startMs = -1L,
+                    endMs = -1L,
+                    text = text,
+                )
+            }
+
+        return Lyrics(
+            lines = lines,
+            synced = false,
+        )
     }
 }
 
@@ -41,8 +53,10 @@ fun List<LyricLine>.fillLineEnds(): List<LyricLine> =
 
 fun List<LyricLine>.mergeSimultaneousDuplicates(): List<LyricLine> {
     val out = mutableListOf<LyricLine>()
+
     forEach { line ->
         val last = out.lastOrNull()
+
         if (last != null &&
             !last.interlude &&
             last.text == line.text &&
@@ -57,12 +71,14 @@ fun List<LyricLine>.mergeSimultaneousDuplicates(): List<LyricLine> {
             out += line
         }
     }
+
     return out
 }
 
 fun List<LyricLine>.withInterludes(): List<LyricLine> {
     val out = mutableListOf<LyricLine>()
     var previousEnd = 0L
+
     forEach { line ->
         if (line.startMs - previousEnd >= 8_000L) {
             out += LyricLine(
@@ -74,8 +90,10 @@ fun List<LyricLine>.withInterludes(): List<LyricLine> {
                 interlude = true,
             )
         }
+
         out += line
         previousEnd = maxOf(previousEnd, line.endMs)
     }
+
     return out
 }

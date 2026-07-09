@@ -23,7 +23,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `single voice ttml with background vocals parses cleanly`() {
-        val lyrics = parseTtml(fixture("ttml_single.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_single.ttml"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
         assertTrue(lyrics.lines.isNotEmpty())
@@ -40,7 +40,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `multi-voice ensemble ttml assigns distinct voices and a group voice`() {
-        val lyrics = parseTtml(fixture("ttml_multivoice.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_multivoice.ttml"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
 
@@ -55,7 +55,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `translations block is attached to its matching line by itunes key`() {
-        val lyrics = parseTtml(fixture("ttml_single.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_single.ttml"))
         assertNotNull(lyrics)
 
         val first = lyrics!!.lines.first { it.startMs == 2_344L }
@@ -65,7 +65,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `translation with an x-bg clause splits into separate segments`() {
-        val lyrics = parseTtml(fixture("ttml_single.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_single.ttml"))
         assertNotNull(lyrics)
 
         val line = lyrics!!.lines.first { it.startMs == 93_775L }
@@ -80,7 +80,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `transliterations block is attached with its own word timing`() {
-        val lyrics = parseTtml(fixture("ttml_transliteration.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_transliteration.ttml"))
         assertNotNull(lyrics)
 
         val first = lyrics!!.lines.first { it.startMs == 1_594L }
@@ -93,7 +93,7 @@ class TtmlLyricsParserTest {
 
     @Test
     fun `spans split across source lines keep their word spacing`() {
-        val lyrics = parseTtml(fixture("ttml_pretty_printed.ttml"))
+        val lyrics = TtmlLyricsParser.parse(fixture("ttml_pretty_printed.ttml"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
 

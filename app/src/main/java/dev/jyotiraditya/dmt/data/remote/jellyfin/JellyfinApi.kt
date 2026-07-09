@@ -96,20 +96,9 @@ class JellyfinApi @Inject constructor(
 
         if (entries.all { (text, _) -> text.isBlank() }) return null
 
-        val texts = entries.map { (text, _) -> text }
-        val looksLikeTtml = texts.any { it.startsWith("<?xml") || it.contains("<tt ") }
-        if (looksLikeTtml) {
-            return LyricsParser.parse(texts.joinToString("\n"))
-        }
-
         val synced = entries.all { (_, startTicks) -> startTicks >= 0L }
         if (!synced) {
-            return Lyrics(
-                lines = texts.map { text ->
-                    LyricLine(startMs = 0L, endMs = 0L, text = text)
-                },
-                synced = false,
-            )
+            return LyricsParser.parse(entries.joinToString("\n") { (text, _) -> text })
         }
 
         return Lyrics(

@@ -18,7 +18,7 @@ class LrcLyricsParserTest {
 
     @Test
     fun `plain line-synced lrc has no word timing`() {
-        val lyrics = parseLrc(fixture("plain.lrc"))
+        val lyrics = LrcLyricsParser.parse(fixture("plain.lrc"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
         assertTrue(lyrics.lines.isNotEmpty())
@@ -31,7 +31,7 @@ class LrcLyricsParserTest {
 
     @Test
     fun `enhanced word-timed lrc extracts per-word timing`() {
-        val lyrics = parseLrc(fixture("enhanced.lrc"))
+        val lyrics = LrcLyricsParser.parse(fixture("enhanced.lrc"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
 
@@ -48,7 +48,7 @@ class LrcLyricsParserTest {
 
     @Test
     fun `voice prefix and background lines are handled`() {
-        val lyrics = parseLrc(fixture("voice_bg.lrc"))
+        val lyrics = LrcLyricsParser.parse(fixture("voice_bg.lrc"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
 
@@ -68,7 +68,7 @@ class LrcLyricsParserTest {
 
     @Test
     fun `bg lines with a duplicated nested timestamp and voice prefix are cleaned`() {
-        val lyrics = parseLrc(fixture("voice_bg_nested.lrc"))
+        val lyrics = LrcLyricsParser.parse(fixture("voice_bg_nested.lrc"))
         assertNotNull(lyrics)
         assertTrue(lyrics!!.synced)
 
@@ -86,14 +86,14 @@ class LrcLyricsParserTest {
     }
 
     @Test
-    fun `isLrc detects bracket timestamps only`() {
-        assertTrue(isLrc(fixture("plain.lrc")))
-        assertTrue(isLrc(fixture("enhanced.lrc")))
-        assertFalse(isLrc("just some plain unsynced text\nwith multiple lines"))
+    fun `matches detects bracket timestamps only`() {
+        assertTrue(LrcLyricsParser.matches(fixture("plain.lrc")))
+        assertTrue(LrcLyricsParser.matches(fixture("enhanced.lrc")))
+        assertFalse(LrcLyricsParser.matches("just some plain unsynced text\nwith multiple lines"))
     }
 
     @Test
-    fun `parseLrc returns null when there is nothing synced`() {
-        assertNull(parseLrc("no timestamps here at all"))
+    fun `parse returns null when there is nothing synced`() {
+        assertNull(LrcLyricsParser.parse("no timestamps here at all"))
     }
 }
