@@ -39,6 +39,20 @@ data class Spec(
     val hot: Boolean = false,
 )
 
+/**
+ * The playback signal flow shown by the Audio Inspector: track -> decoder -> processing ->
+ * output -> output device. Every section is a list of [Spec] so the UI can render them
+ * uniformly; a section is simply empty (and hidden) when nothing accurate can be reported.
+ */
+data class AudioJourney(
+    val track: List<Spec> = emptyList(),
+    val decoder: List<Spec> = emptyList(),
+    val processing: List<Spec> = emptyList(),
+    val output: List<Spec> = emptyList(),
+    val outputDevice: List<Spec> = emptyList(),
+    val advanced: List<Spec> = emptyList(),
+)
+
 data class LibrarySnapshot(
     val tracks: List<Track> = emptyList(),
     val albums: List<Album> = emptyList(),

@@ -176,7 +176,7 @@ fun InfoContent(state: DmtState) {
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+fun InfoRow(label: String, value: String) {
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,

@@ -93,6 +93,15 @@
     <string name="info_album">album</string>
     <string name="info_duration">duration</string>
     <string name="info_uri">uri</string>
+
+    <string name="audio_inspector">audio inspector</string>
+    <string name="ai_track">track</string>
+    <string name="ai_decoder">decoder</string>
+    <string name="ai_processing">audio processing</string>
+    <string name="ai_output">output</string>
+    <string name="ai_output_device">output device</string>
+    <string name="ai_advanced">advanced details</string>
+    <string name="ai_no_processing">no audio processing</string>
     <plurals name="search_tracks_hint">
         <item quantity="one">search %1$d track</item>
         <item quantity="other">search %1$d tracks</item>

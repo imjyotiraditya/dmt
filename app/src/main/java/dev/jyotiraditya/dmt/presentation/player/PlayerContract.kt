@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.presentation.player
 import android.graphics.Bitmap
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.domain.model.Album
+import dev.jyotiraditya.dmt.domain.model.AudioJourney
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.Folder
@@ -48,6 +49,7 @@ data class DmtState(
     val settings: DmtSettings = DmtSettings(),
     val stats: DmtStats = DmtStats(),
     val tech: List<Spec> = emptyList(),
+    val audioJourney: AudioJourney = AudioJourney(),
     val error: String? = null,
     val notice: String? = null,
 )
@@ -72,6 +74,7 @@ sealed interface DmtAction {
     data class RemoveAt(val index: Int) : DmtAction
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
+    data object LoadAudioInspector : DmtAction
     data object OpenEqualizer : DmtAction
     data object NoEqualizer : DmtAction
     data class Config(val settings: DmtSettings) : DmtAction

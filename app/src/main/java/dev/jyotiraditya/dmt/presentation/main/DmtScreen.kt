@@ -53,8 +53,8 @@ import dev.jyotiraditya.dmt.presentation.library.LibraryPane
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
+import dev.jyotiraditya.dmt.presentation.player.AudioInspectorContent
 import dev.jyotiraditya.dmt.presentation.player.ExpandedPlayer
-import dev.jyotiraditya.dmt.presentation.player.InfoContent
 import dev.jyotiraditya.dmt.presentation.player.MiniPlayer
 import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
@@ -189,7 +189,10 @@ fun DmtScreen(
             ExpandedPlayer(
                 state = state,
                 dispatch = dispatch,
-                onInfo = { showInfoSheet = true },
+                onInfo = {
+                    showInfoSheet = true
+                    dispatch(DmtAction.LoadAudioInspector)
+                },
                 onQueue = { showQueueSheet = true },
             )
         }
@@ -211,8 +214,8 @@ fun DmtScreen(
 
         if (showInfoSheet) {
             TuiSheet(onDismiss = { showInfoSheet = false }) {
-                SheetHeader(title = stringResource(R.string.track_info))
-                InfoContent(state)
+                SheetHeader(title = stringResource(R.string.audio_inspector))
+                AudioInspectorContent(state.audioJourney)
             }
         }
     }

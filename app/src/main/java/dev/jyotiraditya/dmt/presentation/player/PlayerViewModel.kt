@@ -23,11 +23,13 @@ import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Accent
 import dev.jyotiraditya.dmt.domain.model.Album
+import dev.jyotiraditya.dmt.domain.model.AudioJourney
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
+import dev.jyotiraditya.dmt.domain.usecase.GetAudioJourneyUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetCoverArtUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
@@ -68,6 +70,7 @@ class PlayerViewModel @Inject constructor(
     private val getLyrics: GetLyricsUseCase,
     private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
+    private val getAudioJourney: GetAudioJourneyUseCase,
     private val dispatchers: DispatcherProvider,
 ) : BaseViewModel<DmtAction, DmtState, PlayerEffect>(
     DmtState(
@@ -198,6 +201,7 @@ class PlayerViewModel @Inject constructor(
 
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
+            DmtAction.LoadAudioInspector -> loadAudioJourney()
             DmtAction.OpenEqualizer -> openEqualizer()
             DmtAction.NoEqualizer -> notify(context.getString(R.string.no_eq))
 
@@ -480,6 +484,24 @@ class PlayerViewModel @Inject constructor(
             reduce {
                 if (it.nowPlayingId != id) it else it.copy(tech = tech)
             }
+        }
+    }
+
+    private fun loadAudioJourney() {
+        val c = controller ?: return
+        val mediaItem = c.currentMediaItem
+        val uri = mediaItem?.localConfiguration?.uri ?: return
+        val id = mediaItem.mediaId
+        viewModelScope.launch {
+            val track = currentState.tracks.find { t -> t.id.toString() == id }
+            val sessionId = runCatching {
+                c.sendCustomCommand(PlaybackService.CMD_AUDIO_SESSION, Bundle.EMPTY)
+                    .await()
+                    .extras
+                    .getInt(PlaybackService.KEY_AUDIO_SESSION)
+            }.getOrDefault(0)
+            val journey = getAudioJourney(uri, track, currentState.speed, sessionId)
+            reduce { it.copy(audioJourney = journey) }
         }
     }
 
