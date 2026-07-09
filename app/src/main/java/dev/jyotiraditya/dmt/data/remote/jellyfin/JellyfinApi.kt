@@ -1,6 +1,8 @@
 package dev.jyotiraditya.dmt.data.remote.jellyfin
 
 import dev.jyotiraditya.dmt.data.source.local.lyrics.LyricsParser
+import dev.jyotiraditya.dmt.data.source.local.lyrics.fillLineEnds
+import dev.jyotiraditya.dmt.data.source.local.lyrics.withInterludes
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.Lyrics
 import okhttp3.MediaType.Companion.toMediaType
@@ -32,7 +34,7 @@ private const val CLIENT_VERSION = "1"
 private const val DEVICE_NAME = "Android"
 private const val DEVICE_ID = "dmt-android"
 
-private const val RUNTIME_TICKS_PER_MS = 10_000L
+private const val TICKS_PER_MS = 10_000L
 
 @Singleton
 class JellyfinApi @Inject constructor(
@@ -87,22 +89,43 @@ class JellyfinApi @Inject constructor(
 
         val lines = json.optJSONArray("Lyrics") ?: return null
 
-        val texts = (0 until lines.length()).map { index ->
-            lines.getJSONObject(index).optString("Text")
+        val entries = (0 until lines.length()).map { index ->
+            val entry = lines.getJSONObject(index)
+            entry.optString("Text") to entry.optLong("Start", -1L)
         }
 
-        if (texts.all { it.isBlank() }) return null
+        if (entries.all { (text, _) -> text.isBlank() }) return null
 
+        val texts = entries.map { (text, _) -> text }
         val looksLikeTtml = texts.any { it.startsWith("<?xml") || it.contains("<tt ") }
         if (looksLikeTtml) {
             return LyricsParser.parse(texts.joinToString("\n"))
         }
 
+        val synced = entries.all { (_, startTicks) -> startTicks >= 0L }
+        if (!synced) {
+            return Lyrics(
+                lines = texts.map { text ->
+                    LyricLine(startMs = 0L, endMs = 0L, text = text)
+                },
+                synced = false,
+            )
+        }
+
         return Lyrics(
-            lines = texts.map { text ->
-                LyricLine(startMs = 0L, endMs = 0L, text = text)
-            },
-            synced = false,
+            lines = entries
+                .filter { (text, _) -> text.isNotBlank() }
+                .map { (text, startTicks) ->
+                    LyricLine(
+                        startMs = startTicks / TICKS_PER_MS,
+                        endMs = -1L,
+                        text = text,
+                    )
+                }
+                .sortedBy { it.startMs }
+                .fillLineEnds()
+                .withInterludes(),
+            synced = true,
         )
     }
 
@@ -160,7 +183,7 @@ class JellyfinApi @Inject constructor(
             album = optString("Album", "unknown album"),
             albumId = if (has("AlbumId")) optString("AlbumId") else null,
             trackNumber = optInt("IndexNumber", 0),
-            durationMs = optLong("RunTimeTicks", 0L) / RUNTIME_TICKS_PER_MS,
+            durationMs = optLong("RunTimeTicks", 0L) / TICKS_PER_MS,
             mime = "audio/" + optString("Container", "?"),
             bitrate = mediaSource?.optInt("Bitrate", 0) ?: 0,
             size = mediaSource?.optLong("Size", 0L) ?: 0L,
