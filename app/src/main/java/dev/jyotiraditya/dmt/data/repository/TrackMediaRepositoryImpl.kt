@@ -8,6 +8,7 @@ import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Size
+import androidx.media3.common.MimeTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -16,9 +17,14 @@ import dev.jyotiraditya.dmt.domain.repository.TrackMediaRepository
 import dev.jyotiraditya.dmt.util.asKHz
 import dev.jyotiraditya.dmt.util.asMB
 import dev.jyotiraditya.dmt.util.codecLabel
+import dev.jyotiraditya.dmt.util.heAacLabel
+import dev.jyotiraditya.dmt.util.probeFrames
 import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val VBR_PROBE_SKIP = 4
+private const val VBR_PROBE_FRAMES = 400
 
 @Singleton
 class TrackMediaRepositoryImpl @Inject constructor(
@@ -51,6 +57,8 @@ class TrackMediaRepositoryImpl @Inject constructor(
             }
         }
         var mime = track?.mime.orEmpty()
+        var codec: String? = null
+        var vbr = false
         var bitrate = track?.bitrate ?: 0
         var sampleRate: Int? = null
         var channels: Int? = null
@@ -60,7 +68,18 @@ class TrackMediaRepositoryImpl @Inject constructor(
             extractor.setDataSource(context, uri, null)
             val format = extractor.getTrackFormat(0)
             format.getString(MediaFormat.KEY_MIME)?.let {
-                if (mime.isEmpty() || mime == "audio/?") mime = it
+                if (mime.isEmpty() || it != MimeTypes.AUDIO_RAW) mime = it
+            }
+            if (mime == MimeTypes.AUDIO_AAC) {
+                codec = format.heAacLabel()
+            }
+            if (mime == MimeTypes.AUDIO_AAC || mime == MimeTypes.AUDIO_MPEG) {
+                val frames = extractor.probeFrames(VBR_PROBE_FRAMES)
+                val steady = frames.drop(VBR_PROBE_SKIP)
+                vbr = steady.size > 1 && steady.max() > steady.min() * 2
+                if (vbr && (mime == MimeTypes.AUDIO_MPEG || bitrate <= 0) && extractor.sampleTime > 0) {
+                    bitrate = (frames.sum() * 8_000_000L / extractor.sampleTime).toInt()
+                }
             }
             if (format.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
                 sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
@@ -93,7 +112,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
                 add(
                     Spec(
                         label = "FMT",
-                        value = mime.codecLabel(),
+                        value = codec ?: mime.codecLabel(),
                     ),
                 )
             }
@@ -124,7 +143,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
             if (bitrate > 0) {
                 add(
                     Spec(
-                        label = "KBPS",
+                        label = if (vbr) "VBR" else "KBPS",
                         value = "${bitrate / 1000}",
                         hot = true,
                     ),

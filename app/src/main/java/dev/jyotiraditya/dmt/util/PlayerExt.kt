@@ -2,6 +2,8 @@ package dev.jyotiraditya.dmt.util
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -11,6 +13,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.nio.ByteBuffer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -90,6 +93,43 @@ fun String.codecLabel(): String =
         else -> substringAfterLast('/').uppercase().take(8)
     }
 
-fun Int.asKHz(): String = if (this % 1000 == 0) "${this / 1000}K" else "%.1fK".format(this / 1000f)
+fun MediaFormat.heAacLabel(): String? =
+    getByteBuffer("csd-0")?.heAacLabel()
+
+private fun ByteBuffer.heAacLabel(): String? {
+    val base = position()
+    if (remaining() < 1) return null
+
+    return when ((get(base).toInt() and 0xFF) ushr 3) {
+        5 -> "HE-AAC"
+
+        29 -> "HE-AACv2"
+
+        2 -> {
+            if (remaining() < 5) return null
+            val sync = ((get(base + 2).toInt() and 0xFF) shl 3) or
+                    ((get(base + 3).toInt() and 0xFF) ushr 5)
+            val extType = get(base + 3).toInt() and 0x1F
+            val sbr = get(base + 4).toInt() and 0x80 != 0
+            if (sync == 0x2B7 && extType == 5 && sbr) "HE-AAC" else null
+        }
+
+        else -> null
+    }
+}
+
+fun MediaExtractor.probeFrames(limit: Int): List<Int> = runCatching {
+    selectTrack(0)
+    buildList {
+        while (size < limit) {
+            val bytes = sampleSize.toInt()
+            if (bytes <= 0) break
+            add(bytes)
+            if (!advance()) break
+        }
+    }
+}.getOrDefault(emptyList())
+
+fun Int.asKHz(): String = if (this % 1000 == 0) "${this / 1000}K" else "%.1fK".format(this / 1000.0)
 
 fun Long.asMB(): String = "%.1fMB".format(this / 1048576f)
