@@ -204,7 +204,7 @@ object TtmlLyricsParser {
             val synced = lines.all { it.startMs >= 0 }
             if (!synced) {
                 return Lyrics(
-                    lines = lines,
+                    lines = lines.alternateVoices(),
                     synced = false,
                 )
             }
@@ -213,6 +213,7 @@ object TtmlLyricsParser {
                 lines = lines.sortedBy { it.startMs }
                     .fillLineEnds()
                     .mergeSimultaneousDuplicates()
+                    .alternateVoices()
                     .withInterludes(),
                 synced = true,
             )
@@ -421,16 +422,14 @@ object TtmlLyricsParser {
         private val order = mutableListOf<String>()
 
         fun register(id: String?, type: String?) {
-            if (id != null && type != null) types[id] = type
+            if (id == null) return
+            if (type != null) types[id] = type
+            if (types[id] != AGENT_TYPE_GROUP && id !in order) order += id
         }
 
         fun voiceFor(agentId: String?): Voice {
             if (agentId == null) return Voice.PRIMARY
-            if (types[agentId] == AGENT_TYPE_GROUP) return Voice.GROUP
-
-            if (agentId !in order) order += agentId
-
-            return if (order.indexOf(agentId) % 2 == 0) Voice.PRIMARY else Voice.SECONDARY
+            return if (types[agentId] == AGENT_TYPE_GROUP) Voice.GROUP else Voice.PRIMARY
         }
 
         fun singerFor(agentId: String?): Int {

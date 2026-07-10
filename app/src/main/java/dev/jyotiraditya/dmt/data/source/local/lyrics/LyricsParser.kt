@@ -75,6 +75,22 @@ fun List<LyricLine>.mergeSimultaneousDuplicates(): List<LyricLine> {
     return out
 }
 
+fun List<LyricLine>.alternateVoices(): List<LyricLine> {
+    var side = Voice.SECONDARY
+    var lastSinger = -1
+
+    return map { line ->
+        if (line.voice == Voice.GROUP || line.interlude) return@map line
+
+        if (line.singer != lastSinger) {
+            side = if (side == Voice.PRIMARY) Voice.SECONDARY else Voice.PRIMARY
+            lastSinger = line.singer
+        }
+
+        line.copy(voice = side)
+    }
+}
+
 fun List<LyricLine>.withInterludes(): List<LyricLine> {
     val out = mutableListOf<LyricLine>()
     var previousEnd = 0L
