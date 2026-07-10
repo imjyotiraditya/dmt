@@ -42,14 +42,7 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew assembleDebug assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
-
-      - name: upload debug apk
-        uses: actions/upload-artifact@v7
-        with:
-          name: dmt-debug
-          path: app/build/outputs/apk/debug/*.apk
-          archive: false
+        run: ./gradlew assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
 
       - name: upload release apk
         uses: actions/upload-artifact@v7
@@ -57,3 +50,4 @@ jobs:
           name: dmt-release
           path: app/build/outputs/apk/release/*.apk
           archive: false
+          retention-days: 1
