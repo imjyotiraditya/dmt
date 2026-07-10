@@ -45,7 +45,6 @@
     <string name="set_lyrics_script">lyrics script</string>
     <string name="lyrics_script_original">original</string>
     <string name="lyrics_script_romanized">romanized</string>
-    <string name="set_accent">accent</string>
     <string name="set_eq">equalizer</string>
     <string name="set_eq_open">open</string>
     <string name="no_eq">no equalizer app found</string>

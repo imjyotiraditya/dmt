@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -107,8 +106,6 @@ fun ListRow(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val accent = LocalAccent.current
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,21 +123,17 @@ fun ListRow(
                 .background(if (current) TuiFg else Color.Transparent)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
         ) {
-            if (current) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 10.dp)
-                        .size(8.dp)
-                        .background(accent),
-                )
-            } else {
-                Text(
-                    text = "%03d".format(index + 1),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TuiFaint,
-                    modifier = Modifier.padding(end = 10.dp),
-                )
-            }
+            Text(
+                text = if (current) ">" else " ",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = TuiBg,
+            )
+            Text(
+                text = "%03d".format(index + 1),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (current) TuiBg.copy(alpha = 0.55f) else TuiFaint,
+                modifier = Modifier.padding(start = 4.dp, end = 10.dp),
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (current) "${line1}_" else line1,

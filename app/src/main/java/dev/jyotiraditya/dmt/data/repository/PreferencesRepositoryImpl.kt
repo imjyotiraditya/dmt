@@ -3,7 +3,6 @@ package dev.jyotiraditya.dmt.data.repository
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.jyotiraditya.dmt.data.source.local.KEY_ACCENT
 import dev.jyotiraditya.dmt.data.source.local.KEY_COLS
 import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_TOKEN
 import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_URL
@@ -22,7 +21,6 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_WAVE
 import dev.jyotiraditya.dmt.data.source.local.dmtStore
 import dev.jyotiraditya.dmt.data.source.local.encodeCounts
 import dev.jyotiraditya.dmt.data.source.local.toCounts
-import dev.jyotiraditya.dmt.domain.model.Accent
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.LastSession
@@ -49,7 +47,6 @@ class PreferencesRepositoryImpl @Inject constructor(
             cols = prefs[KEY_COLS] ?: 64,
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
-            accent = Accent.fromOrdinal(prefs[KEY_ACCENT] ?: 0),
             rawArt = prefs[KEY_RAW] ?: false,
             sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
                 ?: 0).mod(SourceMode.entries.size)],
@@ -65,7 +62,6 @@ class PreferencesRepositoryImpl @Inject constructor(
             it[KEY_COLS] = settings.cols
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics
-            it[KEY_ACCENT] = settings.accent.ordinal
             it[KEY_RAW] = settings.rawArt
             it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal
             settings.jellyfinUrl

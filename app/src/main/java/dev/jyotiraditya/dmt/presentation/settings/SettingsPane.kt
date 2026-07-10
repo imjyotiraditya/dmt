@@ -85,16 +85,6 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.Config(settings.copy(listSpecs = !settings.listSpecs)))
         }
-        SettingRow(
-            label = stringResource(R.string.set_accent),
-            value = settings.accent.label,
-        ) {
-            dispatch(
-                DmtAction.Config(
-                    settings.copy(accent = settings.accent.next()),
-                ),
-            )
-        }
         Caption(stringResource(R.string.tools))
         SettingRow(
             label = stringResource(R.string.set_eq),

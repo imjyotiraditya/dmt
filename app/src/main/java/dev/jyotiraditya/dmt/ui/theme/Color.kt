@@ -2,12 +2,12 @@ package dev.jyotiraditya.dmt.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val TuiBg = Color(0xFF121314)
-val TuiSurface = Color(0xFF191A1C)
-val TuiFg = Color(0xFFD8D6D0)
-val TuiBright = Color(0xFFEDEBE4)
-val TuiDim = Color(0xFF83827D)
-val TuiFaint = Color(0xFF4C4C49)
-val TuiLine = Color(0xFF2A2B2D)
-val TuiAccent = Color(0xFFE8642C)
-val TuiRed = Color(0xFFC96B6B)
+val TuiBg = Color(0xFF0A0A0B)
+val TuiSurface = Color(0xFF131415)
+val TuiFg = Color(0xFFC6CBCC)
+val TuiBright = Color(0xFFDFE4E5)
+val TuiDim = Color(0xFF767D80)
+val TuiFaint = Color(0xFF3C4245)
+val TuiLine = Color(0xFF1E2122)
+val TuiAccent = Color(0xFFE8A33D)
+val TuiRed = Color(0xFFB85C50)

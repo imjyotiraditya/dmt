@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,8 +28,6 @@ import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.PlayerEffect
 import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
 import dev.jyotiraditya.dmt.ui.theme.DMTTheme
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
-import dev.jyotiraditya.dmt.ui.theme.color
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -59,20 +56,16 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    CompositionLocalProvider(
-                        LocalAccent provides state.settings.accent.color,
-                    ) {
-                        Box {
-                            DmtScreen(
-                                state = state,
-                                dispatch = playerViewModel::onIntent,
-                            )
-                            AnimatedVisibility(
-                                visible = showSplash,
-                                exit = fadeOut(tween(450)),
-                            ) {
-                                SplashOverlay { showSplash = false }
-                            }
+                    Box {
+                        DmtScreen(
+                            state = state,
+                            dispatch = playerViewModel::onIntent,
+                        )
+                        AnimatedVisibility(
+                            visible = showSplash,
+                            exit = fadeOut(tween(450)),
+                        ) {
+                            SplashOverlay { showSplash = false }
                         }
                     }
                 }

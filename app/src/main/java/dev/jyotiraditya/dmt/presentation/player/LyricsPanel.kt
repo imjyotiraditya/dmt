@@ -66,6 +66,10 @@ fun LyricsPanel(
         }
     }
 
+    LaunchedEffect(lyrics) {
+        listState.scrollToItem(0)
+    }
+
     LaunchedEffect(scrollTarget) {
         if (lyrics.synced && scrollTarget >= 0) {
             listState.animateScrollToItem((scrollTarget - 2).coerceAtLeast(0))
@@ -184,7 +188,7 @@ private fun TextUnit.scaledBy(factor: Float): TextUnit = (value * factor).sp
 private fun singerColorFor(line: LyricLine, palette: List<Color>): Color =
     when {
         line.interlude -> palette.first()
-        line.singer < 0 -> TuiBright
+        line.singer < 0 -> GroupVoice
         else -> palette[line.singer % palette.size]
     }
 
