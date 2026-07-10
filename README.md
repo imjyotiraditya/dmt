@@ -27,22 +27,26 @@ this is the thank you note.
   shuffle and repeat buttons on the car screen
 - picks up where you left off: last queue, track and position restore on launch,
   deleted files silently drop out
-- format nerd info when you want it: codec, bitrate, sample rate, bit depth, size
+- format nerd info when you want it: codec, bitrate, sample rate, bit depth, size,
+  down to spotting he-aac and vbr encodes
+- bundled ffmpeg decoders, so formats the platform won't touch still play
 - four accents (orange, moss, steel, mono) and the launcher icon follows
 - hooks into the system equalizer, media notification with album art
 - handles big libraries without falling over
 - lyrics read straight from the file tags (mp3, flac, m4a), supporting synced
-  apple ttml (line and word timing, background vocals, multiple singers) and
-  lrc, with a karaoke view in the player, plus translation and transliteration
-  where the file has them
+  apple ttml (line and word timing, background vocals, duet sides, multiple
+  singers) and lrc, with a karaoke view in the player, plus translation,
+  transliteration and a script toggle (original or romanized) where the
+  file has them
 - shows up in external media widgets (kustom and the like) so they can read
   what's playing
 
 ## building
 
-open in android studio and hit run. minSdk 33.
-release builds are minified and land around 4mb.
-ci builds signed debug and release apks on every push.
+open in android studio and hit run. minSdk 31.
+release builds are minified and land around 12mb, most of it the
+bundled ffmpeg decoders.
+ci builds a signed release apk on every push.
 
 ## stack
 
