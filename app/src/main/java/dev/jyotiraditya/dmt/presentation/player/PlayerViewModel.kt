@@ -1,6 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.player
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -21,7 +20,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
-import dev.jyotiraditya.dmt.domain.model.Accent
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.SourceMode
@@ -87,7 +85,6 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val settings = settingsRepository.settings.first()
             reduce { it.copy(settings = settings) }
-            applyIcon(settings.accent)
         }
         viewModelScope.launch {
             statsRepository.stats.collect { stats ->
@@ -215,7 +212,6 @@ class PlayerViewModel @Inject constructor(
                     if (old.sourceMode != intent.settings.sourceMode) scan()
                 }
                 if (old.cols != intent.settings.cols) loadCover(c?.currentMediaItem)
-                if (old.accent != intent.settings.accent) applyIcon(intent.settings.accent)
             }
 
             is DmtAction.ShowLogin ->
@@ -544,34 +540,6 @@ class PlayerViewModel @Inject constructor(
                     else -> 60
                 }
                 reduce { it.copy(sleepMinutes = step, sleepLeftMs = left) }
-            }
-        }
-    }
-
-    private fun applyIcon(accent: Accent) {
-        Accent.entries.forEach { entry ->
-            val component = ComponentName(context, "dev.jyotiraditya.dmt.${entry.launcherAlias}")
-            val desired = if (entry == accent) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
-            val current = context.packageManager.getComponentEnabledSetting(component)
-            val effective = if (current == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
-                if (entry.ordinal == 0) {
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                } else {
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                }
-            } else {
-                current
-            }
-            if (effective != desired) {
-                context.packageManager.setComponentEnabledSetting(
-                    component,
-                    desired,
-                    PackageManager.DONT_KILL_APP,
-                )
             }
         }
     }

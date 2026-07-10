@@ -1,10 +1,10 @@
 package dev.jyotiraditya.dmt.domain.model
 
-enum class Accent(val label: String, val launcherAlias: String) {
-    ORANGE("orange", "LauncherOrange"),
-    MOSS("moss", "LauncherMoss"),
-    STEEL("steel", "LauncherSteel"),
-    MONO("mono", "LauncherMono"),
+enum class Accent(val label: String) {
+    ORANGE("orange"),
+    MOSS("moss"),
+    STEEL("steel"),
+    MONO("mono"),
     ;
 
     fun next(): Accent = entries[(ordinal + 1) % entries.size]
