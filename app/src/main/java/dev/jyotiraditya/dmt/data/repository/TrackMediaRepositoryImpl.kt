@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaCodecList
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -58,6 +59,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
                     add(Spec(label = "KBPS", value = "${track.bitrate / 1000}", hot = true))
                 }
                 track.size.takeIf { it > 0 }?.let { add(Spec(label = "SIZE", value = it.asMB())) }
+                addAll(decoderSpecs(track.mime))
             }
         }
         var mime = track?.mime.orEmpty()
@@ -169,6 +171,30 @@ class TrackMediaRepositoryImpl @Inject constructor(
                     ),
                 )
             }
+            addAll(decoderSpecs(mime))
         }
+    }
+
+    private fun decoderSpecs(mime: String): List<Spec> = buildList {
+        if (mime.isEmpty()) return@buildList
+        MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos
+            .firstOrNull { info ->
+                !info.isEncoder &&
+                        info.supportedTypes.any { it.equals(mime, ignoreCase = true) }
+            }
+            ?.let { info ->
+                add(
+                    Spec(
+                        label = "DEC",
+                        value = info.name,
+                    ),
+                )
+                add(
+                    Spec(
+                        label = "HW",
+                        value = if (info.isHardwareAccelerated) "YES" else "NO",
+                    ),
+                )
+            }
     }
 }

@@ -87,6 +87,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+private val PLAYER_CHIP_LABELS = setOf("FMT", "BIT", "RATE", "KBPS", "VBR")
+
 @Composable
 fun ExpandedPlayer(
     state: DmtState,
@@ -511,9 +513,11 @@ private fun TrackMeta(state: DmtState) {
                 }
                 .horizontalScroll(chipScroll),
         ) {
-            state.tech.forEach { spec ->
-                TuiChip("${spec.label}:${spec.value}".lowercase())
-            }
+            state.tech
+                .filter { it.label in PLAYER_CHIP_LABELS }
+                .forEach { spec ->
+                    TuiChip("${spec.label}:${spec.value}".lowercase())
+                }
         }
     }
 }
