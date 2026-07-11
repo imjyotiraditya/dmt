@@ -79,7 +79,10 @@ class MainActivity : ComponentActivity() {
             putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
             putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
         }
-        if (intent.resolveActivity(packageManager) != null) {
+        val handler = packageManager.queryIntentActivities(intent, 0)
+            .firstOrNull { it.activityInfo.packageName != "com.android.musicfx" }
+        if (handler != null) {
+            intent.setClassName(handler.activityInfo.packageName, handler.activityInfo.name)
             startActivity(intent)
         } else {
             playerViewModel.onIntent(DmtAction.NoEqualizer)

@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.playback
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.audiofx.AudioEffect
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
@@ -151,8 +152,21 @@ class PlaybackService : MediaLibraryService() {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     saveSession()
                 }
+
+                override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                    broadcastEffectSession(
+                        AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION,
+                        audioSessionId,
+                    )
+                }
             },
         )
+        if (player.audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
+            broadcastEffectSession(
+                AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION,
+                player.audioSessionId,
+            )
+        }
         val artworkLoader = DataSourceBitmapLoader.Builder(this).build()
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .setBitmapLoader(FreshCopyBitmapLoader(CacheBitmapLoader(artworkLoader)))
@@ -572,7 +586,14 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun onDestroy() {
+        (mediaSession?.player as? ExoPlayer)?.let {
+            broadcastEffectSession(
+                AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION,
+                it.audioSessionId,
+            )
+        }
         scope.cancel()
         mediaSession?.run {
             player.release()
@@ -580,5 +601,15 @@ class PlaybackService : MediaLibraryService() {
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    private fun broadcastEffectSession(action: String, sessionId: Int) {
+        sendBroadcast(
+            Intent(action).apply {
+                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
+            },
+        )
     }
 }
