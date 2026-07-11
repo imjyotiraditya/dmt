@@ -11,7 +11,7 @@ import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 
-enum class DmtView { LIBRARY, ALBUMS, FILES, SETTINGS, STATS, SOURCES, SOURCE_LOGIN }
+enum class DmtView { LIBRARY, ALBUMS, SETTINGS, STATS, BLOCKLIST, SOURCES, SOURCE_LOGIN }
 
 data class DmtState(
     val hasPermission: Boolean = false,
@@ -22,11 +22,9 @@ data class DmtState(
     val filtered: List<Track> = emptyList(),
     val filteredAlbums: List<Album> = emptyList(),
     val folders: List<Folder> = emptyList(),
-    val filteredFolders: List<Folder> = emptyList(),
     val view: DmtView = DmtView.LIBRARY,
     val loginSource: SourceMode = SourceMode.JELLYFIN,
     val openAlbum: String? = null,
-    val openFolder: String? = null,
     val nowPlayingId: String? = null,
     val title: String = "",
     val artist: String = "",
@@ -58,7 +56,6 @@ sealed interface DmtAction {
     data class Query(val value: String) : DmtAction
     data class Show(val view: DmtView) : DmtAction
     data class OpenAlbum(val name: String?) : DmtAction
-    data class OpenFolder(val path: String?) : DmtAction
     data class PlayAt(val list: List<Track>, val index: Int) : DmtAction
     data class Enqueue(val list: List<Track>, val label: String) : DmtAction
     data class Jump(val index: Int) : DmtAction

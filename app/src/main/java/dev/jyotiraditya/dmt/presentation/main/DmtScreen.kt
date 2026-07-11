@@ -48,7 +48,6 @@ import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
-import dev.jyotiraditya.dmt.presentation.library.FilesPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
@@ -59,6 +58,7 @@ import dev.jyotiraditya.dmt.presentation.player.MiniPlayer
 import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
+import dev.jyotiraditya.dmt.presentation.settings.BlocklistPane
 import dev.jyotiraditya.dmt.presentation.settings.SettingsPane
 import dev.jyotiraditya.dmt.presentation.settings.SourceLoginPane
 import dev.jyotiraditya.dmt.presentation.settings.SourcesPane
@@ -93,7 +93,6 @@ fun DmtScreen(
 
     val backHandled = state.expanded ||
             (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
-            (state.view == DmtView.FILES && state.openFolder != null) ||
             state.view != DmtView.LIBRARY
     BackHandler(enabled = backHandled) {
         when {
@@ -101,13 +100,12 @@ fun DmtScreen(
 
             state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
 
+            state.view == DmtView.BLOCKLIST -> dispatch(DmtAction.Show(DmtView.SETTINGS))
+
             state.view == DmtView.SOURCE_LOGIN -> dispatch(DmtAction.Show(DmtView.SOURCES))
 
             state.view == DmtView.ALBUMS && state.openAlbum != null ->
                 dispatch(DmtAction.OpenAlbum(null))
-
-            state.view == DmtView.FILES && state.openFolder != null ->
-                dispatch(DmtAction.OpenFolder(null))
 
             else -> dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
@@ -222,13 +220,13 @@ private fun PaneHost(
     Column(modifier = modifier) {
         when {
             state.view == DmtView.STATS -> StatsPane(state, dispatch)
+            state.view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
             state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
             state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
             state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
             state.scanning -> Caption(stringResource(R.string.scanning))
-            state.view == DmtView.LIBRARY -> LibraryPane(state, dispatch)
             state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
-            else -> FilesPane(state, dispatch)
+            else -> LibraryPane(state, dispatch)
         }
     }
 }
@@ -279,15 +277,6 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.Show(DmtView.ALBUMS))
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        TuiTab(
-            label = stringResource(R.string.tab_files),
-            active = state.view == DmtView.FILES,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(DmtView.FILES))
-        }
-
         Spacer(modifier = Modifier.weight(1f))
 
         val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
@@ -373,13 +362,6 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             active = state.view == DmtView.ALBUMS,
         ) {
             dispatch(DmtAction.Show(DmtView.ALBUMS))
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        TuiTab(
-            label = stringResource(R.string.tab_files),
-            active = state.view == DmtView.FILES,
-        ) {
-            dispatch(DmtAction.Show(DmtView.FILES))
         }
     }
 }

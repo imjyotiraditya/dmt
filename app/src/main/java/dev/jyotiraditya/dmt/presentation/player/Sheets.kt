@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.presentation.player
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,7 +69,10 @@ fun SheetHeader(title: String, meta: String? = null) {
             .fillMaxWidth()
             .padding(vertical = 8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
+        ) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
@@ -78,6 +82,8 @@ fun SheetHeader(title: String, meta: String? = null) {
                 text = " $title",
                 style = MaterialTheme.typography.labelMedium,
                 color = TuiDim,
+                maxLines = 1,
+                modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
             )
         }
         if (meta != null) {

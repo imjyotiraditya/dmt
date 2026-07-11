@@ -21,7 +21,6 @@ import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Album
-import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
@@ -123,9 +122,6 @@ class PlayerViewModel @Inject constructor(
             }
         }
 
-    private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
-        if (query.isBlank()) folders else folders.filter { it.name.contains(query, true) }
-
     override fun onIntent(intent: DmtAction) {
         val c = controller
         when (intent) {
@@ -140,13 +136,11 @@ class PlayerViewModel @Inject constructor(
                     query = intent.value,
                     filtered = filter(it.tracks, intent.value),
                     filteredAlbums = filterAlbums(it.albums, intent.value),
-                    filteredFolders = filterFolders(it.folders, intent.value),
                 )
             }
 
             is DmtAction.Show -> reduce { it.copy(view = intent.view, error = null) }
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
-            is DmtAction.OpenFolder -> reduce { it.copy(openFolder = intent.path) }
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
@@ -209,7 +203,11 @@ class PlayerViewModel @Inject constructor(
                 }
                 viewModelScope.launch {
                     settingsRepository.save(intent.settings)
-                    if (old.sourceMode != intent.settings.sourceMode) scan()
+                    if (old.sourceMode != intent.settings.sourceMode ||
+                        old.blockedFolders != intent.settings.blockedFolders
+                    ) {
+                        scan()
+                    }
                 }
                 if (old.cols != intent.settings.cols) loadCover(c?.currentMediaItem)
             }
@@ -368,7 +366,6 @@ class PlayerViewModel @Inject constructor(
                         folders = emptyList(),
                         filtered = emptyList(),
                         filteredAlbums = emptyList(),
-                        filteredFolders = emptyList(),
                         error = context.getString(
                             R.string.scan_failed,
                             state.settings.sourceMode.label,
@@ -377,14 +374,10 @@ class PlayerViewModel @Inject constructor(
                 }
                 return@launch
             }
-            val (filteredTracks, filteredAlbums, filteredFolders) = withContext(
+            val (filteredTracks, filteredAlbums) = withContext(
                 dispatchers.default,
             ) {
-                Triple(
-                    filter(library.tracks, query),
-                    filterAlbums(library.albums, query),
-                    filterFolders(library.folders, query),
-                )
+                filter(library.tracks, query) to filterAlbums(library.albums, query)
             }
             reduce {
                 it.copy(
@@ -394,7 +387,6 @@ class PlayerViewModel @Inject constructor(
                     folders = library.folders,
                     filtered = filteredTracks,
                     filteredAlbums = filteredAlbums,
-                    filteredFolders = filteredFolders,
                     error = null,
                 )
             }

@@ -10,12 +10,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
+import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MediaRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    private val settingsRepository: SettingsRepository,
 ) : MediaRepository {
 
     private val projection = arrayOf(
@@ -32,8 +35,9 @@ class MediaRepositoryImpl @Inject constructor(
         MediaStore.Audio.Media.TRACK,
     )
 
-    override suspend fun scan(): List<Track> =
-        buildList {
+    override suspend fun scan(): List<Track> {
+        val blocked = settingsRepository.settings.first().blockedFolders
+        return buildList {
             runCatching {
                 context.contentResolver.query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -42,10 +46,14 @@ class MediaRepositoryImpl @Inject constructor(
                     null,
                     "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC",
                 )?.use { cursor ->
-                    while (cursor.moveToNext()) add(cursor.toTrack())
+                    while (cursor.moveToNext()) {
+                        val track = cursor.toTrack()
+                        if (track.path.substringBeforeLast('/') !in blocked) add(track)
+                    }
                 }
             }
         }
+    }
 }
 
 private fun Cursor.text(column: String, fallback: String): String =

@@ -14,7 +14,9 @@ this is the thank you note.
   server instead: sources get their own screen, tap to switch, log in once
   and it remembers the server and token (never the password). covers, lyrics
   and format info come from the server too
-- library, albums and folders tabs, all searchable, long-press anything to queue it
+- library and albums tabs, both searchable; tap an album to play it, [↗] to open it,
+  long-press for play/queue actions
+- a folder blocklist in cfg keeps voice notes and other junk out of the library
 - cover art rendered as colored ascii with a light sweep while playing.
   tracks without art get a generated ascii pattern of their own.
   there is a raw artwork toggle if ascii is not your thing

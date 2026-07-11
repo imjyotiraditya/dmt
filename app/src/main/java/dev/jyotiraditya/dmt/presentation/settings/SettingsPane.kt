@@ -23,6 +23,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.tuiClickable
+import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
@@ -103,6 +104,18 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             value = stringResource(R.string.run),
         ) {
             dispatch(DmtAction.Rescan)
+        }
+        if (settings.sourceMode == SourceMode.LOCAL) {
+            SettingRow(
+                label = stringResource(R.string.blocklist_title),
+                value = if (settings.blockedFolders.isEmpty()) {
+                    stringResource(R.string.blocklist_edit)
+                } else {
+                    stringResource(R.string.blocklist_edit_count, settings.blockedFolders.size)
+                },
+            ) {
+                dispatch(DmtAction.Show(DmtView.BLOCKLIST))
+            }
         }
 
         Caption(stringResource(R.string.about))

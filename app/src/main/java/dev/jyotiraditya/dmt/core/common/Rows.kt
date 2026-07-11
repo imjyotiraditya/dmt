@@ -105,6 +105,7 @@ fun ListRow(
     current: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -158,6 +159,7 @@ fun ListRow(
                     )
                 }
             }
+            trailing?.invoke()
         }
         Box(
             modifier = Modifier

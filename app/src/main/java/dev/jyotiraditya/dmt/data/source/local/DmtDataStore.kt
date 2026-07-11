@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 
 val Context.dmtStore by preferencesDataStore(name = "dmt")
@@ -15,6 +16,7 @@ val KEY_COLS = intPreferencesKey("cols")
 val KEY_SPECS = booleanPreferencesKey("specs")
 val KEY_RAW = booleanPreferencesKey("raw_art")
 val KEY_ROMANIZED_LYRICS = booleanPreferencesKey("romanized_lyrics")
+val KEY_BLOCKED_FOLDERS = stringSetPreferencesKey("blocked_folders")
 val KEY_SPEED = floatPreferencesKey("speed")
 val KEY_STAT_TOTAL = longPreferencesKey("stat_total_ms")
 val KEY_STAT_COUNTS = stringPreferencesKey("stat_counts")

@@ -1,19 +1,18 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">dmt</string>
+    <string name="app_name" translatable="false">dmt</string>
     <string name="tagline">dear music, thanks</string>
 
     <string name="tab_library">1:library</string>
     <string name="tab_albums">2:albums</string>
-    <string name="tab_files">3:files</string>
     <string name="auto_tracks">tracks</string>
     <string name="auto_albums">albums</string>
     <string name="auto_folders">folders</string>
     <string name="auto_shuffle">shuffle</string>
     <string name="auto_repeat">repeat</string>
-    <string name="cfg">cfg</string>
-    <string name="tab_sources">src</string>
+    <string name="cfg" translatable="false">cfg</string>
+    <string name="tab_sources" translatable="false">src</string>
 
-    <string name="clear">[x]</string>
+    <string name="clear" translatable="false">[x]</string>
     <string name="scanning">scanning library&#8230;</string>
     <string name="no_match">no match</string>
     <string name="no_audio">no tracks in %1$s - try rescanning from cfg</string>
@@ -25,10 +24,10 @@
 
     <string name="now_playing">now playing</string>
     <string name="no_cover">[ no cover ]</string>
-    <string name="close">v</string>
-    <string name="info">i</string>
-    <string name="lyrics_key">lyr</string>
-    <string name="back">../</string>
+    <string name="close" translatable="false">v</string>
+    <string name="info" translatable="false">i</string>
+    <string name="lyrics_key" translatable="false">lyr</string>
+    <string name="back" translatable="false">../</string>
     <string name="queue_key">[ queue %1$d/%2$d ]</string>
     <string name="next_up">next: %1$s</string>
     <string name="end_of_queue">end of queue</string>
@@ -51,6 +50,13 @@
     <string name="queued">queued: %1$s</string>
     <string name="playback_error">playback error: %1$s</string>
     <string name="set_rescan">rescan library</string>
+    <string name="action_play">play</string>
+    <string name="action_queue">queue</string>
+    <string name="open_album" translatable="false">[↗]</string>
+    <string name="blocklist_title">folder blocklist</string>
+    <string name="blocklist_edit">edit</string>
+    <string name="blocklist_edit_count">%1$d hidden</string>
+    <string name="blocklist_hint">[x] folders are hidden from the library</string>
     <string name="run">run</string>
     <string name="sources_title">sources</string>
     <string name="sources_hint">(*) active source - tap to switch</string>
@@ -58,7 +64,7 @@
     <string name="source_logout">log out</string>
     <string name="source_login_title">connect to %1$s</string>
     <string name="source_url_label">server</string>
-    <string name="source_url_hint">http://192.168.1.10:8096</string>
+    <string name="source_url_hint" translatable="false">http://192.168.1.10:8096</string>
     <string name="source_user_label">user</string>
     <string name="source_user_hint">username</string>
     <string name="source_pass_label">pass</string>
@@ -76,9 +82,9 @@
     <string name="stat_top">most played</string>
     <string name="stat_view">view</string>
     <string name="stat_library">library</string>
-    <string name="stat_tracks">tracks</string>
-    <string name="stat_albums">albums</string>
-    <string name="stat_folders">folders</string>
+    <string name="stat_tracks">@string/auto_tracks</string>
+    <string name="stat_albums">@string/auto_albums</string>
+    <string name="stat_folders">@string/auto_folders</string>
     <string name="stat_empty">nothing played yet</string>
     <string name="about">about</string>
     <string name="about_title">dmt · dear music, thanks</string>
@@ -99,9 +105,5 @@
     <plurals name="search_albums_hint">
         <item quantity="one">search %1$d album</item>
         <item quantity="other">search %1$d albums</item>
-    </plurals>
-    <plurals name="search_folders_hint">
-        <item quantity="one">search %1$d folder</item>
-        <item quantity="other">search %1$d folders</item>
     </plurals>
 </resources>
