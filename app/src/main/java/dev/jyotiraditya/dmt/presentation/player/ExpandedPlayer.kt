@@ -396,7 +396,10 @@ private fun ArtSlot(
             isPlaying = state.isPlaying,
             romanized = state.settings.romanizedLyrics,
             contentAspect = aspect,
-            onSeekFraction = { dispatch(DmtAction.Seek(it)) },
+            onSeekFraction = {
+                dispatch(DmtAction.Seek(it))
+                if (!state.isPlaying) dispatch(DmtAction.TogglePlay)
+            },
             modifier = modifier,
         )
     } else {
