@@ -36,10 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,6 +45,8 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.TuiTab
+import dev.jyotiraditya.dmt.core.common.fitScaleFor
+import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.FilesPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
@@ -78,8 +78,7 @@ fun DmtScreen(
     var showQueueSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
-    val windowSize = LocalWindowInfo.current.containerSize
-    val landscape = windowSize.width > windowSize.height
+    val landscape = isLandscapeWindow()
 
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -120,11 +119,7 @@ fun DmtScreen(
             .background(TuiBg),
     ) {
         if (landscape) {
-            val density = LocalDensity.current
-            val windowHeightDp = with(density) { windowSize.height.toDp().value }
-            val fitScale = (windowHeightDp / 400f).coerceIn(0.85f, 1f)
-
-            FitScaled(fitScale) {
+            FitScaled(fitScaleFor(designHeightDp = 400f, minScale = 0.85f)) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()

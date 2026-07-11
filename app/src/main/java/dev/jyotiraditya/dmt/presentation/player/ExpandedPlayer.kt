@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,8 +68,12 @@ import dev.jyotiraditya.dmt.core.common.TuiChip
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.TuiStatus
+import dev.jyotiraditya.dmt.core.common.fitScaleFor
+import dev.jyotiraditya.dmt.core.common.isCompactWindow
+import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.core.common.rememberCursorAlpha
 import dev.jyotiraditya.dmt.core.common.tuiClickable
+import dev.jyotiraditya.dmt.core.common.windowDpSize
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
@@ -91,14 +94,11 @@ fun ExpandedPlayer(
     onInfo: () -> Unit,
     onQueue: () -> Unit,
 ) {
-    val windowSize = LocalWindowInfo.current.containerSize
-    val landscape = windowSize.width > windowSize.height
+    val windowSize = windowDpSize()
+    val landscape = isLandscapeWindow()
     var showLyrics by rememberSaveable { mutableStateOf(false) }
 
-    val density = LocalDensity.current
-    val windowWidthDp = with(density) { windowSize.width.toDp().value }
-    val windowHeightDp = with(density) { windowSize.height.toDp().value }
-    val dismissThreshold = with(density) { 120.dp.toPx() }
+    val dismissThreshold = with(LocalDensity.current) { 120.dp.toPx() }
     val dragOffset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
@@ -133,14 +133,26 @@ fun ExpandedPlayer(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
     ) {
+        val compact = isCompactWindow()
         val fitScale =
             if (landscape) {
-                (windowHeightDp / 480f).coerceIn(0.6f, 1f)
+                fitScaleFor(designHeightDp = 480f, minScale = 0.6f)
             } else {
-                (windowHeightDp / (windowWidthDp + 560f)).coerceIn(0.75f, 1f)
+                fitScaleFor(designHeightDp = windowSize.width.value + 560f, minScale = 0.75f)
             }
-        FitScaled(fitScale) {
-            if (landscape) {
+        when {
+            compact ->
+                PortraitPlayer(
+                    state = state,
+                    dispatch = dispatch,
+                    onInfo = onInfo,
+                    onQueue = onQueue,
+                    showLyrics = showLyrics,
+                    onToggleLyrics = { showLyrics = !showLyrics },
+                    compact = true,
+                )
+
+            landscape -> FitScaled(fitScale) {
                 LandscapePlayer(
                     state = state,
                     dispatch = dispatch,
@@ -149,7 +161,9 @@ fun ExpandedPlayer(
                     showLyrics = showLyrics,
                     onToggleLyrics = { showLyrics = !showLyrics },
                 )
-            } else {
+            }
+
+            else -> FitScaled(fitScale) {
                 PortraitPlayer(
                     state = state,
                     dispatch = dispatch,
@@ -171,29 +185,34 @@ private fun PortraitPlayer(
     onQueue: () -> Unit,
     showLyrics: Boolean,
     onToggleLyrics: () -> Unit,
+    compact: Boolean = false,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         PlayerHeader(
             dispatch = dispatch,
             onInfo = onInfo,
-            hasLyrics = state.lyrics != null,
+            hasLyrics = !compact && state.lyrics != null,
             showLyrics = showLyrics,
             onToggleLyrics = onToggleLyrics,
         )
 
-        Box(
-            contentAlignment = Alignment.BottomCenter,
-            modifier = Modifier
-                .weight(5f)
-                .padding(top = 14.dp)
-                .fillMaxWidth(),
-        ) {
+        if (!compact) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.aspectRatio(1f),
+                modifier = Modifier
+                    .weight(5f)
+                    .padding(top = 14.dp)
+                    .fillMaxWidth(),
             ) {
-                ArtSlot(state, dispatch, showLyrics)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.aspectRatio(1f),
+                ) {
+                    ArtSlot(state, dispatch, showLyrics)
+                }
             }
+        } else {
+            Spacer(modifier = Modifier.height(14.dp))
         }
         ControlsBlock(state, dispatch)
 
