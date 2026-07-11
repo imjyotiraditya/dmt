@@ -9,23 +9,15 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jyotiraditya.dmt.presentation.main.DmtScreen
-import dev.jyotiraditya.dmt.presentation.main.SplashOverlay
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.PlayerEffect
 import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
@@ -49,7 +41,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val state by playerViewModel.state.collectAsState()
-                    var showSplash by remember { mutableStateOf(true) }
 
                     LaunchedEffect(Unit) {
                         playerViewModel.effects.collect { effect ->
@@ -61,18 +52,10 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    Box {
-                        DmtScreen(
-                            state = state,
-                            dispatch = playerViewModel::onIntent,
-                        )
-                        AnimatedVisibility(
-                            visible = showSplash,
-                            exit = fadeOut(tween(450)),
-                        ) {
-                            SplashOverlay { showSplash = false }
-                        }
-                    }
+                    DmtScreen(
+                        state = state,
+                        dispatch = playerViewModel::onIntent,
+                    )
                 }
             }
         }
