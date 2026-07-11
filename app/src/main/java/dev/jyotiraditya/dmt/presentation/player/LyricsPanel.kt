@@ -36,7 +36,6 @@ import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Transliteration
 import dev.jyotiraditya.dmt.domain.model.Voice
-import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -323,7 +322,6 @@ private fun InterludeRow(
 
 private data class SweepColors(
     val sung: Color,
-    val sweepTail: Color,
     val unsung: Color,
 )
 
@@ -356,13 +354,11 @@ private fun LyricRunText(
     val sweepColors = if (run.background) {
         SweepColors(
             sung = TuiFg,
-            sweepTail = TuiDim,
             unsung = TuiFaint,
         )
     } else {
         SweepColors(
             sung = singerColor,
-            sweepTail = TuiFg,
             unsung = TuiDim,
         )
     }
@@ -380,11 +376,15 @@ private fun LyricRunText(
                         val fraction =
                             ((positionMs - word.startMs).toFloat() / span).coerceIn(0f, 1f)
                         val length = word.end - word.start
-                        val filled = word.start +
-                                ceil(fraction * length).toInt().coerceIn(1, length)
-                        addStyle(SpanStyle(color = sweepColors.sung), word.start, filled)
-                        if (filled < word.end) {
-                            addStyle(SpanStyle(color = sweepColors.sweepTail), filled, word.end)
+                        val exact = fraction * length
+                        val sungEnd = word.start + exact.toInt().coerceIn(0, length - 1)
+                        if (sungEnd > word.start) {
+                            addStyle(SpanStyle(color = sweepColors.sung), word.start, sungEnd)
+                        }
+                        val edge = lerp(sweepColors.unsung, sweepColors.sung, exact - exact.toInt())
+                        addStyle(SpanStyle(color = edge), sungEnd, sungEnd + 1)
+                        if (sungEnd + 1 < word.end) {
+                            addStyle(SpanStyle(color = sweepColors.unsung), sungEnd + 1, word.end)
                         }
                     }
 
@@ -401,7 +401,7 @@ private fun LyricRunText(
         run.background && sweepState == LineState.ACTIVE -> TuiFg
         run.background && sweepState == LineState.PASSED -> TuiFaint
         run.background -> TuiDim
-        sweepState == LineState.ACTIVE && karaoke -> TuiBright
+        sweepState == LineState.ACTIVE && karaoke -> TuiDim
         sweepState == LineState.ACTIVE -> singerColor
         sweepState == LineState.PASSED && hasSinger -> lerp(singerColor, TuiFaint, 0.8f)
         sweepState == LineState.PASSED -> TuiFaint
