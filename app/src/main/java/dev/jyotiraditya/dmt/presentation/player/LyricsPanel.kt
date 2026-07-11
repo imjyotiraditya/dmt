@@ -46,6 +46,7 @@ private enum class LineState { ACTIVE, PASSED, UPCOMING }
 @Composable
 fun LyricsPanel(
     lyrics: Lyrics,
+    trackId: String?,
     positionMs: Long,
     durationMs: Long,
     isPlaying: Boolean,
@@ -65,7 +66,7 @@ fun LyricsPanel(
         }
     }
 
-    LaunchedEffect(lyrics) {
+    LaunchedEffect(trackId) {
         listState.scrollToItem(0)
     }
 

@@ -393,6 +393,7 @@ private fun ArtSlot(
         val aspect = state.cover?.let { it.width.toFloat() / it.height } ?: 1f
         LyricsPanel(
             lyrics = lyrics,
+            trackId = state.nowPlayingId,
             positionMs = state.positionMs,
             durationMs = state.durationMs,
             isPlaying = state.isPlaying,
