@@ -8,7 +8,10 @@ import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Size
+import androidx.annotation.OptIn
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.MediaFormatUtil
+import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -44,6 +47,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
             }.getOrNull()
         }
 
+    @OptIn(UnstableApi::class)
     override fun techSpecs(uri: Uri, track: Track?): List<Spec> {
         if (track?.source == TrackSource.JELLYFIN) {
             return buildList {
@@ -60,6 +64,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
         var codec: String? = null
         var vbr = false
         var bitrate = track?.bitrate ?: 0
+        var maxBitrate = 0
         var sampleRate: Int? = null
         var channels: Int? = null
         var bits: Int? = null
@@ -89,6 +94,9 @@ class TrackMediaRepositoryImpl @Inject constructor(
             }
             if (bitrate <= 0 && format.containsKey(MediaFormat.KEY_BIT_RATE)) {
                 bitrate = format.getInteger(MediaFormat.KEY_BIT_RATE)
+            }
+            if (format.containsKey(MediaFormatUtil.KEY_MAX_BIT_RATE)) {
+                maxBitrate = format.getInteger(MediaFormatUtil.KEY_MAX_BIT_RATE)
             }
             extractor.release()
         }
@@ -144,7 +152,11 @@ class TrackMediaRepositoryImpl @Inject constructor(
                 add(
                     Spec(
                         label = if (vbr) "VBR" else "KBPS",
-                        value = "${bitrate / 1000}",
+                        value = if (vbr && maxBitrate > bitrate) {
+                            "${bitrate / 1000}/${maxBitrate / 1000}"
+                        } else {
+                            "${bitrate / 1000}"
+                        },
                         hot = true,
                     ),
                 )
