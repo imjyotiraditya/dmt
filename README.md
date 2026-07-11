@@ -40,6 +40,8 @@ this is the thank you note.
   singers) and lrc, with a karaoke view in the player, plus translation,
   transliteration and a script toggle (original or romanized) where the
   file has them
+- when a file has no lyrics, the lyr? key fetches them from lrclib on
+  demand - never automatically
 - shows up in external media widgets (kustom and the like) so they can read
   what's playing
 
@@ -55,4 +57,5 @@ ci builds a signed release apk on every push.
 kotlin, compose, media3, datastore. single state + actions, no magic.
 
 no ads, no analytics. the network is only ever used to talk to your own
-jellyfin server, and only if you connect one. it just plays music.
+jellyfin server, and to lrclib when you ask for missing lyrics. it just
+plays music.

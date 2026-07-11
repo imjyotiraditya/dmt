@@ -193,7 +193,8 @@ private fun PortraitPlayer(
         PlayerHeader(
             dispatch = dispatch,
             onInfo = onInfo,
-            hasLyrics = !compact && state.lyrics != null,
+            lyricsKeyVisible = !compact,
+            state = state,
             showLyrics = showLyrics,
             onToggleLyrics = onToggleLyrics,
         )
@@ -237,7 +238,8 @@ private fun LandscapePlayer(
         PlayerRail(
             dispatch = dispatch,
             onInfo = onInfo,
-            hasLyrics = state.lyrics != null,
+            lyricsKeyVisible = true,
+            state = state,
             showLyrics = showLyrics,
             onToggleLyrics = onToggleLyrics,
         )
@@ -278,7 +280,8 @@ private fun LandscapePlayer(
 private fun PlayerRail(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
-    hasLyrics: Boolean,
+    lyricsKeyVisible: Boolean,
+    state: DmtState,
     showLyrics: Boolean,
     onToggleLyrics: () -> Unit,
 ) {
@@ -310,12 +313,15 @@ private fun PlayerRail(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            if (hasLyrics) {
+            if (lyricsKeyVisible) {
                 TuiKey(
-                    label = stringResource(R.string.lyrics_key),
+                    label = stringResource(lyricsKeyLabel(state)),
                     bright = showLyrics,
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = onToggleLyrics,
+                    onClick = {
+                        if (state.lyrics == null) dispatch(DmtAction.FetchLyrics)
+                        if (state.lyrics != null || !showLyrics) onToggleLyrics()
+                    },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -326,6 +332,13 @@ private fun PlayerRail(
             )
         }
     }
+}
+
+private fun lyricsKeyLabel(state: DmtState): Int = when {
+    state.lyricsFetching -> R.string.lyrics_key_busy
+    state.lyrics == null -> R.string.lyrics_key_fetch
+    state.lyrics.remote -> R.string.lyrics_key_remote
+    else -> R.string.lyrics_key
 }
 
 @Composable
@@ -340,7 +353,8 @@ private fun ControlsBlock(state: DmtState, dispatch: (DmtAction) -> Unit) {
 private fun PlayerHeader(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
-    hasLyrics: Boolean,
+    lyricsKeyVisible: Boolean,
+    state: DmtState,
     showLyrics: Boolean,
     onToggleLyrics: () -> Unit,
 ) {
@@ -365,11 +379,14 @@ private fun PlayerHeader(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterEnd),
         ) {
-            if (hasLyrics) {
+            if (lyricsKeyVisible) {
                 TuiKey(
-                    label = stringResource(R.string.lyrics_key),
+                    label = stringResource(lyricsKeyLabel(state)),
                     bright = showLyrics,
-                    onClick = onToggleLyrics,
+                    onClick = {
+                        if (state.lyrics == null) dispatch(DmtAction.FetchLyrics)
+                        if (state.lyrics != null || !showLyrics) onToggleLyrics()
+                    },
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }

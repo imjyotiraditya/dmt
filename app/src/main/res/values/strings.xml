@@ -26,7 +26,11 @@
     <string name="no_cover">[ no cover ]</string>
     <string name="close" translatable="false">v</string>
     <string name="info" translatable="false">i</string>
-    <string name="lyrics_key" translatable="false">lyr</string>
+    <string name="lyrics_key" translatable="false">lyr:</string>
+    <string name="lyrics_key_remote" translatable="false">lyr*</string>
+    <string name="lyrics_key_fetch" translatable="false">lyr?</string>
+    <string name="lyrics_key_busy" translatable="false">lyr…</string>
+    <string name="no_lyrics_found">no lyrics found online</string>
     <string name="back" translatable="false">../</string>
     <string name="queue_key">[ queue %1$d/%2$d ]</string>
     <string name="next_up">next: %1$s</string>

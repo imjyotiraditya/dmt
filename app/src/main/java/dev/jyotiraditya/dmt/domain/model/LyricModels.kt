@@ -25,4 +25,8 @@ data class LyricLine(
     val transliteration: Transliteration? = null,
 )
 
-data class Lyrics(val lines: List<LyricLine>, val synced: Boolean)
+data class Lyrics(
+    val lines: List<LyricLine>,
+    val synced: Boolean,
+    val remote: Boolean = false,
+)

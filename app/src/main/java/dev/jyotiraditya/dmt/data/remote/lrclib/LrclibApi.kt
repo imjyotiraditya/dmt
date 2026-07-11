@@ -1,0 +1,49 @@
+package dev.jyotiraditya.dmt.data.remote.lrclib
+
+import dev.jyotiraditya.dmt.BuildConfig
+import dev.jyotiraditya.dmt.data.source.local.lyrics.LyricsParser
+import dev.jyotiraditya.dmt.domain.model.Lyrics
+import dev.jyotiraditya.dmt.domain.model.Track
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import javax.inject.Inject
+import javax.inject.Singleton
+
+private const val BASE_URL = "https://lrclib.net/api/get"
+private const val USER_AGENT =
+    "dmt v${BuildConfig.VERSION_NAME} (https://github.com/imjyotiraditya/dmt)"
+
+@Singleton
+class LrclibApi @Inject constructor(
+    private val client: OkHttpClient,
+) {
+
+    fun fetchLyrics(track: Track): Lyrics? {
+        val url = BASE_URL.toHttpUrl().newBuilder()
+            .addQueryParameter("track_name", track.title)
+            .addQueryParameter("artist_name", track.artist)
+            .addQueryParameter("album_name", track.album)
+            .addQueryParameter("duration", "${track.durationMs / 1000}")
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .build()
+
+        val json = client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            JSONObject(response.body.string())
+        }
+
+        if (json.optBoolean("instrumental")) return null
+
+        val text = json.optString("syncedLyrics")
+            .ifBlank { json.optString("plainLyrics") }
+            .ifBlank { return null }
+
+        return LyricsParser.parse(text)?.copy(remote = true)
+    }
+}

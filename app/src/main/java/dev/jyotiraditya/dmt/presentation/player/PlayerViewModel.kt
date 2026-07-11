@@ -187,6 +187,7 @@ class PlayerViewModel @Inject constructor(
                 if (intent.index in 0 until mediaItemCount) removeMediaItem(intent.index)
             }
 
+            DmtAction.FetchLyrics -> fetchOnlineLyrics()
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
             DmtAction.OpenEqualizer -> openEqualizer()
@@ -293,7 +294,14 @@ class PlayerViewModel @Inject constructor(
 
     private val listener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            reduce { it.copy(nowPlayingId = mediaItem?.mediaId, error = null) }
+            reduce {
+                it.copy(
+                    nowPlayingId = mediaItem?.mediaId,
+                    lyrics = null,
+                    lyricsFetching = false,
+                    error = null,
+                )
+            }
             loadCover(mediaItem)
             loadTech(mediaItem)
             loadLyrics(mediaItem)
@@ -424,6 +432,23 @@ class PlayerViewModel @Inject constructor(
                 position,
             )
             c.prepare()
+        }
+    }
+
+    private fun fetchOnlineLyrics() {
+        val id = currentState.nowPlayingId ?: return
+        if (currentState.lyricsFetching || currentState.lyrics != null) return
+        val track = currentState.tracks.find { it.id.toString() == id } ?: return
+        reduce { it.copy(lyricsFetching = true) }
+        viewModelScope.launch {
+            val lyrics = getLyrics.online(track)
+            reduce {
+                when {
+                    it.nowPlayingId != id -> it.copy(lyricsFetching = false)
+                    else -> it.copy(lyricsFetching = false, lyrics = lyrics)
+                }
+            }
+            if (lyrics == null) notify(context.getString(R.string.no_lyrics_found))
         }
     }
 

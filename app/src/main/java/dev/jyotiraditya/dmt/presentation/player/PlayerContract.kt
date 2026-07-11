@@ -39,6 +39,7 @@ data class DmtState(
     val cover: Bitmap? = null,
     val artRaw: Bitmap? = null,
     val lyrics: Lyrics? = null,
+    val lyricsFetching: Boolean = false,
     val expanded: Boolean = false,
     val sleepMinutes: Int = 0,
     val sleepLeftMs: Long = 0L,
@@ -67,6 +68,7 @@ sealed interface DmtAction {
     data class Seek(val fraction: Float) : DmtAction
     data class Expand(val value: Boolean) : DmtAction
     data class RemoveAt(val index: Int) : DmtAction
+    data object FetchLyrics : DmtAction
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
     data object OpenEqualizer : DmtAction
