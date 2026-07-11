@@ -44,7 +44,7 @@ class PreferencesRepositoryImpl @Inject constructor(
     override val settings: Flow<DmtSettings> = context.dmtStore.data.map { prefs ->
         DmtSettings(
             wave = prefs[KEY_WAVE] ?: true,
-            cols = prefs[KEY_COLS] ?: 64,
+            cols = prefs[KEY_COLS] ?: 96,
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
             rawArt = prefs[KEY_RAW] ?: false,

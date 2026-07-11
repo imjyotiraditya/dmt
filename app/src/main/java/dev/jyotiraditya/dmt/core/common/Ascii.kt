@@ -91,7 +91,7 @@ private fun renderAsciiGrid(
     return out
 }
 
-fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
+fun Bitmap.toAsciiBitmap(cols: Int = 96): Bitmap {
     val mutable = false
     val safe = if (config == Bitmap.Config.HARDWARE) {
         copy(Bitmap.Config.ARGB_8888, mutable)
@@ -120,7 +120,7 @@ fun Bitmap.toAsciiBitmap(cols: Int = 64): Bitmap {
     }
 }
 
-fun generateAsciiPlaceholder(seed: Long, cols: Int = 64): Bitmap {
+fun generateAsciiPlaceholder(seed: Long, cols: Int = 96): Bitmap {
     val rows = (cols * CELL_ASPECT).roundToInt()
     val random = Random(seed)
     val f1 = 0.10f + random.nextFloat() * 0.25f

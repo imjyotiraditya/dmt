@@ -7,7 +7,7 @@ enum class SourceMode(val label: String) {
 
 data class DmtSettings(
     val wave: Boolean = true,
-    val cols: Int = 64,
+    val cols: Int = 96,
     val listSpecs: Boolean = true,
     val romanizedLyrics: Boolean = false,
     val rawArt: Boolean = false,
