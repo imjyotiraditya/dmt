@@ -11,7 +11,6 @@ data class DmtSettings(
     val listSpecs: Boolean = true,
     val romanizedLyrics: Boolean = false,
     val rawArt: Boolean = false,
-    val asciiDebug: Boolean = false,
     val blockedFolders: Set<String> = emptySet(),
     val sourceMode: SourceMode = SourceMode.LOCAL,
     val jellyfinUrl: String? = null,

@@ -511,9 +511,12 @@ class PlayerViewModel @Inject constructor(
             val raw = uri?.let { getCoverArt(it) }
             val cover = withContext(dispatchers.io) {
                 raw?.let { art ->
-                    runCatching { art.toAsciiBitmap(currentState.settings.cols) }.getOrNull()
+                    runCatching {
+                        art.toAsciiBitmap(context, currentState.settings.cols)
+                    }.getOrNull()
                 } ?: mediaItem?.let {
                     generateAsciiPlaceholder(
+                        context = context,
                         seed = forId?.toLongOrNull() ?: forId.hashCode().toLong(),
                         cols = currentState.settings.cols,
                     )

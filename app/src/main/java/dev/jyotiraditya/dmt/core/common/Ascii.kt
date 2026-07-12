@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.core.common
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -24,10 +25,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntSize
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import androidx.core.graphics.scale
-import java.util.Locale
+import dev.jyotiraditya.dmt.R
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -38,9 +40,33 @@ import android.graphics.Color as AndroidColor
 private const val RAMP =
     " .'`^\":;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@\$"
 
-private const val CELL_ASPECT = 0.6f
 private const val GLYPH_SIZE = 24f
 private const val BASELINE_SHIFT = 0.22f
+private const val MIN_ROWS = 8
+private const val MAX_ROWS = 96
+
+@Volatile
+private var cachedMonoTypeface: Typeface? = null
+
+private fun monoTypeface(context: Context): Typeface =
+    cachedMonoTypeface
+        ?: loadMonoTypeface(context).also { cachedMonoTypeface = it }
+
+private fun loadMonoTypeface(context: Context): Typeface =
+    ResourcesCompat.getFont(context, R.font.jetbrains_mono)
+        ?: Typeface.MONOSPACE
+
+private fun asciiPaint(context: Context): Paint = Paint().apply {
+    typeface = monoTypeface(context)
+    isAntiAlias = true
+    textSize = GLYPH_SIZE
+}
+
+private val Paint.cellAdvance: Float
+    get() = measureText("M")
+
+private val Paint.cellAspect: Float
+    get() = cellAdvance / textSize
 
 private fun gammaLift(channel: Int): Int {
     val normalized = channel / 255f
@@ -59,16 +85,12 @@ private fun symbolFor(intensity: Float): Char {
 }
 
 private fun renderAsciiGrid(
+    paint: Paint,
     cols: Int,
     rows: Int,
     cell: (x: Int, y: Int, paint: Paint) -> Char,
 ): Bitmap {
-    val paint = Paint().apply {
-        typeface = Typeface.MONOSPACE
-        isAntiAlias = true
-        textSize = GLYPH_SIZE
-    }
-    val advance = paint.measureText("M")
+    val advance = paint.cellAdvance
     val lineH = paint.textSize
     val width = (cols * advance).roundToInt()
     val height = (rows * lineH).roundToInt()
@@ -92,20 +114,24 @@ private fun renderAsciiGrid(
     return out
 }
 
-fun Bitmap.toAsciiBitmap(cols: Int = 96): Bitmap {
+fun Bitmap.toAsciiBitmap(context: Context, cols: Int = 96): Bitmap {
+    val paint = asciiPaint(context)
+
     val mutable = false
     val safe = if (config == Bitmap.Config.HARDWARE) {
         copy(Bitmap.Config.ARGB_8888, mutable)
     } else {
         this
     }
-    val rawRows = cols.toFloat() * safe.height / safe.width * CELL_ASPECT
-    val rows = rawRows.roundToInt().coerceIn(8, 96)
+
+    val rows = (cols.toFloat() * safe.height / safe.width * paint.cellAspect)
+        .roundToInt()
+        .coerceIn(MIN_ROWS, MAX_ROWS)
     val small = safe
         .scale(width = cols * 2, height = rows * 2)
         .scale(width = cols, height = rows)
 
-    return renderAsciiGrid(cols, rows) { x, y, paint ->
+    return renderAsciiGrid(paint, cols, rows) { x, y, cellPaint ->
         val pixel = small[x, y]
         val red = gammaLift(AndroidColor.red(pixel))
         val green = gammaLift(AndroidColor.green(pixel))
@@ -114,33 +140,17 @@ fun Bitmap.toAsciiBitmap(cols: Int = 96): Bitmap {
         val symbol = symbolFor(lum)
 
         if (symbol != ' ') {
-            paint.color = AndroidColor.rgb(red, green, blue)
+            cellPaint.color = AndroidColor.rgb(red, green, blue)
         }
 
         symbol
     }
 }
 
-fun asciiDebugInfo(raw: Bitmap?, ascii: Bitmap): String {
-    val paint = Paint().apply {
-        typeface = Typeface.MONOSPACE
-        textSize = GLYPH_SIZE
-    }
-    val advance = paint.measureText("M") / paint.textSize
-    val src = raw?.let { "${it.width}x${it.height}" } ?: "none"
+fun generateAsciiPlaceholder(context: Context, seed: Long, cols: Int = 96): Bitmap {
+    val paint = asciiPaint(context)
+    val rows = (cols * paint.cellAspect).roundToInt()
 
-    return "adv=%.3f want=%.3f src=%s out=%dx%d".format(
-        Locale.US,
-        advance,
-        CELL_ASPECT,
-        src,
-        ascii.width,
-        ascii.height,
-    )
-}
-
-fun generateAsciiPlaceholder(seed: Long, cols: Int = 96): Bitmap {
-    val rows = (cols * CELL_ASPECT).roundToInt()
     val random = Random(seed)
     val f1 = 0.10f + random.nextFloat() * 0.25f
     val f2 = 0.10f + random.nextFloat() * 0.25f
@@ -151,7 +161,7 @@ fun generateAsciiPlaceholder(seed: Long, cols: Int = 96): Bitmap {
     val hue = random.nextFloat() * 360f
     val hsv = FloatArray(3)
 
-    return renderAsciiGrid(cols, rows) { x, y, paint ->
+    return renderAsciiGrid(paint, cols, rows) { x, y, cellPaint ->
         val v = (
                 sin(x * f1 + p1) +
                         sin(y * f2 + p2) +
@@ -164,7 +174,7 @@ fun generateAsciiPlaceholder(seed: Long, cols: Int = 96): Bitmap {
             hsv[0] = hue
             hsv[1] = 0.30f
             hsv[2] = 0.20f + v * 0.45f
-            paint.color = AndroidColor.HSVToColor(hsv)
+            cellPaint.color = AndroidColor.HSVToColor(hsv)
         }
 
         symbol

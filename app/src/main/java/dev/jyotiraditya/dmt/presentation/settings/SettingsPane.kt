@@ -106,12 +106,6 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.Rescan)
         }
-        SettingRow(
-            label = stringResource(R.string.set_ascii_debug),
-            value = if (settings.asciiDebug) on else off,
-        ) {
-            dispatch(DmtAction.Config(settings.copy(asciiDebug = !settings.asciiDebug)))
-        }
         if (settings.sourceMode == SourceMode.LOCAL) {
             SettingRow(
                 label = stringResource(R.string.blocklist_title),
