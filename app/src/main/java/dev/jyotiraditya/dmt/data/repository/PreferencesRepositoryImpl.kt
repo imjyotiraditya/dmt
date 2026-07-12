@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.data.repository
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.data.source.local.KEY_ASCII_DEBUG
 import dev.jyotiraditya.dmt.data.source.local.KEY_BLOCKED_FOLDERS
 import dev.jyotiraditya.dmt.data.source.local.KEY_COLS
 import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_TOKEN
@@ -49,6 +50,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
             rawArt = prefs[KEY_RAW] ?: false,
+            asciiDebug = prefs[KEY_ASCII_DEBUG] ?: false,
             blockedFolders = prefs[KEY_BLOCKED_FOLDERS] ?: emptySet(),
             sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
                 ?: 0).mod(SourceMode.entries.size)],
@@ -65,6 +67,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics
             it[KEY_RAW] = settings.rawArt
+            it[KEY_ASCII_DEBUG] = settings.asciiDebug
             it[KEY_BLOCKED_FOLDERS] = settings.blockedFolders
             it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal
             settings.jellyfinUrl

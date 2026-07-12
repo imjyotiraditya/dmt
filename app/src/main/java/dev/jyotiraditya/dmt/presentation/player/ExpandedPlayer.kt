@@ -1,11 +1,15 @@
 package dev.jyotiraditya.dmt.presentation.player
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -62,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.AsciiCover
+import dev.jyotiraditya.dmt.core.common.asciiDebugInfo
 import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.ThinSlider
 import dev.jyotiraditya.dmt.core.common.TuiChip
@@ -446,11 +452,31 @@ private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
             }
 
             state.cover != null -> {
+                val context = LocalContext.current
+                val debugModifier = if (state.settings.asciiDebug) {
+                    Modifier.pointerInput(state.cover) {
+                        detectTapGestures(
+                            onLongPress = {
+                                val info = asciiDebugInfo(rawArt, state.cover)
+                                val clipboard =
+                                    context.getSystemService(ClipboardManager::class.java)
+                                clipboard.setPrimaryClip(
+                                    ClipData.newPlainText("ascii debug", info),
+                                )
+                                Toast.makeText(context, info, Toast.LENGTH_LONG).show()
+                            },
+                        )
+                    }
+                } else {
+                    Modifier
+                }
                 AsciiCover(
                     cover = state.cover,
                     playing = state.isPlaying,
                     wave = state.settings.wave,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .then(debugModifier),
                 )
             }
 

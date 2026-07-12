@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import androidx.core.graphics.scale
+import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -118,6 +119,24 @@ fun Bitmap.toAsciiBitmap(cols: Int = 96): Bitmap {
 
         symbol
     }
+}
+
+fun asciiDebugInfo(raw: Bitmap?, ascii: Bitmap): String {
+    val paint = Paint().apply {
+        typeface = Typeface.MONOSPACE
+        textSize = GLYPH_SIZE
+    }
+    val advance = paint.measureText("M") / paint.textSize
+    val src = raw?.let { "${it.width}x${it.height}" } ?: "none"
+
+    return "adv=%.3f want=%.3f src=%s out=%dx%d".format(
+        Locale.US,
+        advance,
+        CELL_ASPECT,
+        src,
+        ascii.width,
+        ascii.height,
+    )
 }
 
 fun generateAsciiPlaceholder(seed: Long, cols: Int = 96): Bitmap {
