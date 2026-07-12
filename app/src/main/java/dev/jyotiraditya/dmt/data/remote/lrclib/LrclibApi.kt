@@ -1,8 +1,6 @@
 package dev.jyotiraditya.dmt.data.remote.lrclib
 
 import dev.jyotiraditya.dmt.BuildConfig
-import dev.jyotiraditya.dmt.data.source.local.lyrics.LyricsParser
-import dev.jyotiraditya.dmt.domain.model.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Track
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -20,7 +18,7 @@ class LrclibApi @Inject constructor(
     private val client: OkHttpClient,
 ) {
 
-    fun fetchLyrics(track: Track): Lyrics? {
+    fun fetchLyrics(track: Track): String? {
         val url = BASE_URL.toHttpUrl().newBuilder()
             .addQueryParameter("track_name", track.title)
             .addQueryParameter("artist_name", track.artist)
@@ -40,10 +38,8 @@ class LrclibApi @Inject constructor(
 
         if (json.optBoolean("instrumental")) return null
 
-        val text = json.optString("syncedLyrics")
+        return json.optString("syncedLyrics")
             .ifBlank { json.optString("plainLyrics") }
-            .ifBlank { return null }
-
-        return LyricsParser.parse(text)?.copy(remote = true)
+            .ifBlank { null }
     }
 }

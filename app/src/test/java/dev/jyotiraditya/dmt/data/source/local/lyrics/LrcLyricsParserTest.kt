@@ -59,7 +59,7 @@ class LrcLyricsParserTest {
         // [bg: ... ] lines must survive as their own lines, fully word-timed and flagged background
         val bgLines = lyrics.lines.filter {
             it.words.isNotEmpty() &&
-                it.words.all { w -> w.background }
+                    it.words.all { w -> w.background }
         }
         assertTrue(bgLines.isNotEmpty())
         val sampleBg = bgLines.first { it.text.startsWith("I'm") }

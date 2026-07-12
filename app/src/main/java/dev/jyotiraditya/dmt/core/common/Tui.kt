@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
@@ -53,6 +54,25 @@ import dev.jyotiraditya.dmt.ui.theme.TuiLine
 import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+@Composable
+fun TuiNotice(
+    error: String?,
+    notice: String?,
+    modifier: Modifier = Modifier,
+    reserveSpace: Boolean = false,
+) {
+    val text = error ?: notice
+    if (text == null && !reserveSpace) return
+    Text(
+        text = text.orEmpty(),
+        style = MaterialTheme.typography.labelSmall,
+        color = if (error != null) MaterialTheme.colorScheme.error else TuiDim,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.padding(bottom = 4.dp),
+    )
+}
 
 @Composable
 fun rememberCursorAlpha(periodMs: Int = 1060): Float {

@@ -25,11 +25,21 @@
     <string name="no_cover">[ no cover ]</string>
     <string name="close" translatable="false">v</string>
     <string name="info" translatable="false">i</string>
-    <string name="lyrics_key" translatable="false">lyr:</string>
-    <string name="lyrics_key_remote" translatable="false">lyr*</string>
-    <string name="lyrics_key_fetch" translatable="false">lyr?</string>
-    <string name="lyrics_key_busy" translatable="false">lyr…</string>
+    <string name="lyrics_key" translatable="false">lyr</string>
+    <string name="lyrics_key_fetch">get</string>
+    <string name="lyrics_key_busy" translatable="false" tools:ignore="TypographyEllipsis">...</string>
+    <string name="shuffle_key" translatable="false">shf</string>
+    <string name="repeat_key" translatable="false">rpt</string>
+    <string name="repeat_all">all</string>
+    <string name="repeat_one">one</string>
+    <string name="sleep_key" translatable="false">slp</string>
+    <string name="sleep_left" translatable="false">%1$dm</string>
+    <string name="speed_key" translatable="false">spd</string>
+    <string name="speed_value" translatable="false">%1$sx</string>
     <string name="no_lyrics_found">no lyrics found online</string>
+    <string name="lyrics_embedded">lyrics saved into the file</string>
+    <string name="lyrics_embed_failed">could not save lyrics into the file</string>
+    <string name="lyrics_embed_unsupported">cannot save lyrics into this file type</string>
     <string name="back" translatable="false">../</string>
     <string name="queue_key">[ queue %1$d/%2$d ]</string>
     <string name="next_up">next: %1$s</string>

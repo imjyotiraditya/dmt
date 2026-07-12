@@ -25,6 +25,7 @@ import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
+import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetCoverArtUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
@@ -63,6 +64,7 @@ class PlayerViewModel @Inject constructor(
     private val scanLibrary: ScanLibraryUseCase,
     private val jellyfinLogin: JellyfinLoginUseCase,
     private val getLyrics: GetLyricsUseCase,
+    private val embedLyrics: EmbedLyricsUseCase,
     private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
     private val dispatchers: DispatcherProvider,
@@ -76,6 +78,7 @@ class PlayerViewModel @Inject constructor(
 ) {
 
     private var controller: MediaController? = null
+    private var pendingEmbed: Pair<Track, String>? = null
     private var noticeJob: Job? = null
     private var sleepEndAt: Long? = null
     private var sessionRestored = false
@@ -139,7 +142,10 @@ class PlayerViewModel @Inject constructor(
                 )
             }
 
-            is DmtAction.Show -> reduce { it.copy(view = intent.view, error = null) }
+            is DmtAction.Show -> {
+                reduce { it.copy(view = intent.view, error = null) }
+            }
+
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
 
             is DmtAction.PlayAt -> c?.run {
@@ -188,6 +194,7 @@ class PlayerViewModel @Inject constructor(
             }
 
             DmtAction.FetchLyrics -> fetchOnlineLyrics()
+            is DmtAction.EmbedLyrics -> embedPendingLyrics(intent.granted)
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
             DmtAction.OpenEqualizer -> openEqualizer()
@@ -298,7 +305,6 @@ class PlayerViewModel @Inject constructor(
                 it.copy(
                     nowPlayingId = mediaItem?.mediaId,
                     lyrics = null,
-                    lyricsFetching = false,
                     error = null,
                 )
             }
@@ -439,26 +445,61 @@ class PlayerViewModel @Inject constructor(
         val id = currentState.nowPlayingId ?: return
         if (currentState.lyricsFetching || currentState.lyrics != null) return
         val track = currentState.tracks.find { it.id.toString() == id } ?: return
+
         reduce { it.copy(lyricsFetching = true) }
         viewModelScope.launch {
-            val lyrics = getLyrics.online(track)
+            val text = getLyrics.onlineText(track)
+            val lyrics = text?.let { getLyrics.parse(it) }
+
             reduce {
-                when {
-                    it.nowPlayingId != id -> it.copy(lyricsFetching = false)
-                    else -> it.copy(lyricsFetching = false, lyrics = lyrics)
+                if (it.nowPlayingId != id) {
+                    it.copy(lyricsFetching = false)
+                } else {
+                    it.copy(lyricsFetching = false, lyrics = lyrics)
                 }
             }
-            if (lyrics == null) notify(context.getString(R.string.no_lyrics_found))
+            if (lyrics == null) {
+                notify(context.getString(R.string.no_lyrics_found))
+                return@launch
+            }
+
+            val intentSender = embedLyrics.writeRequest(track)
+            if (intentSender == null) {
+                notify(context.getString(R.string.lyrics_embed_unsupported))
+                return@launch
+            }
+            pendingEmbed = track to text
+            sendEffect(PlayerEffect.RequestWrite(intentSender))
+        }
+    }
+
+    private fun embedPendingLyrics(granted: Boolean) {
+        val (track, text) = pendingEmbed ?: return
+        pendingEmbed = null
+        if (!granted) return
+
+        viewModelScope.launch {
+            val done = embedLyrics(track, text)
+            notify(
+                context.getString(
+                    if (done) R.string.lyrics_embedded else R.string.lyrics_embed_failed,
+                ),
+            )
         }
     }
 
     private fun loadLyrics(mediaItem: MediaItem?) {
         val forId = mediaItem?.mediaId
+        reduce { it.copy(lyricsFetching = true) }
         viewModelScope.launch {
             val track = currentState.tracks.find { it.id.toString() == forId }
             val lyrics = track?.let { getLyrics(it) }
             reduce {
-                if (it.nowPlayingId != forId) it else it.copy(lyrics = lyrics)
+                if (it.nowPlayingId != forId) {
+                    it
+                } else {
+                    it.copy(lyrics = lyrics, lyricsFetching = false)
+                }
             }
         }
     }

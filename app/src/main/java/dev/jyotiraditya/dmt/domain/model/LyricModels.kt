@@ -28,5 +28,4 @@ data class LyricLine(
 data class Lyrics(
     val lines: List<LyricLine>,
     val synced: Boolean,
-    val remote: Boolean = false,
 )

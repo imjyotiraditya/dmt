@@ -6,8 +6,11 @@ import android.media.audiofx.AudioEffect
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -41,12 +44,23 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val state by playerViewModel.state.collectAsState()
+                    val writeLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.StartIntentSenderForResult(),
+                    ) { result ->
+                        playerViewModel.onIntent(
+                            DmtAction.EmbedLyrics(result.resultCode == RESULT_OK),
+                        )
+                    }
 
                     LaunchedEffect(Unit) {
                         playerViewModel.effects.collect { effect ->
                             when (effect) {
                                 is PlayerEffect.OpenEqualizer -> openEqualizer(
                                     effect.audioSessionId,
+                                )
+
+                                is PlayerEffect.RequestWrite -> writeLauncher.launch(
+                                    IntentSenderRequest.Builder(effect.intentSender).build(),
                                 )
                             }
                         }

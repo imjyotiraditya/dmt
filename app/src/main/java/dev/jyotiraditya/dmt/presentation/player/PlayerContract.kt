@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.presentation.player
 
+import android.content.IntentSender
 import android.graphics.Bitmap
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.domain.model.Album
@@ -69,6 +70,7 @@ sealed interface DmtAction {
     data class Expand(val value: Boolean) : DmtAction
     data class RemoveAt(val index: Int) : DmtAction
     data object FetchLyrics : DmtAction
+    data class EmbedLyrics(val granted: Boolean) : DmtAction
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
     data object OpenEqualizer : DmtAction
@@ -85,4 +87,5 @@ sealed interface DmtAction {
 
 sealed interface PlayerEffect {
     data class OpenEqualizer(val audioSessionId: Int) : PlayerEffect
+    data class RequestWrite(val intentSender: IntentSender) : PlayerEffect
 }

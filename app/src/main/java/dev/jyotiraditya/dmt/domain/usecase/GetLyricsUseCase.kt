@@ -2,6 +2,7 @@ package dev.jyotiraditya.dmt.domain.usecase
 
 import dev.jyotiraditya.dmt.data.remote.jellyfin.JellyfinApi
 import dev.jyotiraditya.dmt.data.remote.lrclib.LrclibApi
+import dev.jyotiraditya.dmt.data.source.local.lyrics.LyricsParser
 import dev.jyotiraditya.dmt.domain.model.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
@@ -10,7 +11,6 @@ import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.util.DispatcherProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class GetLyricsUseCase @Inject constructor(
@@ -20,23 +20,24 @@ class GetLyricsUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val dispatchers: DispatcherProvider,
 ) {
-    private val onlineCache = ConcurrentHashMap<Long, Lyrics>()
 
     suspend operator fun invoke(track: Track): Lyrics? =
         withContext(dispatchers.io) {
-            val local = if (track.source == TrackSource.JELLYFIN) {
+            if (track.source == TrackSource.JELLYFIN) {
                 jellyfinLyrics(track)
             } else {
                 lyricsRepository.lyricsFor(track.path, track.mime)
             }
-            local ?: onlineCache[track.id]
         }
 
-    suspend fun online(track: Track): Lyrics? =
+    suspend fun onlineText(track: Track): String? =
         withContext(dispatchers.io) {
-            onlineCache[track.id]
-                ?: runCatching { lrclibApi.fetchLyrics(track) }.getOrNull()
-                    ?.also { onlineCache[track.id] = it }
+            runCatching { lrclibApi.fetchLyrics(track) }.getOrNull()
+        }
+
+    suspend fun parse(text: String): Lyrics? =
+        withContext(dispatchers.default) {
+            LyricsParser.parse(text)
         }
 
     private suspend fun jellyfinLyrics(track: Track): Lyrics? {

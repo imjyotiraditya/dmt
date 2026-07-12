@@ -67,13 +67,14 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.AsciiCover
-import dev.jyotiraditya.dmt.core.common.asciiDebugInfo
 import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.ThinSlider
 import dev.jyotiraditya.dmt.core.common.TuiChip
 import dev.jyotiraditya.dmt.core.common.TuiKey
+import dev.jyotiraditya.dmt.core.common.TuiNotice
 import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.TuiStatus
+import dev.jyotiraditya.dmt.core.common.asciiDebugInfo
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isCompactWindow
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
@@ -199,10 +200,6 @@ private fun PortraitPlayer(
         PlayerHeader(
             dispatch = dispatch,
             onInfo = onInfo,
-            lyricsKeyVisible = !compact,
-            state = state,
-            showLyrics = showLyrics,
-            onToggleLyrics = onToggleLyrics,
         )
 
         if (!compact) {
@@ -223,7 +220,12 @@ private fun PortraitPlayer(
         } else {
             Spacer(modifier = Modifier.height(14.dp))
         }
-        ControlsBlock(state, dispatch)
+        ControlsBlock(
+            state = state,
+            dispatch = dispatch,
+            showLyrics = showLyrics,
+            onToggleLyrics = onToggleLyrics,
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -244,10 +246,6 @@ private fun LandscapePlayer(
         PlayerRail(
             dispatch = dispatch,
             onInfo = onInfo,
-            lyricsKeyVisible = true,
-            state = state,
-            showLyrics = showLyrics,
-            onToggleLyrics = onToggleLyrics,
         )
         Spacer(modifier = Modifier.width(16.dp))
         Box(
@@ -272,7 +270,12 @@ private fun LandscapePlayer(
                     .padding(top = 12.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
-                ControlsBlock(state, dispatch)
+                ControlsBlock(
+                    state = state,
+                    dispatch = dispatch,
+                    showLyrics = showLyrics,
+                    onToggleLyrics = onToggleLyrics,
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -286,10 +289,6 @@ private fun LandscapePlayer(
 private fun PlayerRail(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
-    lyricsKeyVisible: Boolean,
-    state: DmtState,
-    showLyrics: Boolean,
-    onToggleLyrics: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -315,54 +314,44 @@ private fun PlayerRail(
                 .align(Alignment.Center),
         )
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            if (lyricsKeyVisible) {
-                TuiKey(
-                    label = stringResource(lyricsKeyLabel(state)),
-                    bright = showLyrics,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        if (state.lyrics == null) dispatch(DmtAction.FetchLyrics)
-                        if (state.lyrics != null || !showLyrics) onToggleLyrics()
-                    },
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            TuiKey(
-                label = stringResource(R.string.info),
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onInfo,
-            )
-        }
+        TuiKey(
+            label = stringResource(R.string.info),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+            onClick = onInfo,
+        )
     }
 }
 
-private fun lyricsKeyLabel(state: DmtState): Int = when {
-    state.lyricsFetching -> R.string.lyrics_key_busy
-    state.lyrics == null -> R.string.lyrics_key_fetch
-    state.lyrics.remote -> R.string.lyrics_key_remote
-    else -> R.string.lyrics_key
-}
-
 @Composable
-private fun ControlsBlock(state: DmtState, dispatch: (DmtAction) -> Unit) {
+private fun ControlsBlock(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
+) {
     TrackMeta(state)
     SeekRow(state, dispatch)
     TransportRow(state, dispatch)
-    StatusRow(state, dispatch)
+    StatusRow(
+        state = state,
+        dispatch = dispatch,
+        showLyrics = showLyrics,
+        onToggleLyrics = onToggleLyrics,
+    )
+    TuiNotice(
+        error = state.error,
+        notice = state.notice,
+        modifier = Modifier.padding(top = 8.dp),
+        reserveSpace = true,
+    )
 }
 
 @Composable
 private fun PlayerHeader(
     dispatch: (DmtAction) -> Unit,
     onInfo: () -> Unit,
-    lyricsKeyVisible: Boolean,
-    state: DmtState,
-    showLyrics: Boolean,
-    onToggleLyrics: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -381,21 +370,7 @@ private fun PlayerHeader(
             color = TuiDim,
             modifier = Modifier.align(Alignment.Center),
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        ) {
-            if (lyricsKeyVisible) {
-                TuiKey(
-                    label = stringResource(lyricsKeyLabel(state)),
-                    bright = showLyrics,
-                    onClick = {
-                        if (state.lyrics == null) dispatch(DmtAction.FetchLyrics)
-                        if (state.lyrics != null || !showLyrics) onToggleLyrics()
-                    },
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
+        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
             TuiKey(
                 label = stringResource(R.string.info),
                 onClick = onInfo,
@@ -661,7 +636,12 @@ private fun TransportRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
+private fun StatusRow(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
+) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -670,40 +650,64 @@ private fun StatusRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             .padding(top = 10.dp),
     ) {
         TuiStatus(
-            label = "shf",
-            value = if (state.shuffle) "on" else "off",
+            label = stringResource(R.string.shuffle_key),
+            value = if (state.shuffle) {
+                stringResource(R.string.on)
+            } else {
+                stringResource(R.string.off)
+            },
             on = state.shuffle,
         ) {
             dispatch(DmtAction.ToggleShuffle)
         }
         TuiStatus(
-            label = "rpt",
-            value = when (state.repeat) {
-                Player.REPEAT_MODE_ALL -> "all"
-                Player.REPEAT_MODE_ONE -> "one"
-                else -> "off"
-            },
+            label = stringResource(R.string.repeat_key),
+            value = stringResource(
+                when (state.repeat) {
+                    Player.REPEAT_MODE_ALL -> R.string.repeat_all
+                    Player.REPEAT_MODE_ONE -> R.string.repeat_one
+                    else -> R.string.off
+                },
+            ),
             on = state.repeat != Player.REPEAT_MODE_OFF,
         ) {
             dispatch(DmtAction.CycleRepeat)
         }
         TuiStatus(
-            label = "slp",
+            label = stringResource(R.string.sleep_key),
             value = if (state.sleepMinutes == 0) {
-                "off"
+                stringResource(R.string.off)
             } else {
-                "${(state.sleepLeftMs + 59_999) / 60_000}m"
+                stringResource(R.string.sleep_left, (state.sleepLeftMs + 59_999) / 60_000)
             },
             on = state.sleepMinutes != 0,
         ) {
             dispatch(DmtAction.CycleSleep)
         }
         TuiStatus(
-            label = "spd",
-            value = "${state.speed}x",
+            label = stringResource(R.string.speed_key),
+            value = stringResource(R.string.speed_value, state.speed.toString()),
             on = abs(state.speed - 1f) > 0.01f,
         ) {
             dispatch(DmtAction.CycleSpeed)
+        }
+        TuiStatus(
+            label = stringResource(R.string.lyrics_key),
+            value = stringResource(
+                when {
+                    state.lyricsFetching -> R.string.lyrics_key_busy
+                    state.lyrics == null -> R.string.lyrics_key_fetch
+                    showLyrics -> R.string.on
+                    else -> R.string.off
+                },
+            ),
+            on = showLyrics && state.lyrics != null,
+        ) {
+            when {
+                state.lyricsFetching -> Unit
+                state.lyrics == null -> dispatch(DmtAction.FetchLyrics)
+                else -> onToggleLyrics()
+            }
         }
     }
 }

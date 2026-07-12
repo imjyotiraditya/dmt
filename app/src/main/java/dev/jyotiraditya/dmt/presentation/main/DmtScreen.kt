@@ -39,11 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
+import dev.jyotiraditya.dmt.core.common.TuiNotice
 import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
@@ -66,7 +66,6 @@ import dev.jyotiraditya.dmt.presentation.settings.StatsPane
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
-import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -133,7 +132,7 @@ fun DmtScreen(
                             modifier = Modifier.weight(1f),
                         )
 
-                        NoticeLine(state)
+                        TuiNotice(error = state.error, notice = state.notice)
 
                         if (state.nowPlayingId != null && !imeVisible) {
                             MiniPlayer(
@@ -161,7 +160,7 @@ fun DmtScreen(
                     modifier = Modifier.weight(1f),
                 )
 
-                NoticeLine(state)
+                TuiNotice(error = state.error, notice = state.notice)
 
                 if (state.nowPlayingId != null && !imeVisible) {
                     MiniPlayer(
@@ -366,16 +365,3 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
-@Composable
-private fun NoticeLine(state: DmtState) {
-    (state.error ?: state.notice)?.let {
-        Text(
-            text = it,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (state.error != null) MaterialTheme.colorScheme.error else TuiDim,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-    }
-}
