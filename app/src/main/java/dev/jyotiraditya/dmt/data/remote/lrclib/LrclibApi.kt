@@ -13,16 +13,23 @@ private const val BASE_URL = "https://lrclib.net/api/get"
 private const val USER_AGENT =
     "dmt v${BuildConfig.VERSION_NAME} (https://github.com/imjyotiraditya/dmt)"
 
+private fun known(value: String, placeholder: String): String? =
+    value.takeIf { it.isNotBlank() && it != placeholder }
+
 @Singleton
 class LrclibApi @Inject constructor(
     private val client: OkHttpClient,
 ) {
 
     fun fetchLyrics(track: Track): String? {
+        val title = known(track.title, "unknown title") ?: return null
+        val artist = known(track.artist, "unknown artist") ?: return null
+        val album = known(track.album, "unknown album")
+
         val url = BASE_URL.toHttpUrl().newBuilder()
-            .addQueryParameter("track_name", track.title)
-            .addQueryParameter("artist_name", track.artist)
-            .addQueryParameter("album_name", track.album)
+            .addQueryParameter("track_name", title)
+            .addQueryParameter("artist_name", artist)
+            .apply { album?.let { addQueryParameter("album_name", it) } }
             .addQueryParameter("duration", "${track.durationMs / 1000}")
             .build()
 
