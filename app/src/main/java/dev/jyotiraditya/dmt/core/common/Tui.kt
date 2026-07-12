@@ -150,9 +150,9 @@ fun TuiPanel(
 @Composable
 fun TuiKey(
     label: String,
+    modifier: Modifier = Modifier,
     bright: Boolean = false,
     big: Boolean = false,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }

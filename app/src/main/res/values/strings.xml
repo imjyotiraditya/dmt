@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_name" translatable="false">dmt</string>
 
     <string name="tab_library">1:library</string>
@@ -12,7 +12,7 @@
     <string name="tab_sources" translatable="false">src</string>
 
     <string name="clear" translatable="false">[x]</string>
-    <string name="scanning">scanning library&#8230;</string>
+    <string name="scanning">scanning library...</string>
     <string name="no_match">no match</string>
     <string name="no_audio">no tracks in %1$s - try rescanning from cfg</string>
     <string name="scan_failed">could not reach %1$s - check connection and rescan</string>
@@ -27,7 +27,7 @@
     <string name="info" translatable="false">i</string>
     <string name="lyrics_key" translatable="false">lyr</string>
     <string name="lyrics_key_fetch">get</string>
-    <string name="lyrics_key_busy" translatable="false" tools:ignore="TypographyEllipsis">...</string>
+    <string name="lyrics_key_busy" translatable="false">...</string>
     <string name="shuffle_key" translatable="false">shf</string>
     <string name="repeat_key" translatable="false">rpt</string>
     <string name="repeat_all">all</string>
@@ -51,7 +51,10 @@
     <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
     <string name="set_detail">cover detail</string>
-    <string name="set_detail_value" tools:ignore="PluralsCandidate">%1$d col</string>
+    <plurals name="set_detail_value">
+        <item quantity="one">%1$d col</item>
+        <item quantity="other">%1$d cols</item>
+    </plurals>
     <string name="set_specs">format chips</string>
     <string name="set_raw">raw artwork</string>
     <string name="set_lyrics_script">lyrics script</string>
@@ -69,7 +72,10 @@
     <string name="open_album" translatable="false">[↗]</string>
     <string name="blocklist_title">folder blocklist</string>
     <string name="blocklist_edit">edit</string>
-    <string name="blocklist_edit_count">%1$d hidden</string>
+    <plurals name="blocklist_edit_count">
+        <item quantity="one">%1$d hidden</item>
+        <item quantity="other">%1$d hidden</item>
+    </plurals>
     <string name="blocklist_hint">[x] folders are hidden from the library</string>
     <string name="run">run</string>
     <string name="sources_title">sources</string>

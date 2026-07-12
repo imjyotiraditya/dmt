@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.BuildConfig
@@ -52,7 +53,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         }
         SettingRow(
             label = stringResource(R.string.set_detail),
-            value = stringResource(R.string.set_detail_value, settings.cols),
+            value = pluralStringResource(R.plurals.set_detail_value, settings.cols, settings.cols),
         ) {
             val currentIndex = COVER_COLS_STEPS.indexOf(settings.cols)
             val next = COVER_COLS_STEPS[(currentIndex + 1).mod(COVER_COLS_STEPS.size)]
@@ -117,7 +118,11 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 value = if (settings.blockedFolders.isEmpty()) {
                     stringResource(R.string.blocklist_edit)
                 } else {
-                    stringResource(R.string.blocklist_edit_count, settings.blockedFolders.size)
+                    pluralStringResource(
+                        R.plurals.blocklist_edit_count,
+                        settings.blockedFolders.size,
+                        settings.blockedFolders.size,
+                    )
                 },
             ) {
                 dispatch(DmtAction.Show(DmtView.BLOCKLIST))
