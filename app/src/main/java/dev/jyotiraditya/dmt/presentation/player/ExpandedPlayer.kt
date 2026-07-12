@@ -702,6 +702,7 @@ private fun StatusRow(
                 },
             ),
             on = showLyrics && state.lyrics != null,
+            busy = state.lyricsFetching,
         ) {
             when {
                 state.lyricsFetching -> Unit

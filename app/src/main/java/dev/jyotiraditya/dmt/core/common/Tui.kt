@@ -223,6 +223,7 @@ fun TuiStatus(
     label: String,
     value: String,
     on: Boolean,
+    busy: Boolean = false,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -230,6 +231,7 @@ fun TuiStatus(
     val flash = rememberPressFlash()
     val press = if (pressed) 1f else flash.value
     val restText = if (on) TuiBright else TuiDim
+    val blink = if (busy) rememberCursorAlpha() else 1f
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -247,7 +249,13 @@ fun TuiStatus(
         Box(
             modifier = Modifier
                 .size(7.dp)
-                .background(if (on) LocalAccent.current else TuiFaint),
+                .background(
+                    when {
+                        busy -> LocalAccent.current.copy(alpha = blink)
+                        on -> LocalAccent.current
+                        else -> TuiFaint
+                    },
+                ),
         )
         Text(
             text = " $label:$value",
