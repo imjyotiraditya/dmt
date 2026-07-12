@@ -9,7 +9,7 @@ object LrcLyricsParser {
 
     private val LINE_TIME = Regex("""\[(\d+):(\d{1,2})(?:[.:](\d{1,3}))?]""")
     private val WORD_TIME = Regex("""<(\d+):(\d{1,2})(?:[.:](\d{1,3}))?>""")
-    private val VOICE_PREFIX = Regex("""^v\d+:""")
+    private val VOICE_PREFIX = Regex("""^v(\d+):""")
     private val BG_LINE = Regex("""^\[bg:(.*)]$""", RegexOption.IGNORE_CASE)
     private val LEADING_TIME = Regex("""^\[\d+:\d{1,2}(?:[.:]\d{1,3})?]""")
 
@@ -17,6 +17,7 @@ object LrcLyricsParser {
 
     fun parse(raw: String): Lyrics? {
         val lines = mutableListOf<LyricLine>()
+        val singers = mutableMapOf<Int, Int>()
 
         raw.lines().forEach { line ->
             val trimmedLine = line.trim()
@@ -30,11 +31,13 @@ object LrcLyricsParser {
             val stamps = LINE_TIME.findAll(line).toList()
             if (stamps.isEmpty()) return@forEach
 
-            val rawText = stripLinePrefix(line.substring(stamps.last().range.last + 1))
+            val (rawText, voiceTag) = stripLinePrefix(line.substring(stamps.last().range.last + 1))
             if (rawText.isEmpty()) return@forEach
 
             val (text, words) = parseWordTags(rawText)
             if (text.isBlank()) return@forEach
+
+            val singer = voiceTag?.let { tag -> singers.getOrPut(tag) { singers.size } } ?: 0
 
             stamps.forEach { match ->
                 val startMs = match.toMs()
@@ -42,9 +45,10 @@ object LrcLyricsParser {
 
                 lines += LyricLine(
                     startMs = startMs,
-                    endMs = -1L,
+                    endMs = words.lastOrNull()?.endMs ?: -1L,
                     text = text,
                     words = words,
+                    singer = singer,
                 )
             }
         }
@@ -52,13 +56,18 @@ object LrcLyricsParser {
         if (lines.isEmpty()) return null
 
         return Lyrics(
-            lines = lines.sortedBy { it.startMs }.fillLineEnds(),
+            lines = lines.sortedBy { it.startMs }
+                .fillLineEnds()
+                .mergeSimultaneousDuplicates()
+                .alternateVoices()
+                .withInterludes(),
             synced = true,
         )
     }
 
     private fun parseBackgroundLine(content: String, lines: MutableList<LyricLine>) {
-        val (text, words) = parseWordTags(stripLinePrefix(content))
+        val (stripped, _) = stripLinePrefix(content)
+        val (text, words) = parseWordTags(stripped)
         if (text.isBlank() || words.isEmpty()) return
 
         val precedingMain = lines.lastOrNull()
@@ -78,14 +87,19 @@ object LrcLyricsParser {
                 endMs = bgWords.last().endMs,
                 text = text,
                 words = bgWords,
+                singer = precedingMain?.singer ?: 0,
             )
         }
     }
 
-    private fun stripLinePrefix(text: String): String {
+    private fun stripLinePrefix(text: String): Pair<String, Int?> {
         val withoutLeadingTime = LEADING_TIME.replaceFirst(text.trim(), "")
+        val voice = VOICE_PREFIX.find(withoutLeadingTime)
+        val stripped = withoutLeadingTime
+            .substring(voice?.range?.let { it.last + 1 } ?: 0)
+            .trimStart()
 
-        return VOICE_PREFIX.replaceFirst(withoutLeadingTime, "").trimStart()
+        return stripped to voice?.groupValues?.get(1)?.toIntOrNull()
     }
 
     private fun scriptOf(text: String): String? =

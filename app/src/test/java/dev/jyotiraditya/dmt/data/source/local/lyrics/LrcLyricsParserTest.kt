@@ -2,6 +2,7 @@ package dev.jyotiraditya.dmt.data.source.local.lyrics
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -24,7 +25,7 @@ class LrcLyricsParserTest {
         assertTrue(lyrics.lines.isNotEmpty())
         assertTrue(lyrics.lines.all { it.words.isEmpty() })
 
-        val first = lyrics.lines.first()
+        val first = lyrics.lines.first { !it.interlude }
         assertEquals(21_769L, first.startMs)
         assertEquals("I'm tired of being what you want me to be", first.text)
     }
@@ -83,6 +84,29 @@ class LrcLyricsParserTest {
         assertNotNull(transliteration)
         assertEquals("Maru de otogi no hanashi", transliteration!!.text)
         assertTrue(lyrics.lines.none { it.words.any { w -> w.background } })
+    }
+
+    @Test
+    fun `duet lrc keeps voice sides, own line ends, and bg singer`() {
+        val lyrics = LrcLyricsParser.parse(fixture("duet.lrc"))
+        assertNotNull(lyrics)
+
+        val lines = lyrics!!.lines.filter { !it.interlude }
+
+        // a line's end comes from its own final word stamp, not the start of the
+        // next line that overlaps it
+        val v3 = lines.first { it.text.startsWith("だから") }
+        assertEquals(68_820L, v3.endMs)
+
+        // the two singers land on different sides
+        val v1 = lines.first { it.text.startsWith("限り有る") }
+        assertNotEquals(v3.voice, v1.voice)
+
+        // a standalone bg line keeps background words and inherits the singer it backs
+        val bg = lines.first { it.startMs == 194_156L }
+        assertTrue(bg.words.isNotEmpty())
+        assertTrue(bg.words.all { it.background })
+        assertEquals(lines.first { it.startMs == 193_265L }.singer, bg.singer)
     }
 
     @Test
