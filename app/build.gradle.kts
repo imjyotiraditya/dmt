@@ -10,6 +10,7 @@ plugins {
 val appVersionName = (project.findProperty("versionOverride") as String?) ?: "1.0"
 val appVersionCode =
     appVersionName
+        .substringBefore("-")
         .split(".")
         .mapNotNull { it.toIntOrNull() }
         .let {

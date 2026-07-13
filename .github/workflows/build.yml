@@ -34,7 +34,9 @@ jobs:
 
       - name: resolve version
         id: version
-        run: echo "name=unreleased-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "name=$(gh release view --json tagName --jq .tagName | sed 's/^v//')-ci-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: build
         env:
