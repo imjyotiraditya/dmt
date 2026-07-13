@@ -47,7 +47,7 @@ this is the thank you note.
 
 ## building
 
-open in android studio and hit run. minSdk 31.
+open in android studio and hit run. minSdk 30.
 release builds are minified and land around 12mb, most of it the
 bundled ffmpeg decoders.
 ci builds a signed release apk on every push.
