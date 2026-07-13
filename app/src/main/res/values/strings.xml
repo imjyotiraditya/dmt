@@ -46,6 +46,8 @@
     <string name="end_of_queue">end of queue</string>
     <string name="queue_title">queue · tap to jump</string>
     <string name="track_info">track info</string>
+    <string name="tab_info">info</string>
+    <string name="tab_chain">chain</string>
 
     <string name="config">config</string>
     <string name="tools">tools</string>

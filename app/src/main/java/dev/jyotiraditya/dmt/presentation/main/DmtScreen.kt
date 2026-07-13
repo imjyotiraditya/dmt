@@ -49,6 +49,7 @@ import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
+import dev.jyotiraditya.dmt.presentation.player.ChainContent
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
@@ -203,8 +204,23 @@ fun DmtScreen(
 
         if (showInfoSheet) {
             TuiSheet(onDismiss = { showInfoSheet = false }) {
-                SheetHeader(title = stringResource(R.string.track_info))
-                InfoContent(state)
+                var showChain by remember { mutableStateOf(false) }
+                SheetHeader(title = stringResource(R.string.track_info)) {
+                    TuiTab(
+                        label = stringResource(R.string.tab_info),
+                        active = !showChain,
+                    ) {
+                        showChain = false
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TuiTab(
+                        label = stringResource(R.string.tab_chain),
+                        active = showChain,
+                    ) {
+                        showChain = true
+                    }
+                }
+                if (showChain) ChainContent(state) else InfoContent(state)
             }
         }
     }

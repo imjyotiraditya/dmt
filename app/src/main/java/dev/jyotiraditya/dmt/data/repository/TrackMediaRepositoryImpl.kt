@@ -1,18 +1,25 @@
 package dev.jyotiraditya.dmt.data.repository
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.MediaCodecList
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.util.Size
 import androidx.annotation.OptIn
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.MediaFormatUtil
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -23,6 +30,9 @@ import dev.jyotiraditya.dmt.util.asMB
 import dev.jyotiraditya.dmt.util.codecLabel
 import dev.jyotiraditya.dmt.util.heAacLabel
 import dev.jyotiraditya.dmt.util.probeFrames
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -70,6 +80,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
         var sampleRate: Int? = null
         var channels: Int? = null
         var bits: Int? = null
+        var gapless = false
         runCatching {
             val extractor = MediaExtractor()
             extractor.setDataSource(context, uri, null)
@@ -100,16 +111,20 @@ class TrackMediaRepositoryImpl @Inject constructor(
             if (format.containsKey(MediaFormatUtil.KEY_MAX_BIT_RATE)) {
                 maxBitrate = format.getInteger(MediaFormatUtil.KEY_MAX_BIT_RATE)
             }
+            gapless = format.containsKey(MediaFormat.KEY_ENCODER_DELAY) ||
+                    format.containsKey(MediaFormat.KEY_ENCODER_PADDING)
             extractor.release()
         }
         runCatching {
             MediaMetadataRetriever().use { retriever ->
                 retriever.setDataSource(context, uri)
-                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITS_PER_SAMPLE)
-                    ?.toIntOrNull()?.takeIf { it > 0 }?.let { bits = it }
-                if (sampleRate == null) {
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
-                        ?.toIntOrNull()?.let { sampleRate = it }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITS_PER_SAMPLE)
+                        ?.toIntOrNull()?.takeIf { it > 0 }?.let { bits = it }
+                    if (sampleRate == null) {
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
+                            ?.toIntOrNull()?.let { sampleRate = it }
+                    }
                 }
                 if (bitrate <= 0) {
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
@@ -163,6 +178,14 @@ class TrackMediaRepositoryImpl @Inject constructor(
                     ),
                 )
             }
+            if (gapless) {
+                add(
+                    Spec(
+                        label = "GAPLESS",
+                        value = "YES",
+                    ),
+                )
+            }
             track?.size?.takeIf { it > 0 }?.let {
                 add(
                     Spec(
@@ -175,26 +198,178 @@ class TrackMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    @OptIn(UnstableApi::class)
     private fun decoderSpecs(mime: String): List<Spec> = buildList {
         if (mime.isEmpty()) return@buildList
-        MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos
+        val info = MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos
             .firstOrNull { info ->
                 !info.isEncoder &&
                         info.supportedTypes.any { it.equals(mime, ignoreCase = true) }
             }
-            ?.let { info ->
+        if (info != null) {
+            add(
+                Spec(
+                    label = "DEC",
+                    value = info.name,
+                ),
+            )
+            add(
+                Spec(
+                    label = "HW",
+                    value = if (info.isHardwareAccelerated) "YES" else "NO",
+                ),
+            )
+            add(
+                Spec(
+                    label = "IMPL",
+                    value = if (info.isVendor) "VENDOR" else "PLATFORM",
+                ),
+            )
+            val type = info.supportedTypes.first { it.equals(mime, ignoreCase = true) }
+            runCatching { info.getCapabilitiesForType(type) }.getOrNull()
+                ?.maxSupportedInstances
+                ?.takeIf { it > 0 }
+                ?.let {
+                    add(
+                        Spec(
+                            label = "INST",
+                            value = "$it",
+                        ),
+                    )
+                }
+        } else if (FfmpegLibrary.isAvailable() && FfmpegLibrary.supportsFormat(mime)) {
+            add(
+                Spec(
+                    label = "DEC",
+                    value = "MEDIA3 FFMPEG",
+                ),
+            )
+            add(
+                Spec(
+                    label = "HW",
+                    value = "NO",
+                ),
+            )
+            add(
+                Spec(
+                    label = "IMPL",
+                    value = "BUNDLED",
+                ),
+            )
+        }
+    }
+
+    override fun routeSpecs(): Flow<List<Spec>> = callbackFlow {
+        val audioManager = context.getSystemService(AudioManager::class.java)
+        val callback = object : AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+                trySend(currentRouteSpecs(audioManager))
+            }
+
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                trySend(currentRouteSpecs(audioManager))
+            }
+        }
+        audioManager.registerAudioDeviceCallback(callback, null)
+        trySend(currentRouteSpecs(audioManager))
+        awaitClose { audioManager.unregisterAudioDeviceCallback(callback) }
+    }
+
+    private fun currentRouteSpecs(audioManager: AudioManager): List<Spec> {
+        val outRateHz = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)
+            ?.toIntOrNull()
+        val outFrames = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER)
+            ?.toIntOrNull()
+        return buildList {
+            add(Spec(label = "API", value = "AUDIOTRACK"))
+            add(Spec(label = "BIT", value = "16"))
+            outRateHz?.let { add(Spec(label = "RATE", value = it.asKHz())) }
+            if (outFrames != null && outRateHz != null) {
+                val bufMs = outFrames * 1000f / outRateHz
                 add(
                     Spec(
-                        label = "DEC",
-                        value = info.name,
-                    ),
-                )
-                add(
-                    Spec(
-                        label = "HW",
-                        value = if (info.isHardwareAccelerated) "YES" else "NO",
+                        label = "BUF",
+                        value = "$outFrames FRAMES / %.1fMS".format(bufMs),
                     ),
                 )
             }
+            add(Spec(label = "FLAGS", value = outputFlags()))
+            addAll(deviceSpecs(audioManager))
+        }
+    }
+
+    private fun outputFlags(): String {
+        val packageManager = context.packageManager
+        val flags = buildList {
+            if (packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY)) {
+                add("LOW-LATENCY")
+            }
+            if (packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_PRO)) {
+                add("PRO-AUDIO")
+            }
+        }
+        return if (flags.isEmpty()) "NONE" else flags.joinToString(" ")
+    }
+
+    private fun deviceSpecs(audioManager: AudioManager): List<Spec> {
+        val device = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .maxByOrNull { it.routePriority() }
+            ?: return listOf(Spec(label = "VIA", value = "UNKNOWN"))
+        return buildList {
+            add(Spec(label = "VIA", value = device.typeLabel()))
+            device.productName?.toString()?.takeIf { it.isNotBlank() }?.let {
+                add(Spec(label = "NAME", value = it))
+            }
+            device.sampleRates.takeIf { it.isNotEmpty() }?.let { rates ->
+                add(
+                    Spec(
+                        label = "RATES",
+                        value = rates.sorted().joinToString("/") { it.asKHz() },
+                    ),
+                )
+            }
+            device.encodings.toList().mapNotNull(::encodingLabel).distinct()
+                .takeIf { it.isNotEmpty() }
+                ?.let { add(Spec(label = "ENC", value = it.joinToString(" "))) }
+            device.channelCounts.maxOrNull()?.let {
+                add(Spec(label = "CH", value = "$it"))
+            }
+        }
     }
 }
+
+private fun AudioDeviceInfo.routePriority(): Int =
+    when (type) {
+        AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_BLE_HEADSET -> 4
+        AudioDeviceInfo.TYPE_USB_DEVICE, AudioDeviceInfo.TYPE_USB_HEADSET -> 3
+        AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> 2
+        AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> 1
+        else -> 0
+    }
+
+private fun AudioDeviceInfo.typeLabel(): String =
+    when (type) {
+        AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_BLE_HEADSET -> "BLUETOOTH"
+
+        AudioDeviceInfo.TYPE_WIRED_HEADSET,
+        AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            -> "WIRED"
+
+        AudioDeviceInfo.TYPE_USB_DEVICE,
+        AudioDeviceInfo.TYPE_USB_HEADSET,
+            -> "USB"
+
+        AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "SPEAKER"
+
+        else -> productName.toString()
+    }
+
+private fun encodingLabel(encoding: Int): String? =
+    when (encoding) {
+        AudioFormat.ENCODING_PCM_8BIT -> "PCM8"
+        AudioFormat.ENCODING_PCM_16BIT -> "PCM16"
+        AudioFormat.ENCODING_PCM_24BIT_PACKED -> "PCM24"
+        AudioFormat.ENCODING_PCM_32BIT -> "PCM32"
+        AudioFormat.ENCODING_PCM_FLOAT -> "FLOAT"
+        else -> null
+    }

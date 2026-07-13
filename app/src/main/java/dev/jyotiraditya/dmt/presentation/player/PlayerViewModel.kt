@@ -28,20 +28,21 @@ import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetCoverArtUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
+import dev.jyotiraditya.dmt.domain.usecase.GetRouteSpecsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import dev.jyotiraditya.dmt.util.DispatcherProvider
+import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.await
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
 import dev.jyotiraditya.dmt.util.queueLabels
-import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.toMediaItem
-import dev.jyotiraditya.dmt.util.windowQueue
 import dev.jyotiraditya.dmt.util.togglePlayPause
+import dev.jyotiraditya.dmt.util.windowQueue
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -67,6 +68,7 @@ class PlayerViewModel @Inject constructor(
     private val embedLyrics: EmbedLyricsUseCase,
     private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
+    private val getRouteSpecs: GetRouteSpecsUseCase,
     private val dispatchers: DispatcherProvider,
 ) : BaseViewModel<DmtAction, DmtState, PlayerEffect>(
     DmtState(
@@ -91,6 +93,11 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             statsRepository.stats.collect { stats ->
                 reduce { if (it.stats == stats) it else it.copy(stats = stats) }
+            }
+        }
+        viewModelScope.launch {
+            getRouteSpecs().collect { route ->
+                reduce { if (it.route == route) it else it.copy(route = route) }
             }
         }
         if (currentState.hasPermission) scan()
