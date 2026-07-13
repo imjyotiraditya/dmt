@@ -11,6 +11,7 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_USER_ID
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
+import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_SORT
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
 import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
@@ -25,6 +26,7 @@ import dev.jyotiraditya.dmt.data.source.local.toCounts
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.LastSession
+import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
@@ -52,6 +54,8 @@ class PreferencesRepositoryImpl @Inject constructor(
             blockedFolders = prefs[KEY_BLOCKED_FOLDERS] ?: emptySet(),
             sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
                 ?: 0).mod(SourceMode.entries.size)],
+            librarySort = LibrarySort.entries[(prefs[KEY_LIBRARY_SORT]
+                ?: 0).mod(LibrarySort.entries.size)],
             jellyfinUrl = prefs[KEY_JELLYFIN_URL],
             jellyfinUserId = prefs[KEY_JELLYFIN_USER_ID],
             jellyfinToken = prefs[KEY_JELLYFIN_TOKEN],
@@ -67,6 +71,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             it[KEY_RAW] = settings.rawArt
             it[KEY_BLOCKED_FOLDERS] = settings.blockedFolders
             it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal
+            it[KEY_LIBRARY_SORT] = settings.librarySort.ordinal
             settings.jellyfinUrl
                 ?.let { url -> it[KEY_JELLYFIN_URL] = url }
                 ?: it.remove(KEY_JELLYFIN_URL)

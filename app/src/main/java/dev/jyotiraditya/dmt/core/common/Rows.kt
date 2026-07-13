@@ -46,6 +46,8 @@ fun SearchRow(
     hint: String,
     shown: Int,
     onQuery: (String) -> Unit,
+    sort: String? = null,
+    onSort: (() -> Unit)? = null,
 ) {
     val accent = LocalAccent.current
 
@@ -90,6 +92,16 @@ fun SearchRow(
                 color = TuiFg,
                 modifier = Modifier
                     .tuiClickable { onQuery("") }
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+        }
+        if (sort != null && onSort != null) {
+            Text(
+                text = "[$sort]",
+                style = MaterialTheme.typography.labelLarge,
+                color = TuiDim,
+                modifier = Modifier
+                    .tuiClickable(onSort)
                     .padding(horizontal = 8.dp, vertical = 6.dp),
             )
         }

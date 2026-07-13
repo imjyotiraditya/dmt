@@ -21,6 +21,7 @@ import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Album
+import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
@@ -104,7 +105,7 @@ class PlayerViewModel @Inject constructor(
         connect()
     }
 
-    private fun filter(tracks: List<Track>, query: String): List<Track> =
+    private fun filter(tracks: List<Track>, query: String, sort: LibrarySort): List<Track> =
         if (query.isBlank()) {
             tracks
         } else {
@@ -113,7 +114,7 @@ class PlayerViewModel @Inject constructor(
                         it.artist.contains(query, true) ||
                         it.album.contains(query, true)
             }
-        }
+        }.sortedWith(sort.comparator)
 
     private fun filterAlbums(albums: List<Album>, query: String): List<Album> =
         if (query.isBlank()) {
@@ -136,7 +137,7 @@ class PlayerViewModel @Inject constructor(
             is DmtAction.Query -> reduce {
                 it.copy(
                     query = intent.value,
-                    filtered = filter(it.tracks, intent.value),
+                    filtered = filter(it.tracks, intent.value, it.settings.librarySort),
                     filteredAlbums = filterAlbums(it.albums, intent.value),
                 )
             }
@@ -202,6 +203,13 @@ class PlayerViewModel @Inject constructor(
             is DmtAction.Config -> {
                 val old = currentState.settings
                 reduce { it.copy(settings = intent.settings) }
+                if (old.librarySort != intent.settings.librarySort) {
+                    reduce {
+                        it.copy(
+                            filtered = filter(it.tracks, it.query, intent.settings.librarySort),
+                        )
+                    }
+                }
                 if (old.sourceMode != intent.settings.sourceMode) {
                     c?.run {
                         stop()
@@ -390,7 +398,8 @@ class PlayerViewModel @Inject constructor(
             val (filteredTracks, filteredAlbums) = withContext(
                 dispatchers.default,
             ) {
-                filter(library.tracks, query) to filterAlbums(library.albums, query)
+                filter(library.tracks, query, currentState.settings.librarySort) to
+                        filterAlbums(library.albums, query)
             }
             reduce {
                 it.copy(

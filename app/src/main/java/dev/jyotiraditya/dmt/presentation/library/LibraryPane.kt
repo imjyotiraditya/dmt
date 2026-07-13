@@ -31,6 +31,14 @@ fun LibraryPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             ),
             shown = state.filtered.size,
             onQuery = { dispatch(DmtAction.Query(it)) },
+            sort = state.settings.librarySort.label,
+            onSort = {
+                dispatch(
+                    DmtAction.Config(
+                        state.settings.copy(librarySort = state.settings.librarySort.next()),
+                    ),
+                )
+            },
         )
         if (state.filtered.isEmpty()) {
             Caption(stringResource(R.string.no_match))

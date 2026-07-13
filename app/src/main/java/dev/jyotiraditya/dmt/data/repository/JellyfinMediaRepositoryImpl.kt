@@ -49,6 +49,7 @@ class JellyfinMediaRepositoryImpl @Inject constructor(
             bitrate = bitrate,
             size = size,
             trackNumber = trackNumber,
+            dateAdded = dateAdded,
             coverUri = artId?.let { api.imageUrl(baseUrl, it, token).toUri() },
             source = TrackSource.JELLYFIN,
             remoteId = id,

@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,6 +28,7 @@ data class JellyfinItem(
     val bitrate: Int,
     val size: Long,
     val hasOwnArt: Boolean,
+    val dateAdded: Long,
 )
 
 private const val CLIENT_NAME = "DMT"
@@ -61,7 +63,8 @@ class JellyfinApi @Inject constructor(
         val json = getJson(
             url = endpoint(
                 baseUrl,
-                "/Users/$userId/Items?IncludeItemTypes=Audio&Recursive=true&Fields=MediaSources",
+                "/Users/$userId/Items" +
+                        "?IncludeItemTypes=Audio&Recursive=true&Fields=MediaSources,DateCreated",
             ),
             token = token,
         )
@@ -177,6 +180,9 @@ class JellyfinApi @Inject constructor(
             bitrate = mediaSource?.optInt("Bitrate", 0) ?: 0,
             size = mediaSource?.optLong("Size", 0L) ?: 0L,
             hasOwnArt = optJSONObject("ImageTags")?.has("Primary") == true,
+            dateAdded = runCatching {
+                Instant.parse(optString("DateCreated")).epochSecond
+            }.getOrDefault(0L),
         )
     }
 }
