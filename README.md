@@ -8,6 +8,24 @@ dear music, thanks.
 a tui-inspired music player for android. music helped me through a lot,
 this is the thank you note.
 
+## screenshots
+
+<table>
+  <tr>
+    <td width="68%">
+      <img src=".github/screenshots/library-landscape.png" alt="library, landscape" />
+    </td>
+    <td width="32%" rowspan="2">
+      <img src=".github/screenshots/player-portrait.png" alt="player, portrait" />
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src=".github/screenshots/player-landscape.png" alt="player, landscape" />
+    </td>
+  </tr>
+</table>
+
 ## what it does
 
 - plays the music on your phone, and can stream from a self-hosted jellyfin
