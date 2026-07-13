@@ -38,7 +38,7 @@ import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 
 private const val RAMP =
-    " .'`^\":;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@\$"
+    $$" .'`^\":;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
 
 private const val GLYPH_SIZE = 24f
 private const val BASELINE_SHIFT = 0.22f
