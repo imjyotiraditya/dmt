@@ -39,7 +39,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toAlbums
-import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
@@ -60,9 +59,7 @@ import kotlin.time.Duration.Companion.milliseconds
 private const val ROOT_ID = "root"
 private const val TRACKS_ID = "tracks"
 private const val ALBUMS_ID = "albums"
-private const val FOLDERS_ID = "folders"
 private const val ALBUM_PREFIX = "album/"
-private const val FOLDER_PREFIX = "folder/"
 
 @AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
@@ -277,10 +274,6 @@ class PlaybackService : MediaLibraryService() {
                     title = getString(R.string.auto_albums),
                     childrenAsGrid = true,
                 ),
-                browsableItem(
-                    id = FOLDERS_ID,
-                    title = getString(R.string.auto_folders),
-                ),
             )
 
             parentId == TRACKS_ID -> tracks.map { it.toMediaItem() }
@@ -298,23 +291,6 @@ class PlaybackService : MediaLibraryService() {
                 val name = parentId.removePrefix(ALBUM_PREFIX)
                 tracks.toAlbums()
                     .find { it.name == name }
-                    ?.tracks
-                    .orEmpty()
-                    .map { it.toMediaItem() }
-            }
-
-            parentId == FOLDERS_ID -> tracks.toFolders().map { folder ->
-                browsableItem(
-                    id = FOLDER_PREFIX + folder.path,
-                    title = folder.name,
-                    subtitle = "${folder.tracks.size} trk",
-                )
-            }
-
-            parentId.startsWith(FOLDER_PREFIX) -> {
-                val path = parentId.removePrefix(FOLDER_PREFIX)
-                tracks.toFolders()
-                    .find { it.path == path }
                     ?.tracks
                     .orEmpty()
                     .map { it.toMediaItem() }

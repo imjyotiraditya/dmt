@@ -25,7 +25,7 @@ this is the thank you note.
 - queue and track info live in bottom sheets, queue items can be removed one by one
 - sleep timer (15/30/60), playback speed (0.75x to 2x), shuffle and repeat
 - listening stats: time listened, play counts, most played with accent bars
-- android auto: browse by tracks, albums (grid) and folders, voice search,
+- android auto: browse by tracks and albums (grid), voice search,
   shuffle and repeat buttons on the car screen
 - picks up where you left off: last queue, track and position restore on launch,
   deleted files silently drop out
