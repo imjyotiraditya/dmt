@@ -17,6 +17,7 @@ data class Track(
     val size: Long,
     val trackNumber: Int,
     val dateAdded: Long = 0L,
+    val dateModified: Long = 0L,
     val coverUri: Uri? = null,
     val source: TrackSource = TrackSource.LOCAL,
     val remoteId: String? = null,

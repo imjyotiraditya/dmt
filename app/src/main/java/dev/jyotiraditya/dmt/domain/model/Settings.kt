@@ -8,6 +8,8 @@ enum class SourceMode(val label: String) {
 enum class LibrarySort(val label: String) {
     TITLE("title"),
     ARTIST("artist"),
+    RECENT_ADDED("recent-a"),
+    RECENT_MODIFIED("recent-m"),
     RECENT("recent"),
     ;
 
@@ -15,10 +17,17 @@ enum class LibrarySort(val label: String) {
         get() = when (this) {
             TITLE -> compareBy { it.title.lowercase() }
             ARTIST -> compareBy({ it.artist.lowercase() }, { it.title.lowercase() })
-            RECENT -> compareByDescending { it.dateAdded }
+            RECENT_ADDED, RECENT -> compareByDescending { it.dateAdded }
+            RECENT_MODIFIED -> compareByDescending { it.dateModified }
         }
 
-    fun next(): LibrarySort = entries[(ordinal + 1) % entries.size]
+    fun next(mode: SourceMode): LibrarySort {
+        val cycle = when (mode) {
+            SourceMode.LOCAL -> listOf(TITLE, ARTIST, RECENT_ADDED, RECENT_MODIFIED)
+            SourceMode.JELLYFIN -> listOf(TITLE, ARTIST, RECENT)
+        }
+        return cycle[(cycle.indexOf(this) + 1) % cycle.size]
+    }
 }
 
 data class DmtSettings(

@@ -34,6 +34,7 @@ class MediaRepositoryImpl @Inject constructor(
         MediaStore.Audio.Media.SIZE,
         MediaStore.Audio.Media.TRACK,
         MediaStore.Audio.Media.DATE_ADDED,
+        MediaStore.Audio.Media.DATE_MODIFIED,
     )
 
     override suspend fun scan(): List<Track> {
@@ -82,6 +83,7 @@ private fun Cursor.toTrack(): Track {
         size = long(MediaStore.Audio.Media.SIZE),
         trackNumber = int(MediaStore.Audio.Media.TRACK),
         dateAdded = long(MediaStore.Audio.Media.DATE_ADDED),
+        dateModified = long(MediaStore.Audio.Media.DATE_MODIFIED),
         coverUri = ContentUris.withAppendedId(albumArtBase, albumId),
         source = TrackSource.LOCAL,
     )

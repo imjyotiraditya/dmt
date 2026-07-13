@@ -35,7 +35,11 @@ fun LibraryPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             onSort = {
                 dispatch(
                     DmtAction.Config(
-                        state.settings.copy(librarySort = state.settings.librarySort.next()),
+                        state.settings.copy(
+                            librarySort = state.settings.librarySort.next(
+                                state.settings.sourceMode,
+                            ),
+                        ),
                     ),
                 )
             },
