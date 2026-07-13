@@ -44,6 +44,7 @@ import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
 import dev.jyotiraditya.dmt.util.toMediaItem
+import dev.jyotiraditya.dmt.util.windowQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -293,7 +294,12 @@ class PlaybackService : MediaLibraryService() {
                     .find { it.name == name }
                     ?.tracks
                     .orEmpty()
-                    .map { it.toMediaItem() }
+                    .map { track ->
+                        track.toMediaItem()
+                            .buildUpon()
+                            .setMediaId("$parentId/${track.id}")
+                            .build()
+                    }
             }
 
             else -> emptyList()
@@ -453,23 +459,30 @@ class PlaybackService : MediaLibraryService() {
                 val query = single?.requestMetadata?.searchQuery
 
                 when {
-                    single != null && query != null -> {
-                        val matches = searchLibrary(tracks, query).ifEmpty { tracks }
-                        MediaSession.MediaItemsWithStartPosition(
-                            matches.map { it.toMediaItem() },
-                            0,
-                            0L,
-                        )
+                    single != null && query != null ->
+                        queueOf(searchLibrary(tracks, query).ifEmpty { tracks }, 0)
+
+                    single != null && single.mediaId.startsWith(ALBUM_PREFIX) -> {
+                        val name = single.mediaId
+                            .removePrefix(ALBUM_PREFIX)
+                            .substringBeforeLast('/')
+                        val trackId = single.mediaId.substringAfterLast('/')
+                        val albumTracks = tracks.toAlbums()
+                            .find { it.name == name }
+                            ?.tracks
+                            .orEmpty()
+                        val index = albumTracks.indexOfFirst { it.id.toString() == trackId }
+                        if (index >= 0) {
+                            queueOf(albumTracks, index, startPositionMs)
+                        } else {
+                            queueOf(tracks, 0)
+                        }
                     }
 
                     single != null && single.localConfiguration == null -> {
                         val index = tracks.indexOfFirst { it.id.toString() == single.mediaId }
                         if (index >= 0) {
-                            MediaSession.MediaItemsWithStartPosition(
-                                tracks.map { it.toMediaItem() },
-                                index,
-                                startPositionMs,
-                            )
+                            queueOf(tracks, index, startPositionMs)
                         } else {
                             MediaSession.MediaItemsWithStartPosition(
                                 resolveItems(mediaItems),
@@ -487,13 +500,28 @@ class PlaybackService : MediaLibraryService() {
                 }
             }
 
+        private fun queueOf(
+            list: List<Track>,
+            index: Int,
+            positionMs: Long = 0L,
+        ): MediaSession.MediaItemsWithStartPosition {
+            val (queue, start) = windowQueue(list, index)
+            return MediaSession.MediaItemsWithStartPosition(
+                queue.map { it.toMediaItem() },
+                start,
+                positionMs,
+            )
+        }
+
         private suspend fun resolveItems(mediaItems: List<MediaItem>): List<MediaItem> {
             val tracks = library()
             return mediaItems.map { item ->
                 if (item.localConfiguration != null) {
                     item
                 } else {
-                    tracks.find { it.id.toString() == item.mediaId }?.toMediaItem() ?: item
+                    tracks.find { it.id.toString() == item.mediaId.substringAfterLast('/') }
+                        ?.toMediaItem()
+                        ?: item
                 }
             }
         }

@@ -17,6 +17,17 @@ import java.nio.ByteBuffer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+const val QUEUE_CAP = 500
+private const val QUEUE_LOOKBACK = 100
+
+fun windowQueue(list: List<Track>, index: Int): Pair<List<Track>, Int> {
+    if (list.size <= QUEUE_CAP) return list to index
+    val start = (index - QUEUE_LOOKBACK)
+        .coerceAtLeast(0)
+        .coerceAtMost(list.size - QUEUE_CAP)
+    return list.subList(start, start + QUEUE_CAP).toList() to (index - start)
+}
+
 suspend fun <T> ListenableFuture<T>.await(): T =
     suspendCancellableCoroutine { cont ->
         addListener(

@@ -38,7 +38,9 @@ import dev.jyotiraditya.dmt.util.await
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
 import dev.jyotiraditya.dmt.util.queueLabels
+import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.toMediaItem
+import dev.jyotiraditya.dmt.util.windowQueue
 import dev.jyotiraditya.dmt.util.togglePlayPause
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -51,8 +53,6 @@ import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-private const val QUEUE_CAP = 500
-private const val QUEUE_LOOKBACK = 100
 private val SPEED_STEPS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 private val SLEEP_STEPS = listOf(0, 15, 30, 60)
 
@@ -95,14 +95,6 @@ class PlayerViewModel @Inject constructor(
         }
         if (currentState.hasPermission) scan()
         connect()
-    }
-
-    private fun windowQueue(list: List<Track>, index: Int): Pair<List<Track>, Int> {
-        if (list.size <= QUEUE_CAP) return list to index
-        val start = (index - QUEUE_LOOKBACK)
-            .coerceAtLeast(0)
-            .coerceAtMost(list.size - QUEUE_CAP)
-        return list.subList(start, start + QUEUE_CAP).toList() to (index - start)
     }
 
     private fun filter(tracks: List<Track>, query: String): List<Track> =
