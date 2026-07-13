@@ -1,21 +1,17 @@
 package dev.jyotiraditya.dmt.presentation.player
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -28,9 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,7 +49,6 @@ private val TRACK_SPEC_LABELS = setOf("FMT", "BIT", "RATE", "CH", "KBPS", "VBR",
 private val DECODER_SPEC_LABELS = setOf("DEC", "HW", "IMPL", "INST")
 private val OUTPUT_ROUTE_LABELS = setOf("API", "BIT", "RATE", "BUF", "FLAGS")
 private val DEVICE_ROUTE_LABELS = setOf("VIA", "NAME", "RATES", "ENC", "CH")
-private val CONNECTOR_DASH = floatArrayOf(3f, 7f)
 private const val CHAIN_LABEL_WIDTH = 8
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -219,7 +212,7 @@ fun ChainContent(state: DmtState) {
             .padding(top = 8.dp),
     ) {
         stages.forEachIndexed { index, stage ->
-            ChainStageRow(
+            ChainStageBlock(
                 stage = stage,
                 last = index == stages.lastIndex,
             )
@@ -228,47 +221,40 @@ fun ChainContent(state: DmtState) {
 }
 
 @Composable
-private fun ChainStageRow(stage: ChainStage, last: Boolean) {
-    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxHeight(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 3.dp)
-                    .size(8.dp)
-                    .background(stage.color),
-            )
-            if (!last) {
-                ChainConnector(
-                    modifier = Modifier
-                        .width(8.dp)
-                        .weight(1f),
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(bottom = 16.dp),
-        ) {
-            Text(
-                text = stage.name,
-                style = MaterialTheme.typography.labelMedium,
-                color = TuiBright,
-            )
-            stage.specs.forEach { spec ->
-                ChainSpecRow(spec)
-            }
-        }
+private fun ChainStageBlock(stage: ChainStage, last: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "■ ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = stage.color,
+        )
+        Text(
+            text = stage.name,
+            style = MaterialTheme.typography.labelMedium,
+            color = TuiBright,
+        )
+    }
+    stage.specs.forEach { spec ->
+        ChainSpecRow(spec)
+    }
+    if (!last) {
+        Text(
+            text = "v",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TuiFaint,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
     }
 }
 
 @Composable
 private fun ChainSpecRow(spec: Spec) {
     Row(modifier = Modifier.padding(top = 4.dp)) {
+        Text(
+            text = "┊ ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TuiFaint,
+        )
         Text(
             text = spec.label.lowercase().padEnd(CHAIN_LABEL_WIDTH),
             style = MaterialTheme.typography.bodyMedium,
@@ -280,31 +266,6 @@ private fun ChainSpecRow(spec: Spec) {
             color = if (spec.hot) LocalAccent.current else TuiFg,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun ChainConnector(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val x = size.width / 2f
-        val inset = 3.dp.toPx()
-        val tipY = size.height - inset
-        drawLine(
-            color = TuiFaint,
-            start = Offset(x, inset),
-            end = Offset(x, tipY),
-            pathEffect = PathEffect.dashPathEffect(CONNECTOR_DASH),
-        )
-        drawLine(
-            color = TuiFaint,
-            start = Offset(x - inset, tipY - inset),
-            end = Offset(x, tipY),
-        )
-        drawLine(
-            color = TuiFaint,
-            start = Offset(x + inset, tipY - inset),
-            end = Offset(x, tipY),
         )
     }
 }
