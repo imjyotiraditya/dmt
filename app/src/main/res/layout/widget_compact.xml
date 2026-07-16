@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Widget layout: exact clone of MiniPlayer.kt with 8dp inset padding.
+    - Title, artist, and buttons are defined as ImageViews with pre-rendered
+      JetBrains Mono bitmaps to guarantee the custom font is displayed
+      identically on all devices, bypassing launcher-side custom font blocks.
+    - Buttons use android:tint CSLs to dynamically color the font glyphs
+      when pressed (inverting white/dark exactly like Compose TuiKeys).
+    - Subtitle displays only the artist name (no timestamp).
+    - Left side has a 46dp ImageView for the ASCII artwork.
+    - Buttons sizes follow the in-app player's TuiKey spec exactly:
+      - Height = 36dp for all buttons
+      - Play/Pause Width = 44dp
+      - Prev & Next Width = 52dp
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:padding="8dp">
+
+    <!--
+        Inner container — carries the 1dp tui_line border.
+        Padding matches MiniPlayer: horizontal 12dp, vertical 10dp.
+    -->
+    <LinearLayout
+        android:id="@+id/widget_inner"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/widget_background"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp">
+
+        <!-- Hairline progress bar — 1dp height -->
+        <ProgressBar
+            android:id="@+id/widget_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_progress_bar" />
+
+        <!-- Content row — padded top 8dp -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <!-- ASCII album artwork square -->
+            <ImageView
+                android:id="@+id/widget_artwork"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:scaleType="centerCrop"
+                android:layout_marginEnd="12dp"
+                android:background="@color/tui_faint"
+                android:visibility="gone"
+                android:contentDescription="ASCII Album Art" />
+
+            <!-- Title + artist column — weight=1 -->
+            <LinearLayout
+                android:id="@+id/widget_text_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="10dp">
+
+                <!-- Title — bodyMedium (13sp JetBrains Mono, rendered via Bitmap) -->
+                <ImageView
+                    android:id="@+id/widget_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:scaleType="fitStart"
+                    android:contentDescription="Track Title" />
+
+                <!-- Subtitle — labelSmall (10sp JetBrains Mono, rendered via Bitmap) -->
+                <ImageView
+                    android:id="@+id/widget_artist"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"
+                    android:scaleType="fitStart"
+                    android:contentDescription="Artist Name" />
+            </LinearLayout>
+
+            <!-- Playback keys pre-rendered in JetBrains Mono -->
+            <!-- Prev button (| <<) -->
+            <ImageView
+                android:id="@+id/widget_prev"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
+                android:background="@drawable/widget_button_selector"
+                android:tint="@color/widget_button_normal_text"
+                android:scaleType="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Previous" />
+
+            <!-- Play/Pause button (|| / ▷) — bright selector style -->
+            <ImageView
+                android:id="@+id/widget_play_pause"
+                android:layout_width="44dp"
+                android:layout_height="36dp"
+                android:background="@drawable/widget_button_bright_selector"
+                android:tint="@color/widget_button_bright_text"
+                android:scaleType="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Play or Pause" />
+
+            <!-- Next button (>> |) -->
+            <ImageView
+                android:id="@+id/widget_next"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
+                android:background="@drawable/widget_button_selector"
+                android:tint="@color/widget_button_normal_text"
+                android:scaleType="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Next" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

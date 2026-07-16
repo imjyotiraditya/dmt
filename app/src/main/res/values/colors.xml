@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tui_bg">#0A0A0B</color>
+    <color name="tui_surface">#131415</color>
+    <color name="tui_fg">#C6CBCC</color>
+    <color name="tui_bright">#DFE4E5</color>
+    <color name="tui_dim">#767D80</color>
+    <color name="tui_faint">#3C4245</color>
+    <color name="tui_line">#1E2122</color>
+    <color name="tui_accent">#E8A33D</color>
+</resources>

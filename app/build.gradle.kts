@@ -67,6 +67,7 @@ android {
                 signingConfigs
                     .getByName("release")
                     .takeIf { it.storeFile != null }
+                    ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.playback
 
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Bitmap
 import android.media.audiofx.AudioEffect
@@ -54,6 +55,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import dev.jyotiraditya.dmt.presentation.widget.WidgetPlaybackState
+import dev.jyotiraditya.dmt.presentation.widget.WidgetPlaybackStateRepository
+import dev.jyotiraditya.dmt.presentation.widget.WidgetUpdater
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -90,6 +94,7 @@ class PlaybackService : MediaLibraryService() {
     private var mediaSession: MediaLibrarySession? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var sleepJob: Job? = null
+    private var positionTickJob: Job? = null
     private var sleepEndAt: Long? = null
 
     @Volatile
@@ -144,7 +149,12 @@ class PlaybackService : MediaLibraryService() {
                 override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
 
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    if (!isPlaying) saveSession()
+                    if (!isPlaying) {
+                        saveSession()
+                        stopPositionTick()
+                    } else {
+                        startPositionTick()
+                    }
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -156,6 +166,18 @@ class PlaybackService : MediaLibraryService() {
                         AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION,
                         audioSessionId,
                     )
+                }
+
+                override fun onEvents(player: Player, events: Player.Events) {
+                    if (events.containsAny(
+                            Player.EVENT_MEDIA_ITEM_TRANSITION,
+                            Player.EVENT_IS_PLAYING_CHANGED,
+                            Player.EVENT_PLAYBACK_STATE_CHANGED,
+                            Player.EVENT_MEDIA_METADATA_CHANGED,
+                        )
+                    ) {
+                        pushWidgetState(player)
+                    }
                 }
             },
         )
@@ -208,6 +230,62 @@ class PlaybackService : MediaLibraryService() {
     private fun publishButtons() {
         val session = mediaSession ?: return
         session.setMediaButtonPreferences(sessionButtons(session.player))
+    }
+
+    // -----------------------------------------------------------------------
+    // Widget state management
+    // -----------------------------------------------------------------------
+
+    /**
+     * Snapshot current player state into [WidgetPlaybackStateRepository] then
+     * ask [WidgetUpdater] to push a fresh [RemoteViews] to all widget instances.
+     */
+    private fun pushWidgetState(player: Player) {
+        val mediaItem = player.currentMediaItem
+        val metadata = mediaItem?.mediaMetadata
+        val state = WidgetPlaybackState(
+            hasTrack = mediaItem != null,
+            title = metadata?.title?.toString() ?: "",
+            artist = metadata?.artist?.toString() ?: "",
+            isPlaying = player.isPlaying,
+            positionMs = player.currentPosition.coerceAtLeast(0L),
+            durationMs = player.duration.coerceAtLeast(0L),
+            artworkUriString = metadata?.artworkUri?.toString(),
+            // localConfiguration?.uri is the actual media file URI (content:// or file://).
+            // WidgetArtworkCache uses this as a MediaMetadataRetriever fallback when
+            // artworkUri is null (common for local files with embedded APIC tags).
+            trackUriString = mediaItem?.localConfiguration?.uri?.toString(),
+        )
+        WidgetPlaybackStateRepository.save(this, state)
+        scope.launch { WidgetUpdater.updateAll(this@PlaybackService) }
+    }
+
+    /**
+     * Start a 5-second position tick while playback is active.
+     * Stopped automatically on pause or service destruction.
+     */
+    private fun startPositionTick() {
+        positionTickJob?.cancel()
+        positionTickJob = scope.launch {
+            while (true) {
+                delay(5_000L)
+                val player = mediaSession?.player ?: break
+                if (!player.isPlaying) break
+                val current = WidgetPlaybackStateRepository.load(this@PlaybackService)
+                val updated = current.copy(
+                    positionMs = player.currentPosition.coerceAtLeast(0L),
+                    durationMs = player.duration.coerceAtLeast(0L),
+                    isPlaying = true,
+                )
+                WidgetPlaybackStateRepository.save(this@PlaybackService, updated)
+                WidgetUpdater.updateAll(this@PlaybackService)
+            }
+        }
+    }
+
+    private fun stopPositionTick() {
+        positionTickJob?.cancel()
+        positionTickJob = null
     }
 
     private suspend fun library(): List<Track> {
@@ -592,6 +670,13 @@ class PlaybackService : MediaLibraryService() {
 
     @OptIn(UnstableApi::class)
     override fun onDestroy() {
+        // Mark widget as not-playing before service dies
+        stopPositionTick()
+        runCatching {
+            val current = WidgetPlaybackStateRepository.load(this)
+            WidgetPlaybackStateRepository.save(this, current.copy(isPlaying = false))
+        }
+
         (mediaSession?.player as? ExoPlayer)?.let {
             broadcastEffectSession(
                 AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION,
