@@ -82,6 +82,9 @@ class PreferencesRepositoryImpl @Inject constructor(
                 ?.let { token -> it[KEY_JELLYFIN_TOKEN] = token }
                 ?: it.remove(KEY_JELLYFIN_TOKEN)
         }
+        // Evict artwork from LRU cache & push update to the widget immediately
+        dev.jyotiraditya.dmt.presentation.widget.WidgetArtworkCache.clear()
+        dev.jyotiraditya.dmt.presentation.widget.WidgetUpdater.updateAll(context)
     }
 
     override suspend fun savedSpeed(): Float = context.dmtStore.data.first()[KEY_SPEED] ?: 1f

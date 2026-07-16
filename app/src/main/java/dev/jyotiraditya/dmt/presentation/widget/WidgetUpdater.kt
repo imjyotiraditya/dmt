@@ -62,13 +62,28 @@ object WidgetUpdater {
         if (state.hasTrack) {
             val artworkUri = state.artworkUriString?.let { Uri.parse(it) }
             val trackUri = state.trackUriString?.let { Uri.parse(it) }
-            if (artworkUri != null || trackUri != null) {
-                val bitmap = withContext(Dispatchers.IO) {
-                    WidgetArtworkCache.get(appContext, artworkUri, trackUri)
+            val bitmap = withContext(Dispatchers.IO) {
+                val cached = WidgetArtworkCache.get(appContext, artworkUri, trackUri)
+                if (cached != null) {
+                    cached
+                } else {
+                    // Generate procedural ASCII placeholder using title + artist hash as seed
+                    val seed = (state.title + state.artist).hashCode().toLong()
+                    val placeholder = dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder(
+                        appContext,
+                        seed = seed,
+                        cols = 32
+                    )
+                    // Scale to fit target dimensions cleanly
+                    val density = appContext.resources.displayMetrics.density
+                    val targetPx = (46f * density).toInt().coerceAtLeast(1)
+                    val scaled = Bitmap.createScaledBitmap(placeholder, targetPx, targetPx, true)
+                    if (scaled !== placeholder) placeholder.recycle()
+                    scaled
                 }
-                if (bitmap != null) {
-                    views.setImageViewBitmap(R.id.widget_artwork, bitmap)
-                }
+            }
+            if (bitmap != null) {
+                views.setImageViewBitmap(R.id.widget_artwork, bitmap)
             }
         }
 
@@ -167,8 +182,9 @@ object WidgetUpdater {
         else 0
         views.setProgressBar(R.id.widget_progress, 100, progress, false)
 
-        // Display the artwork image view container
+        // Display the artwork image view container and clear previous image
         views.setViewVisibility(R.id.widget_artwork, View.VISIBLE)
+        views.setImageViewBitmap(R.id.widget_artwork, null)
     }
 
     // -----------------------------------------------------------------------
