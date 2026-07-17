@@ -1,13 +1,11 @@
 package dev.jyotiraditya.dmt.presentation.player
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -28,8 +26,6 @@ import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
-import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import dev.jyotiraditya.dmt.util.asTime
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -37,22 +33,13 @@ import dev.jyotiraditya.dmt.util.asTime
 fun MiniPlayer(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
-    onLongPress: () -> Unit,
 ) {
     val fraction =
         if (state.durationMs > 0) state.positionMs.toFloat() / state.durationMs else 0f
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, TuiLine)
-            .background(TuiSurface.copy(alpha = 0.85f))
-            .combinedClickable(
-                interactionSource = null,
-                indication = null,
-                onClick = { dispatch(DmtAction.Expand(true)) },
-                onLongClick = onLongPress,
-            )
+            .fillMaxSize()
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Hairline(fraction)

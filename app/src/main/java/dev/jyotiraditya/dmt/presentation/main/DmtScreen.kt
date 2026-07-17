@@ -1,12 +1,6 @@
 package dev.jyotiraditya.dmt.presentation.main
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -53,9 +50,9 @@ import dev.jyotiraditya.dmt.presentation.player.ChainContent
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
-import dev.jyotiraditya.dmt.presentation.player.ExpandedPlayer
 import dev.jyotiraditya.dmt.presentation.player.InfoContent
-import dev.jyotiraditya.dmt.presentation.player.MiniPlayer
+import dev.jyotiraditya.dmt.presentation.player.MiniPlayerHeight
+import dev.jyotiraditya.dmt.presentation.player.PlayerSheet
 import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
@@ -77,6 +74,7 @@ fun DmtScreen(
 ) {
     var showQueueSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
+    var miniAnchor by remember { mutableStateOf<Rect?>(null) }
     val imeVisible = WindowInsets.isImeVisible
     val landscape = isLandscapeWindow()
 
@@ -91,13 +89,11 @@ fun DmtScreen(
         if (state.queue.isEmpty()) showQueueSheet = false
     }
 
-    val backHandled = state.expanded ||
-            (state.view == DmtView.ALBUMS && state.openAlbum != null) ||
-            state.view != DmtView.LIBRARY
+    val backHandled = !state.expanded &&
+            ((state.view == DmtView.ALBUMS && state.openAlbum != null) ||
+                    state.view != DmtView.LIBRARY)
     BackHandler(enabled = backHandled) {
         when {
-            state.expanded -> dispatch(DmtAction.Expand(false))
-
             state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
 
             state.view == DmtView.BLOCKLIST -> dispatch(DmtAction.Show(DmtView.SETTINGS))
@@ -136,11 +132,7 @@ fun DmtScreen(
                         TuiNotice(error = state.error, notice = state.notice)
 
                         if (state.nowPlayingId != null && !imeVisible) {
-                            MiniPlayer(
-                                state = state,
-                                dispatch = dispatch,
-                                onLongPress = { showQueueSheet = true },
-                            )
+                            MiniPlayerAnchor { miniAnchor = it }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
@@ -164,28 +156,20 @@ fun DmtScreen(
                 TuiNotice(error = state.error, notice = state.notice)
 
                 if (state.nowPlayingId != null && !imeVisible) {
-                    MiniPlayer(
-                        state = state,
-                        dispatch = dispatch,
-                        onLongPress = { showQueueSheet = true },
-                    )
+                    MiniPlayerAnchor { miniAnchor = it }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
         }
 
-        AnimatedVisibility(
-            visible = state.expanded && state.nowPlayingId != null,
-            enter = slideInVertically(tween(240)) { it } + fadeIn(tween(180)),
-            exit = slideOutVertically(tween(200)) { it } + fadeOut(tween(140)),
-        ) {
-            ExpandedPlayer(
-                state = state,
-                dispatch = dispatch,
-                onInfo = { showInfoSheet = true },
-                onQueue = { showQueueSheet = true },
-            )
-        }
+        PlayerSheet(
+            state = state,
+            dispatch = dispatch,
+            anchor = miniAnchor,
+            hidden = imeVisible && !state.expanded,
+            onInfo = { showInfoSheet = true },
+            onQueue = { showQueueSheet = true },
+        )
 
         if (showQueueSheet) {
             TuiSheet(onDismiss = { showQueueSheet = false }) {
@@ -224,6 +208,16 @@ fun DmtScreen(
             }
         }
     }
+}
+
+@Composable
+private fun MiniPlayerAnchor(onAnchor: (Rect) -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(MiniPlayerHeight)
+            .onGloballyPositioned { onAnchor(it.boundsInRoot()) },
+    )
 }
 
 @Composable
