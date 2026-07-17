@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.data.source.local.cue.CueLibrary
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
@@ -38,7 +39,7 @@ class MediaRepositoryImpl @Inject constructor(
 
     override suspend fun scan(): List<Track> {
         val blocked = settingsRepository.settings.first().blockedFolders
-        return buildList {
+        val base = buildList {
             runCatching {
                 context.contentResolver.query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -54,6 +55,7 @@ class MediaRepositoryImpl @Inject constructor(
                 }
             }
         }
+        return CueLibrary.expand(base).sortedBy { it.title.lowercase() }
     }
 }
 

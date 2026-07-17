@@ -21,6 +21,8 @@ data class Track(
     val coverUri: Uri? = null,
     val source: TrackSource = TrackSource.LOCAL,
     val remoteId: String? = null,
+    val clipStartMs: Long? = null,
+    val clipEndMs: Long? = null,
 )
 
 data class Album(

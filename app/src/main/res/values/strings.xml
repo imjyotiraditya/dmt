@@ -45,6 +45,9 @@
     <string name="perm_notif_label">notifications</string>
     <string name="perm_notif_why">show playback controls outside the app</string>
     <string name="perm_notif_off">off: no media notification, playback still works</string>
+    <string name="perm_files_label">all files access</string>
+    <string name="perm_files_why">read cue sheets stored next to albums</string>
+    <string name="perm_files_off">off: cue albums play as one long track</string>
     <string name="perm_net_label">local network</string>
     <string name="perm_net_why">reach media servers on your home network</string>
     <string name="perm_net_off">off: jellyfin on the same network cannot connect</string>

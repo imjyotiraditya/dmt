@@ -51,6 +51,16 @@ fun Track.toMediaItem(): MediaItem =
     MediaItem.Builder()
         .setMediaId(id.toString())
         .setUri(uri)
+        .apply {
+            if (clipStartMs != null || clipEndMs != null) {
+                setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(clipStartMs ?: 0L)
+                        .apply { clipEndMs?.let { setEndPositionMs(it) } }
+                        .build(),
+                )
+            }
+        }
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(title)

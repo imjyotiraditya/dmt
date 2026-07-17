@@ -43,6 +43,8 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.util.allFilesAccess
+import dev.jyotiraditya.dmt.util.allFilesAccessIntent
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.localNetworkPermission
 import dev.jyotiraditya.dmt.util.notificationPermission
@@ -163,6 +165,27 @@ fun PermissionsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 },
             )
         }
+
+        val filesGranted = remember(refresh) { allFilesAccess }
+        var hadFilesAccess by remember { mutableStateOf(filesGranted) }
+        LaunchedEffect(filesGranted) {
+            if (filesGranted && !hadFilesAccess) dispatch(DmtAction.Rescan)
+            hadFilesAccess = filesGranted
+        }
+        PermissionRow(
+            label = stringResource(R.string.perm_files_label),
+            why = stringResource(R.string.perm_files_why),
+            whenOff = stringResource(R.string.perm_files_off),
+            granted = filesGranted,
+            actionLabel = stringResource(
+                if (filesGranted) R.string.perm_revoke else R.string.grant,
+            ),
+            onAction = {
+                runCatching {
+                    context.startActivity(allFilesAccessIntent(context.packageName))
+                }
+            },
+        )
 
         Text(
             text = stringResource(R.string.perms_hint),
