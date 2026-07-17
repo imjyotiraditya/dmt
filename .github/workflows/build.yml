@@ -53,3 +53,17 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           archive: false
           retention-days: 1
+
+      - name: upload apk to telegram
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          curl -fsS \
+            -F chat_id=-1003667635705 \
+            -F message_thread_id=1908 \
+            -F document=@"$apk" \
+            -F caption="dmt ${{ steps.version.outputs.name }}" \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" > /dev/null
