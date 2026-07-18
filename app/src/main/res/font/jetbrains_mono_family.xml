@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Font family definition for JetBrains Mono.
+    Includes both android: and app: namespaces to ensure compatibility with
+    RemoteViews resource resolution across all Android platform versions.
+-->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:font="@font/jetbrains_mono"
+        app:fontStyle="normal"
+        app:fontWeight="400"
+        app:font="@font/jetbrains_mono" />
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        android:font="@font/jetbrains_mono_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700"
+        app:font="@font/jetbrains_mono_bold" />
+</font-family>

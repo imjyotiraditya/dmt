@@ -73,6 +73,28 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".presentation.widget.CompactWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_compact_info" />
+        </receiver>
+
+        <!-- Widget button command receiver — not exported; only our own app sends these -->
+        <receiver
+            android:name=".presentation.widget.WidgetActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="dev.jyotiraditya.dmt.widget.action.PREV" />
+                <action android:name="dev.jyotiraditya.dmt.widget.action.PLAY_PAUSE" />
+                <action android:name="dev.jyotiraditya.dmt.widget.action.NEXT" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
