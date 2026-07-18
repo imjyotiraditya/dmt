@@ -39,6 +39,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toAlbums
+import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
@@ -61,6 +62,8 @@ private const val ROOT_ID = "root"
 private const val TRACKS_ID = "tracks"
 private const val ALBUMS_ID = "albums"
 private const val ALBUM_PREFIX = "album/"
+private const val ARTISTS_ID = "artists"
+private const val ARTIST_PREFIX = "artist/"
 
 @AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
@@ -275,6 +278,10 @@ class PlaybackService : MediaLibraryService() {
                     title = getString(R.string.auto_albums),
                     childrenAsGrid = true,
                 ),
+                browsableItem(
+                    id = ARTISTS_ID,
+                    title = getString(R.string.auto_artists),
+                ),
             )
 
             parentId == TRACKS_ID -> tracks.map { it.toMediaItem() }
@@ -291,6 +298,28 @@ class PlaybackService : MediaLibraryService() {
             parentId.startsWith(ALBUM_PREFIX) -> {
                 val name = parentId.removePrefix(ALBUM_PREFIX)
                 tracks.toAlbums()
+                    .find { it.name == name }
+                    ?.tracks
+                    .orEmpty()
+                    .map { track ->
+                        track.toMediaItem()
+                            .buildUpon()
+                            .setMediaId("$parentId/${track.id}")
+                            .build()
+                    }
+            }
+
+            parentId == ARTISTS_ID -> tracks.toArtists().map { artist ->
+                browsableItem(
+                    id = ARTIST_PREFIX + artist.name,
+                    title = artist.name,
+                    artwork = artist.tracks.firstOrNull()?.coverUri,
+                )
+            }
+
+            parentId.startsWith(ARTIST_PREFIX) -> {
+                val name = parentId.removePrefix(ARTIST_PREFIX)
+                tracks.toArtists()
                     .find { it.name == name }
                     ?.tracks
                     .orEmpty()
@@ -474,6 +503,23 @@ class PlaybackService : MediaLibraryService() {
                         val index = albumTracks.indexOfFirst { it.id.toString() == trackId }
                         if (index >= 0) {
                             queueOf(albumTracks, index, startPositionMs)
+                        } else {
+                            queueOf(tracks, 0)
+                        }
+                    }
+
+                    single != null && single.mediaId.startsWith(ARTIST_PREFIX) -> {
+                        val name = single.mediaId
+                            .removePrefix(ARTIST_PREFIX)
+                            .substringBeforeLast('/')
+                        val trackId = single.mediaId.substringAfterLast('/')
+                        val artistTracks = tracks.toArtists()
+                            .find { it.name == name }
+                            ?.tracks
+                            .orEmpty()
+                        val index = artistTracks.indexOfFirst { it.id.toString() == trackId }
+                        if (index >= 0) {
+                            queueOf(artistTracks, index, startPositionMs)
                         } else {
                             queueOf(tracks, 0)
                         }

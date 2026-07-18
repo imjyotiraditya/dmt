@@ -21,6 +21,7 @@ import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Album
+import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -125,6 +126,13 @@ class PlayerViewModel @Inject constructor(
             }
         }
 
+    private fun filterArtists(artists: List<Artist>, query: String): List<Artist> =
+        if (query.isBlank()) {
+            artists
+        } else {
+            artists.filter { it.name.contains(query, true) }
+        }
+
     override fun onIntent(intent: DmtAction) {
         val c = controller
         when (intent) {
@@ -139,6 +147,7 @@ class PlayerViewModel @Inject constructor(
                     query = intent.value,
                     filtered = filter(it.tracks, intent.value, it.settings.librarySort),
                     filteredAlbums = filterAlbums(it.albums, intent.value),
+                    filteredArtists = filterArtists(it.artists, intent.value),
                 )
             }
 
@@ -147,6 +156,7 @@ class PlayerViewModel @Inject constructor(
             }
 
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
+            is DmtAction.OpenArtist -> reduce { it.copy(openArtist = intent.name) }
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
@@ -384,9 +394,11 @@ class PlayerViewModel @Inject constructor(
                         scanning = false,
                         tracks = emptyList(),
                         albums = emptyList(),
+                        artists = emptyList(),
                         folders = emptyList(),
                         filtered = emptyList(),
                         filteredAlbums = emptyList(),
+                        filteredArtists = emptyList(),
                         error = context.getString(
                             R.string.scan_failed,
                             state.settings.sourceMode.label,
@@ -395,20 +407,25 @@ class PlayerViewModel @Inject constructor(
                 }
                 return@launch
             }
-            val (filteredTracks, filteredAlbums) = withContext(
+            val (filteredTracks, filteredAlbums, filteredArtists) = withContext(
                 dispatchers.default,
             ) {
-                filter(library.tracks, query, currentState.settings.librarySort) to
-                        filterAlbums(library.albums, query)
+                Triple(
+                    filter(library.tracks, query, currentState.settings.librarySort),
+                    filterAlbums(library.albums, query),
+                    filterArtists(library.artists, query),
+                )
             }
             reduce {
                 it.copy(
                     scanning = false,
                     tracks = library.tracks,
                     albums = library.albums,
+                    artists = library.artists,
                     folders = library.folders,
                     filtered = filteredTracks,
                     filteredAlbums = filteredAlbums,
+                    filteredArtists = filteredArtists,
                     error = null,
                 )
             }

@@ -29,6 +29,12 @@ data class Album(
     val tracks: List<Track>,
 )
 
+data class Artist(
+    val name: String,
+    val albums: Int,
+    val tracks: List<Track>,
+)
+
 data class Folder(
     val name: String,
     val path: String,
@@ -44,5 +50,6 @@ data class Spec(
 data class LibrarySnapshot(
     val tracks: List<Track> = emptyList(),
     val albums: List<Album> = emptyList(),
+    val artists: List<Artist> = emptyList(),
     val folders: List<Folder> = emptyList(),
 )

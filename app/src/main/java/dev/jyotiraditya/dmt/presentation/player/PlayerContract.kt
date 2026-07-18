@@ -4,6 +4,7 @@ import android.content.IntentSender
 import android.graphics.Bitmap
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.domain.model.Album
+import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.Folder
@@ -12,20 +13,23 @@ import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 
-enum class DmtView { LIBRARY, ALBUMS, SETTINGS, STATS, BLOCKLIST, SOURCES, SOURCE_LOGIN }
+enum class DmtView { LIBRARY, ALBUMS, ARTISTS, SETTINGS, STATS, BLOCKLIST, SOURCES, SOURCE_LOGIN }
 
 data class DmtState(
     val hasPermission: Boolean = false,
     val scanning: Boolean = false,
     val tracks: List<Track> = emptyList(),
     val albums: List<Album> = emptyList(),
+    val artists: List<Artist> = emptyList(),
     val query: String = "",
     val filtered: List<Track> = emptyList(),
     val filteredAlbums: List<Album> = emptyList(),
+    val filteredArtists: List<Artist> = emptyList(),
     val folders: List<Folder> = emptyList(),
     val view: DmtView = DmtView.LIBRARY,
     val loginSource: SourceMode = SourceMode.JELLYFIN,
     val openAlbum: String? = null,
+    val openArtist: String? = null,
     val nowPlayingId: String? = null,
     val title: String = "",
     val artist: String = "",
@@ -59,6 +63,7 @@ sealed interface DmtAction {
     data class Query(val value: String) : DmtAction
     data class Show(val view: DmtView) : DmtAction
     data class OpenAlbum(val name: String?) : DmtAction
+    data class OpenArtist(val name: String?) : DmtAction
     data class PlayAt(val list: List<Track>, val index: Int) : DmtAction
     data class Enqueue(val list: List<Track>, val label: String) : DmtAction
     data class Jump(val index: Int) : DmtAction

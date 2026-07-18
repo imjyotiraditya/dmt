@@ -13,6 +13,19 @@ fun List<Track>.toFolders(): List<Folder> =
         }
         .sortedBy { it.name.lowercase() }
 
+fun List<Track>.toArtists(): List<Artist> =
+    groupBy { it.artist }
+        .map { (name, tracks) ->
+            Artist(
+                name = name,
+                albums = tracks.map { it.album }.distinct().size,
+                tracks = tracks.sortedWith(
+                    compareBy({ it.album.lowercase() }, { it.trackNumber }),
+                ),
+            )
+        }
+        .sortedBy { it.name.lowercase() }
+
 fun List<Track>.toAlbums(): List<Album> =
     groupBy { it.album }
         .map { (name, tracks) ->
