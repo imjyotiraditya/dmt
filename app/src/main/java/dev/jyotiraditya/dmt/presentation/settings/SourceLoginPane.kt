@@ -148,11 +148,14 @@ private fun LoginField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = TuiFg),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = TuiFg,
+                    fontFeatureSettings = if (mask) "calt off" else null,
+                ),
                 cursorBrush = SolidColor(accent),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 visualTransformation = if (mask) {
-                    PasswordVisualTransformation('•')
+                    PasswordVisualTransformation('*')
                 } else {
                     VisualTransformation.None
                 },

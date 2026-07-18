@@ -100,7 +100,7 @@ fun List<LyricLine>.withInterludes(): List<LyricLine> {
             out += LyricLine(
                 startMs = previousEnd + 400,
                 endMs = line.startMs - 200,
-                text = "· · ·",
+                text = "* * *",
                 voice = line.voice,
                 singer = -1,
                 interlude = true,
