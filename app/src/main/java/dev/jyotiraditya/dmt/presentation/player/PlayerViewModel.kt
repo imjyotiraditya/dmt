@@ -26,6 +26,7 @@ import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.repository.PlaylistRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
@@ -79,6 +80,7 @@ class PlayerViewModel @Inject constructor(
     private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
     private val getRouteSpecs: GetRouteSpecsUseCase,
+    private val playlistRepository: PlaylistRepository,
     private val dispatchers: DispatcherProvider,
 ) : BaseViewModel<DmtAction, DmtState, PlayerEffect>(
     DmtState(
@@ -141,6 +143,14 @@ class PlayerViewModel @Inject constructor(
             artists.filter { it.name.contains(query, true) }
         }
 
+    private fun mutatePlaylists(block: () -> Unit = {}) {
+        viewModelScope.launch(dispatchers.io) {
+            block()
+            val playlists = playlistRepository.load(currentState.tracks)
+            reduce { it.copy(playlists = playlists) }
+        }
+    }
+
     private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
         if (query.isBlank()) {
             folders
@@ -174,6 +184,24 @@ class PlayerViewModel @Inject constructor(
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
             is DmtAction.OpenArtist -> reduce { it.copy(openArtist = intent.name) }
             is DmtAction.OpenFolder -> reduce { it.copy(openFolder = intent.path) }
+            is DmtAction.OpenPlaylist -> reduce { it.copy(openPlaylist = intent.name) }
+
+            is DmtAction.CreatePlaylist -> mutatePlaylists {
+                playlistRepository.create(intent.name)
+            }
+
+            is DmtAction.DeletePlaylist -> {
+                reduce { it.copy(openPlaylist = null) }
+                mutatePlaylists { playlistRepository.delete(intent.name) }
+            }
+
+            is DmtAction.AddToPlaylist -> mutatePlaylists {
+                playlistRepository.addTrack(intent.name, intent.track)
+            }
+
+            is DmtAction.RemoveFromPlaylist -> mutatePlaylists {
+                playlistRepository.removeTrack(intent.name, intent.path)
+            }
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
@@ -449,6 +477,7 @@ class PlayerViewModel @Inject constructor(
                     error = null,
                 )
             }
+            mutatePlaylists()
             restoreSession()
         }
 

@@ -41,6 +41,11 @@ data class Folder(
     val tracks: List<Track>,
 )
 
+data class Playlist(
+    val name: String,
+    val tracks: List<Track>,
+)
+
 data class Spec(
     val label: String,
     val value: String,

@@ -7,10 +7,12 @@ import dagger.hilt.components.SingletonComponent
 import dev.jyotiraditya.dmt.data.repository.JellyfinMediaRepositoryImpl
 import dev.jyotiraditya.dmt.data.repository.LyricsRepositoryImpl
 import dev.jyotiraditya.dmt.data.repository.MediaRepositoryImpl
+import dev.jyotiraditya.dmt.data.repository.PlaylistRepositoryImpl
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepositoryImpl
 import dev.jyotiraditya.dmt.data.repository.TrackMediaRepositoryImpl
 import dev.jyotiraditya.dmt.domain.repository.LyricsRepository
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
+import dev.jyotiraditya.dmt.domain.repository.PlaylistRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.repository.TrackMediaRepository
@@ -38,4 +40,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun trackMediaRepository(impl: TrackMediaRepositoryImpl): TrackMediaRepository
+
+    @Binds
+    abstract fun playlistRepository(impl: PlaylistRepositoryImpl): PlaylistRepository
 }

@@ -2,7 +2,9 @@ package dev.jyotiraditya.dmt.presentation.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -50,6 +52,7 @@ import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.ArtistsPane
 import dev.jyotiraditya.dmt.presentation.library.FoldersPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
+import dev.jyotiraditya.dmt.presentation.library.PlaylistsPane
 import dev.jyotiraditya.dmt.presentation.player.ChainContent
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
@@ -112,6 +115,9 @@ fun DmtScreen(
 
             state.view == DmtView.FOLDERS && state.openFolder != null ->
                 dispatch(DmtAction.OpenFolder(null))
+
+            state.view == DmtView.PLAYLISTS && state.openPlaylist != null ->
+                dispatch(DmtAction.OpenPlaylist(null))
 
             else -> dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
@@ -253,6 +259,7 @@ private fun PaneHost(
             state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
             state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
             state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
+            state.view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
             else -> LibraryPane(state, dispatch)
         }
     }
@@ -320,6 +327,14 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 dispatch(DmtAction.Show(DmtView.FOLDERS))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TuiTab(
+                label = stringResource(R.string.tab_playlists),
+                active = state.view == DmtView.PLAYLISTS,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                dispatch(DmtAction.Show(DmtView.PLAYLISTS))
             }
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -392,23 +407,26 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    Row(modifier = Modifier.padding(vertical = 8.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(vertical = 8.dp),
+    ) {
         TuiTab(
             label = stringResource(R.string.tab_library),
             active = state.view == DmtView.LIBRARY,
         ) {
             dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
-        Spacer(modifier = Modifier.width(8.dp))
         TuiTab(
             label = stringResource(R.string.tab_albums),
             active = state.view == DmtView.ALBUMS,
         ) {
             dispatch(DmtAction.Show(DmtView.ALBUMS))
         }
-        Spacer(modifier = Modifier.width(8.dp))
         TuiTab(
             label = stringResource(R.string.tab_artists),
             active = state.view == DmtView.ARTISTS,
@@ -416,12 +434,17 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             dispatch(DmtAction.Show(DmtView.ARTISTS))
         }
         if (state.folders.isNotEmpty()) {
-            Spacer(modifier = Modifier.width(8.dp))
             TuiTab(
                 label = stringResource(R.string.tab_folders),
                 active = state.view == DmtView.FOLDERS,
             ) {
                 dispatch(DmtAction.Show(DmtView.FOLDERS))
+            }
+            TuiTab(
+                label = stringResource(R.string.tab_playlists),
+                active = state.view == DmtView.PLAYLISTS,
+            ) {
+                dispatch(DmtAction.Show(DmtView.PLAYLISTS))
             }
         }
     }

@@ -5,6 +5,7 @@
     <string name="tab_albums">2:albums</string>
     <string name="tab_artists">3:artists</string>
     <string name="tab_folders">4:folders</string>
+    <string name="tab_playlists">5:lists</string>
     <string name="auto_tracks">tracks</string>
     <string name="auto_albums">albums</string>
     <string name="auto_artists">artists</string>
@@ -22,6 +23,14 @@
     <string name="no_albums">no albums</string>
     <string name="no_artists">no artists</string>
     <string name="no_files">no folders</string>
+    <string name="no_playlists">no playlists yet</string>
+    <string name="playlist_new">new</string>
+    <string name="playlist_new_title">new playlist</string>
+    <string name="playlist_name_hint">playlist name</string>
+    <string name="playlist_create">create</string>
+    <string name="playlist_add">add</string>
+    <string name="playlist_add_title">add tracks · tap to add</string>
+    <string name="action_delete">del</string>
 
     <string name="grant">[ grant ]</string>
 
