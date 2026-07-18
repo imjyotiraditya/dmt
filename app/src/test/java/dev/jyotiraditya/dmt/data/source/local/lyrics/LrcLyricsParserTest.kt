@@ -110,6 +110,31 @@ class LrcLyricsParserTest {
     }
 
     @Test
+    fun `same-timestamp bilingual lines merge into one line with transliteration`() {
+        val lyrics = LrcLyricsParser.parse(fixture("bilingual.lrc"))
+        assertNotNull(lyrics)
+
+        val lines = lyrics!!.lines.filter { !it.interlude }
+
+        // romaji + original script sharing a timestamp collapse into one line:
+        // the original script stays as text, romaji attaches as transliteration
+        val first = lines.first { it.startMs == 16_240L }
+        assertEquals("単純なステージ", first.text)
+        assertEquals("Tanjun na stage", first.transliteration?.text)
+
+        // the merged line spans to the next line's start instead of the romaji
+        // half getting a zero-length duration
+        assertEquals(18_570L, first.endMs)
+
+        // english-only lines have no partner and stay plain single lines
+        val english = lines.first { it.text == "BLACK ROVER" }
+        assertNull(english.transliteration)
+
+        // every pair collapsed: no two remaining lines share a start time
+        assertEquals(lines.size, lines.map { it.startMs }.distinct().size)
+    }
+
+    @Test
     fun `matches detects bracket timestamps only`() {
         assertTrue(LrcLyricsParser.matches(fixture("plain.lrc")))
         assertTrue(LrcLyricsParser.matches(fixture("enhanced.lrc")))

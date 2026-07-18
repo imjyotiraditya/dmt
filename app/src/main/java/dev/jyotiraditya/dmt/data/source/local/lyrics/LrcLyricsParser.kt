@@ -57,6 +57,7 @@ object LrcLyricsParser {
 
         return Lyrics(
             lines = lines.sortedBy { it.startMs }
+                .pairTransliterations()
                 .fillLineEnds()
                 .mergeSimultaneousDuplicates()
                 .alternateVoices()
@@ -90,6 +91,39 @@ object LrcLyricsParser {
                 singer = precedingMain?.singer ?: 0,
             )
         }
+    }
+
+    private fun List<LyricLine>.pairTransliterations(): List<LyricLine> {
+        val out = mutableListOf<LyricLine>()
+
+        forEach { line ->
+            val last = out.lastOrNull()
+
+            if (last != null &&
+                last.startMs == line.startMs &&
+                last.transliteration == null &&
+                line.transliteration == null &&
+                isTransliterationOf(last.text, line.text)
+            ) {
+                val (main, translit) = if (scriptOf(line.text) == "latin") {
+                    last to line
+                } else {
+                    line to last
+                }
+
+                out[out.size - 1] = main.copy(
+                    endMs = maxOf(last.endMs, line.endMs),
+                    transliteration = Transliteration(
+                        text = translit.text,
+                        words = translit.words,
+                    ),
+                )
+            } else {
+                out += line
+            }
+        }
+
+        return out
     }
 
     private fun stripLinePrefix(text: String): Pair<String, Int?> {
