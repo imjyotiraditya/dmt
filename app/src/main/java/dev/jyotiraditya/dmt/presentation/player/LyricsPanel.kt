@@ -285,7 +285,7 @@ private fun LyricLineRows(
 private fun SecondaryLyricText(text: String, align: TextAlign) {
     Text(
         text = text,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.bodySmall,
         color = TuiDim,
         textAlign = align,
         modifier = Modifier.fillMaxWidth(),
@@ -314,7 +314,7 @@ private fun InterludeRow(
     }
     Text(
         text = annotated,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.headlineSmall,
         color = if (state == LineState.PASSED) TuiFaint else TuiDim,
         textAlign = TextAlign.Center,
         modifier = modifier.fillMaxWidth(),
@@ -410,9 +410,9 @@ private fun LyricRunText(
     }
 
     val baseStyle = if (run.background) {
-        MaterialTheme.typography.labelSmall
+        MaterialTheme.typography.bodySmall
     } else {
-        MaterialTheme.typography.bodyMedium
+        MaterialTheme.typography.headlineSmall
     }
     val arabic = remember(run.text) { isArabicScript(run.text) }
 

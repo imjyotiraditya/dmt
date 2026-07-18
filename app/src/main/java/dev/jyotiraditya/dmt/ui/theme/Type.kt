@@ -26,6 +26,7 @@ private fun mono(
 
 val Typography = Typography(
     displaySmall = mono(26, FontWeight.Bold, 1f),
+    headlineSmall = mono(15),
     titleLarge = mono(21, FontWeight.Bold),
     titleMedium = mono(15, FontWeight.Bold),
     bodyLarge = mono(14),
