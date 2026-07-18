@@ -30,9 +30,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -51,7 +53,7 @@ import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
 import dev.jyotiraditya.dmt.presentation.player.InfoContent
-import dev.jyotiraditya.dmt.presentation.player.MiniPlayerHeight
+import dev.jyotiraditya.dmt.presentation.player.MiniPlayer
 import dev.jyotiraditya.dmt.presentation.player.PlayerSheet
 import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
@@ -132,7 +134,7 @@ fun DmtScreen(
                         TuiNotice(error = state.error, notice = state.notice)
 
                         if (state.nowPlayingId != null && !imeVisible) {
-                            MiniPlayerAnchor { miniAnchor = it }
+                            MiniPlayerAnchor(state) { miniAnchor = it }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
@@ -156,7 +158,7 @@ fun DmtScreen(
                 TuiNotice(error = state.error, notice = state.notice)
 
                 if (state.nowPlayingId != null && !imeVisible) {
-                    MiniPlayerAnchor { miniAnchor = it }
+                    MiniPlayerAnchor(state) { miniAnchor = it }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -211,13 +213,19 @@ fun DmtScreen(
 }
 
 @Composable
-private fun MiniPlayerAnchor(onAnchor: (Rect) -> Unit) {
+private fun MiniPlayerAnchor(
+    state: DmtState,
+    onAnchor: (Rect) -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(MiniPlayerHeight)
-            .onGloballyPositioned { onAnchor(it.boundsInRoot()) },
-    )
+            .onGloballyPositioned { onAnchor(it.boundsInRoot()) }
+            .alpha(0f)
+            .clearAndSetSemantics {},
+    ) {
+        MiniPlayer(state = state, dispatch = {})
+    }
 }
 
 @Composable

@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -51,8 +52,6 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlin.math.roundToInt
-
-val MiniPlayerHeight = 64.dp
 
 private const val EXPAND_VELOCITY_THRESHOLD = 150f
 
@@ -233,7 +232,7 @@ fun PlayerSheet(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
-                        .height(MiniPlayerHeight)
+                        .height(with(LocalDensity.current) { miniHeightPx.toDp() })
                         .zIndex(if (miniOnTop) 1f else 0f)
                         .graphicsLayer {
                             alpha = (1f - fraction.value * 2f).coerceIn(0f, 1f)
