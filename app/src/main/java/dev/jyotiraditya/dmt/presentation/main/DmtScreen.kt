@@ -48,6 +48,7 @@ import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.ArtistsPane
+import dev.jyotiraditya.dmt.presentation.library.FoldersPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
 import dev.jyotiraditya.dmt.presentation.player.ChainContent
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
@@ -108,6 +109,9 @@ fun DmtScreen(
 
             state.view == DmtView.ARTISTS && state.openArtist != null ->
                 dispatch(DmtAction.OpenArtist(null))
+
+            state.view == DmtView.FOLDERS && state.openFolder != null ->
+                dispatch(DmtAction.OpenFolder(null))
 
             else -> dispatch(DmtAction.Show(DmtView.LIBRARY))
         }
@@ -248,6 +252,7 @@ private fun PaneHost(
             state.scanning -> Caption(stringResource(R.string.scanning))
             state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
             state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
+            state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
             else -> LibraryPane(state, dispatch)
         }
     }
@@ -306,6 +311,16 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             dispatch(DmtAction.Show(DmtView.ARTISTS))
+        }
+        if (state.folders.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            TuiTab(
+                label = stringResource(R.string.tab_folders),
+                active = state.view == DmtView.FOLDERS,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                dispatch(DmtAction.Show(DmtView.FOLDERS))
+            }
         }
         Spacer(modifier = Modifier.weight(1f))
 
@@ -399,6 +414,15 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
             active = state.view == DmtView.ARTISTS,
         ) {
             dispatch(DmtAction.Show(DmtView.ARTISTS))
+        }
+        if (state.folders.isNotEmpty()) {
+            Spacer(modifier = Modifier.width(8.dp))
+            TuiTab(
+                label = stringResource(R.string.tab_folders),
+                active = state.view == DmtView.FOLDERS,
+            ) {
+                dispatch(DmtAction.Show(DmtView.FOLDERS))
+            }
         }
     }
 }

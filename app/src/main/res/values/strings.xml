@@ -4,6 +4,7 @@
     <string name="tab_library">1:library</string>
     <string name="tab_albums">2:albums</string>
     <string name="tab_artists">3:artists</string>
+    <string name="tab_folders">4:folders</string>
     <string name="auto_tracks">tracks</string>
     <string name="auto_albums">albums</string>
     <string name="auto_artists">artists</string>
@@ -133,5 +134,9 @@
     <plurals name="search_artists_hint">
         <item quantity="one">search %1$d artist</item>
         <item quantity="other">search %1$d artists</item>
+    </plurals>
+    <plurals name="search_folders_hint">
+        <item quantity="one">search %1$d folder</item>
+        <item quantity="other">search %1$d folders</item>
     </plurals>
 </resources>

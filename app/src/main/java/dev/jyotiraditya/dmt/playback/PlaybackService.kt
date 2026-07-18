@@ -40,6 +40,7 @@ import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toAlbums
 import dev.jyotiraditya.dmt.domain.model.toArtists
+import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import dev.jyotiraditya.dmt.domain.repository.StatsRepository
@@ -64,6 +65,8 @@ private const val ALBUMS_ID = "albums"
 private const val ALBUM_PREFIX = "album/"
 private const val ARTISTS_ID = "artists"
 private const val ARTIST_PREFIX = "artist/"
+private const val FOLDERS_ID = "folders"
+private const val FOLDER_PREFIX = "folder/"
 
 @AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
@@ -268,21 +271,35 @@ class PlaybackService : MediaLibraryService() {
     private suspend fun childrenOf(parentId: String): List<MediaItem> {
         val tracks = library()
         return when {
-            parentId == ROOT_ID -> listOf(
-                browsableItem(
-                    id = TRACKS_ID,
-                    title = getString(R.string.auto_tracks),
-                ),
-                browsableItem(
-                    id = ALBUMS_ID,
-                    title = getString(R.string.auto_albums),
-                    childrenAsGrid = true,
-                ),
-                browsableItem(
-                    id = ARTISTS_ID,
-                    title = getString(R.string.auto_artists),
-                ),
-            )
+            parentId == ROOT_ID -> buildList {
+                add(
+                    browsableItem(
+                        id = TRACKS_ID,
+                        title = getString(R.string.auto_tracks),
+                    ),
+                )
+                add(
+                    browsableItem(
+                        id = ALBUMS_ID,
+                        title = getString(R.string.auto_albums),
+                        childrenAsGrid = true,
+                    ),
+                )
+                add(
+                    browsableItem(
+                        id = ARTISTS_ID,
+                        title = getString(R.string.auto_artists),
+                    ),
+                )
+                if (tracks.toFolders().isNotEmpty()) {
+                    add(
+                        browsableItem(
+                            id = FOLDERS_ID,
+                            title = getString(R.string.auto_folders),
+                        ),
+                    )
+                }
+            }
 
             parentId == TRACKS_ID -> tracks.map { it.toMediaItem() }
 
@@ -321,6 +338,27 @@ class PlaybackService : MediaLibraryService() {
                 val name = parentId.removePrefix(ARTIST_PREFIX)
                 tracks.toArtists()
                     .find { it.name == name }
+                    ?.tracks
+                    .orEmpty()
+                    .map { track ->
+                        track.toMediaItem()
+                            .buildUpon()
+                            .setMediaId("$parentId/${track.id}")
+                            .build()
+                    }
+            }
+
+            parentId == FOLDERS_ID -> tracks.toFolders().map { folder ->
+                browsableItem(
+                    id = FOLDER_PREFIX + folder.path,
+                    title = folder.name,
+                )
+            }
+
+            parentId.startsWith(FOLDER_PREFIX) -> {
+                val path = parentId.removePrefix(FOLDER_PREFIX)
+                tracks.toFolders()
+                    .find { it.path == path }
                     ?.tracks
                     .orEmpty()
                     .map { track ->
@@ -520,6 +558,23 @@ class PlaybackService : MediaLibraryService() {
                         val index = artistTracks.indexOfFirst { it.id.toString() == trackId }
                         if (index >= 0) {
                             queueOf(artistTracks, index, startPositionMs)
+                        } else {
+                            queueOf(tracks, 0)
+                        }
+                    }
+
+                    single != null && single.mediaId.startsWith(FOLDER_PREFIX) -> {
+                        val path = single.mediaId
+                            .removePrefix(FOLDER_PREFIX)
+                            .substringBeforeLast('/')
+                        val trackId = single.mediaId.substringAfterLast('/')
+                        val folderTracks = tracks.toFolders()
+                            .find { it.path == path }
+                            ?.tracks
+                            .orEmpty()
+                        val index = folderTracks.indexOfFirst { it.id.toString() == trackId }
+                        if (index >= 0) {
+                            queueOf(folderTracks, index, startPositionMs)
                         } else {
                             queueOf(tracks, 0)
                         }

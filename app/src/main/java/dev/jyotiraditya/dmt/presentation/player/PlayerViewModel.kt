@@ -22,6 +22,7 @@ import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Artist
+import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -58,6 +59,13 @@ import kotlin.time.Duration.Companion.seconds
 
 private val SPEED_STEPS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 private val SLEEP_STEPS = listOf(0, 15, 30, 60)
+
+private data class FilteredLibrary(
+    val tracks: List<Track>,
+    val albums: List<Album>,
+    val artists: List<Artist>,
+    val folders: List<Folder>,
+)
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
@@ -133,6 +141,13 @@ class PlayerViewModel @Inject constructor(
             artists.filter { it.name.contains(query, true) }
         }
 
+    private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
+        if (query.isBlank()) {
+            folders
+        } else {
+            folders.filter { it.name.contains(query, true) }
+        }
+
     override fun onIntent(intent: DmtAction) {
         val c = controller
         when (intent) {
@@ -148,6 +163,7 @@ class PlayerViewModel @Inject constructor(
                     filtered = filter(it.tracks, intent.value, it.settings.librarySort),
                     filteredAlbums = filterAlbums(it.albums, intent.value),
                     filteredArtists = filterArtists(it.artists, intent.value),
+                    filteredFolders = filterFolders(it.folders, intent.value),
                 )
             }
 
@@ -157,6 +173,7 @@ class PlayerViewModel @Inject constructor(
 
             is DmtAction.OpenAlbum -> reduce { it.copy(openAlbum = intent.name) }
             is DmtAction.OpenArtist -> reduce { it.copy(openArtist = intent.name) }
+            is DmtAction.OpenFolder -> reduce { it.copy(openFolder = intent.path) }
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
@@ -399,6 +416,7 @@ class PlayerViewModel @Inject constructor(
                         filtered = emptyList(),
                         filteredAlbums = emptyList(),
                         filteredArtists = emptyList(),
+                        filteredFolders = emptyList(),
                         error = context.getString(
                             R.string.scan_failed,
                             state.settings.sourceMode.label,
@@ -407,13 +425,14 @@ class PlayerViewModel @Inject constructor(
                 }
                 return@launch
             }
-            val (filteredTracks, filteredAlbums, filteredArtists) = withContext(
+            val (filteredTracks, filteredAlbums, filteredArtists, filteredFolders) = withContext(
                 dispatchers.default,
             ) {
-                Triple(
-                    filter(library.tracks, query, currentState.settings.librarySort),
-                    filterAlbums(library.albums, query),
-                    filterArtists(library.artists, query),
+                FilteredLibrary(
+                    tracks = filter(library.tracks, query, currentState.settings.librarySort),
+                    albums = filterAlbums(library.albums, query),
+                    artists = filterArtists(library.artists, query),
+                    folders = filterFolders(library.folders, query),
                 )
             }
             reduce {
@@ -426,6 +445,7 @@ class PlayerViewModel @Inject constructor(
                     filtered = filteredTracks,
                     filteredAlbums = filteredAlbums,
                     filteredArtists = filteredArtists,
+                    filteredFolders = filteredFolders,
                     error = null,
                 )
             }
