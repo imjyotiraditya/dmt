@@ -567,9 +567,12 @@ class PlayerViewModel @Inject constructor(
 
     private fun loadCover(mediaItem: MediaItem?) {
         val uri: Uri? = mediaItem?.mediaMetadata?.artworkUri
+        val fileUri: Uri? = mediaItem?.localConfiguration?.uri
         val forId = mediaItem?.mediaId
         viewModelScope.launch {
-            val raw = withContext(Dispatchers.IO) { uri?.let(trackMediaRepository::loadArt) }
+            val raw = withContext(Dispatchers.IO) {
+                uri?.let { trackMediaRepository.loadArt(it, fileUri) }
+            }
             val cover = withContext(Dispatchers.IO) {
                 raw?.let { art ->
                     runCatching {

@@ -44,18 +44,25 @@ class TrackMediaRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
 
-    fun loadArt(uri: Uri): Bitmap? =
+    fun loadArt(uri: Uri, fileUri: Uri? = null): Bitmap? =
         if (uri.scheme == "http" || uri.scheme == "https") {
             runCatching {
                 URL(uri.toString()).openStream().use(BitmapFactory::decodeStream)
             }.getOrNull()
         } else {
-            runCatching {
+            fileUri?.let(::loadEmbeddedArt) ?: runCatching {
                 context.contentResolver.loadThumbnail(uri, Size(512, 512), null)
             }.recoverCatching {
                 context.contentResolver.openInputStream(uri).use(BitmapFactory::decodeStream)
             }.getOrNull()
         }
+
+    private fun loadEmbeddedArt(fileUri: Uri): Bitmap? = runCatching {
+        MediaMetadataRetriever().use { retriever ->
+            retriever.setDataSource(context, fileUri)
+            retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        }
+    }.getOrNull()
 
     @OptIn(UnstableApi::class)
     fun techSpecs(uri: Uri, track: Track?): List<Spec> {
