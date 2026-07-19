@@ -3,7 +3,9 @@ package dev.jyotiraditya.dmt.data.source.local.lyrics
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
-import dev.jyotiraditya.dmt.domain.model.Transliteration
+import dev.jyotiraditya.dmt.domain.model.TimedText
+
+private enum class Script { LATIN, CJK, ARABIC, CYRILLIC }
 
 object LrcLyricsParser {
 
@@ -75,7 +77,7 @@ object LrcLyricsParser {
 
         if (precedingMain != null && isTransliterationOf(precedingMain.text, text)) {
             lines[lines.size - 1] = precedingMain.copy(
-                transliteration = Transliteration(
+                transliteration = TimedText(
                     text = text,
                     words = words,
                 ),
@@ -99,27 +101,39 @@ object LrcLyricsParser {
         forEach { line ->
             val last = out.lastOrNull()
 
-            if (last != null &&
-                last.startMs == line.startMs &&
-                last.transliteration == null &&
-                line.transliteration == null &&
-                isTransliterationOf(last.text, line.text)
-            ) {
-                val (main, translit) = if (scriptOf(line.text) == "latin") {
-                    last to line
-                } else {
-                    line to last
+            when {
+                last != null &&
+                    last.startMs == line.startMs &&
+                    last.transliteration == null &&
+                    line.transliteration == null &&
+                    isTransliterationOf(last.text, line.text) -> {
+                    val (main, translit) = if (scriptOf(line.text) == Script.LATIN) {
+                        last to line
+                    } else {
+                        line to last
+                    }
+
+                    out[out.size - 1] = main.copy(
+                        endMs = maxOf(last.endMs, line.endMs),
+                        transliteration = TimedText(
+                            text = translit.text,
+                            words = translit.words,
+                        ),
+                    )
                 }
 
-                out[out.size - 1] = main.copy(
-                    endMs = maxOf(last.endMs, line.endMs),
-                    transliteration = Transliteration(
-                        text = translit.text,
-                        words = translit.words,
-                    ),
-                )
-            } else {
-                out += line
+                last != null &&
+                    last.startMs == line.startMs &&
+                    last.transliteration != null &&
+                    line.transliteration == null -> {
+                    out[out.size - 1] = last.copy(
+                        endMs = maxOf(last.endMs, line.endMs),
+                        translation = last.translation +
+                            TimedText(text = line.text, words = line.words),
+                    )
+                }
+
+                else -> out += line
             }
         }
 
@@ -136,17 +150,17 @@ object LrcLyricsParser {
         return stripped to voice?.groupValues?.get(1)?.toIntOrNull()
     }
 
-    private fun scriptOf(text: String): String? =
+    private fun scriptOf(text: String): Script? =
         text.firstNotNullOfOrNull { c ->
             when (Character.UnicodeScript.of(c.code)) {
                 Character.UnicodeScript.HIRAGANA,
                 Character.UnicodeScript.KATAKANA,
                 Character.UnicodeScript.HAN,
-                -> "cjk"
+                -> Script.CJK
 
-                Character.UnicodeScript.ARABIC -> "arabic"
-                Character.UnicodeScript.CYRILLIC -> "cyrillic"
-                Character.UnicodeScript.LATIN -> "latin"
+                Character.UnicodeScript.ARABIC -> Script.ARABIC
+                Character.UnicodeScript.CYRILLIC -> Script.CYRILLIC
+                Character.UnicodeScript.LATIN -> Script.LATIN
                 else -> null
             }
         }

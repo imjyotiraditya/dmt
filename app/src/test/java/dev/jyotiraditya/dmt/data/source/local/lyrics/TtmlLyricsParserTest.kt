@@ -59,7 +59,7 @@ class TtmlLyricsParserTest {
         assertNotNull(lyrics)
 
         val first = lyrics!!.lines.first { it.startMs == 2_344L }
-        assertEquals(listOf("This song is all, it's about you, baby"), first.translation)
+        assertEquals(listOf("This song is all, it's about you, baby"), first.translation.map { it.text })
         assertNull(first.transliteration)
     }
 
@@ -74,7 +74,7 @@ class TtmlLyricsParserTest {
                 "(They keep on asking me, \"Who is he?\")",
                 "You show up, no matter how busy you are",
             ),
-            line.translation,
+            line.translation.map { it.text },
         )
     }
 

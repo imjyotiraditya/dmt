@@ -135,6 +135,30 @@ class LrcLyricsParserTest {
     }
 
     @Test
+    fun `three same-timestamp lines merge romaji as transliteration and english as translation`() {
+        val lyrics = LrcLyricsParser.parse(fixture("trilingual.lrc"))
+        assertNotNull(lyrics)
+
+        val lines = lyrics!!.lines.filter { !it.interlude }
+
+        val first = lines.first { it.startMs == 17_920L }
+        assertEquals("レーダー　あたしの涙を探して", first.text)
+        assertEquals("RĒDĀ atashi no namida o sagashite", first.transliteration?.text)
+        assertEquals(listOf("Radar, search for my tears"), first.translation.map { it.text })
+
+        // spans through the latest of the three original end times
+        assertEquals(24_200L, first.endMs)
+
+        // the translation kept its own word timing from the source file, not just plain text
+        val translation = first.translation.single()
+        assertTrue(translation.words.isNotEmpty())
+        assertEquals(24_200L, translation.words.last().endMs)
+
+        // every triplet collapsed: no two remaining lines share a start time
+        assertEquals(lines.size, lines.map { it.startMs }.distinct().size)
+    }
+
+    @Test
     fun `matches detects bracket timestamps only`() {
         assertTrue(LrcLyricsParser.matches(fixture("plain.lrc")))
         assertTrue(LrcLyricsParser.matches(fixture("enhanced.lrc")))

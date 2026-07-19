@@ -4,7 +4,7 @@ import android.util.Xml
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
-import dev.jyotiraditya.dmt.domain.model.Transliteration
+import dev.jyotiraditya.dmt.domain.model.TimedText
 import dev.jyotiraditya.dmt.domain.model.Voice
 import org.xmlpull.v1.XmlPullParser
 
@@ -32,8 +32,8 @@ object TtmlLyricsParser {
             var pendingSpace = false
             var lineKey: String? = null
 
-            val translations = mutableMapOf<String, List<String>>()
-            val transliterations = mutableMapOf<String, Transliteration>()
+            val translations = mutableMapOf<String, List<TimedText>>()
+            val transliterations = mutableMapOf<String, TimedText>()
             var inTranslation = false
             var inTransliteration = false
             var capturedTranslation = false
@@ -112,12 +112,14 @@ object TtmlLyricsParser {
 
                             if (forKey != null && inTranslation) {
                                 val segments = readTranslationSegments(parser)
-                                if (segments.isNotEmpty()) translations[forKey] = segments
+                                if (segments.isNotEmpty()) {
+                                    translations[forKey] = segments.map { TimedText(text = it) }
+                                }
                             } else if (forKey != null && inTransliteration) {
                                 val (content, spanWords) = readTimedText(parser)
 
                                 if (content.isNotBlank()) {
-                                    transliterations[forKey] = Transliteration(
+                                    transliterations[forKey] = TimedText(
                                         text = content,
                                         words = spanWords,
                                     )

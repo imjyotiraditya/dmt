@@ -10,7 +10,7 @@ data class LyricWord(
     val background: Boolean,
 )
 
-data class Transliteration(val text: String, val words: List<LyricWord> = emptyList())
+data class TimedText(val text: String, val words: List<LyricWord> = emptyList())
 
 data class LyricLine(
     val startMs: Long,
@@ -21,8 +21,8 @@ data class LyricLine(
     val singer: Int = 0,
     val sectionStart: Boolean = false,
     val interlude: Boolean = false,
-    val translation: List<String> = emptyList(),
-    val transliteration: Transliteration? = null,
+    val translation: List<TimedText> = emptyList(),
+    val transliteration: TimedText? = null,
 )
 
 data class Lyrics(

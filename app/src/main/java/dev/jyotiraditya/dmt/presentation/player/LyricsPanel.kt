@@ -34,7 +34,7 @@ import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
-import dev.jyotiraditya.dmt.domain.model.Transliteration
+import dev.jyotiraditya.dmt.domain.model.TimedText
 import dev.jyotiraditya.dmt.domain.model.Voice
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
@@ -196,7 +196,7 @@ private fun LyricLineRows(
         line.copy(
             text = translit.text,
             words = translit.words,
-            transliteration = Transliteration(
+            transliteration = TimedText(
                 text = line.text,
                 words = line.words,
             ),
@@ -231,11 +231,12 @@ private fun LyricLineRows(
     }
 
     val runs = remember(shown) { buildRuns(shown) }
+    val secondaryRuns = remember(shown, runs) { secondaryRunsFor(shown, runs) }
     Column(
         modifier = rowModifier
             .padding(top = if (shown.sectionStart) 18.dp else 6.dp, bottom = 6.dp),
     ) {
-        runs.forEach { run ->
+        (runs + secondaryRuns).forEach { run ->
             LyricRunText(
                 run = run,
                 state = state,
@@ -245,39 +246,41 @@ private fun LyricLineRows(
                 align = align,
             )
         }
-        shown.transliteration?.let {
-            LyricRunText(
-                run = LyricRun(
-                    background = true,
-                    text = it.text,
-                    words = it.words,
-                ),
-                state = state,
-                positionMs = positionMs,
-                singerColor = singerColor,
-                hasSinger = hasSinger,
-                align = align,
-            )
-        }
-        val originals = if (runs.size == shown.translation.size) runs.map { it.text } else null
-        shown.translation.forEachIndexed { i, segment ->
-            val original = originals?.get(i) ?: shown.text
-            if (!segment.equals(original, ignoreCase = true)) {
-                SecondaryLyricText(segment, align)
-            }
-        }
     }
 }
 
-@Composable
-private fun SecondaryLyricText(text: String, align: TextAlign) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = TuiDim,
-        textAlign = align,
-        modifier = Modifier.fillMaxWidth(),
-    )
+private fun secondaryRunsFor(
+    line: LyricLine,
+    runs: List<LyricRun>,
+): List<LyricRun> = buildList {
+    line.transliteration?.let { translit ->
+        add(
+            LyricRun(
+                background = true,
+                text = translit.text,
+                words = translit.words,
+            ),
+        )
+    }
+
+    val originals = if (runs.size == line.translation.size) {
+        runs.map { it.text }
+    } else {
+        null
+    }
+
+    line.translation.forEachIndexed { i, segment ->
+        val original = originals?.get(i) ?: line.text
+        if (!segment.text.equals(original, ignoreCase = true)) {
+            add(
+                LyricRun(
+                    background = true,
+                    text = segment.text,
+                    words = segment.words,
+                ),
+            )
+        }
+    }
 }
 
 @Composable
