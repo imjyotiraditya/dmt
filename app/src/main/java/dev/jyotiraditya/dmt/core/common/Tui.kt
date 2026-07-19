@@ -35,6 +35,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -100,6 +101,11 @@ fun CursorTitle(
         maxLines = 1,
         modifier = modifier.basicMarquee(iterations = Int.MAX_VALUE),
     )
+}
+
+@Composable
+fun ScrollMemory(key: Any, content: @Composable () -> Unit) {
+    rememberSaveableStateHolder().SaveableStateProvider(key, content)
 }
 
 @Composable

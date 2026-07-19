@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
+import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.TuiNotice
 import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
@@ -253,18 +254,20 @@ private fun PaneHost(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        when {
-            state.view == DmtView.STATS -> StatsPane(state, dispatch)
-            state.view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
-            state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
-            state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
-            state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
-            state.scanning -> Caption(stringResource(R.string.scanning))
-            state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
-            state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
-            state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
-            state.view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
-            else -> LibraryPane(state, dispatch)
+        ScrollMemory(state.view.name) {
+            when {
+                state.view == DmtView.STATS -> StatsPane(state, dispatch)
+                state.view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
+                state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
+                state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
+                state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
+                state.scanning -> Caption(stringResource(R.string.scanning))
+                state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
+                state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
+                state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
+                state.view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
+                else -> LibraryPane(state, dispatch)
+            }
         }
     }
 }

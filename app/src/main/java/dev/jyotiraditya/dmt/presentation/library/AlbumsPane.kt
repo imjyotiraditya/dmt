@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
+import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -35,10 +36,12 @@ import dev.jyotiraditya.dmt.util.asTime
 fun AlbumsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val album: Album? = state.albums.find { it.name == state.openAlbum }
 
-    if (album == null) {
-        AlbumList(state, dispatch)
-    } else {
-        AlbumDetail(album, state, dispatch)
+    ScrollMemory(state.openAlbum ?: "list") {
+        if (album == null) {
+            AlbumList(state, dispatch)
+        } else {
+            AlbumDetail(album, state, dispatch)
+        }
     }
 }
 

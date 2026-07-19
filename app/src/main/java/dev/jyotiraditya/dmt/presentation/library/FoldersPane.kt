@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
+import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -35,10 +36,12 @@ import dev.jyotiraditya.dmt.util.asTime
 fun FoldersPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val folder: Folder? = state.folders.find { it.path == state.openFolder }
 
-    if (folder == null) {
-        FolderList(state, dispatch)
-    } else {
-        FolderDetail(folder, state, dispatch)
+    ScrollMemory(state.openFolder ?: "list") {
+        if (folder == null) {
+            FolderList(state, dispatch)
+        } else {
+            FolderDetail(folder, state, dispatch)
+        }
     }
 }
 

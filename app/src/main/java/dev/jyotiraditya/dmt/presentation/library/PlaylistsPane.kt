@@ -27,6 +27,7 @@ import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.HeaderAction
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.NewEntryRow
+import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -45,10 +46,12 @@ import dev.jyotiraditya.dmt.util.asTime
 fun PlaylistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val playlist: Playlist? = state.playlists.find { it.name == state.openPlaylist }
 
-    if (playlist == null) {
-        PlaylistList(state, dispatch)
-    } else {
-        PlaylistDetail(playlist, state, dispatch)
+    ScrollMemory(state.openPlaylist ?: "list") {
+        if (playlist == null) {
+            PlaylistList(state, dispatch)
+        } else {
+            PlaylistDetail(playlist, state, dispatch)
+        }
     }
 }
 

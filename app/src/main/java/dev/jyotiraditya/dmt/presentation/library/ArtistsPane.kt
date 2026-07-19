@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
+import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
@@ -35,10 +36,12 @@ import dev.jyotiraditya.dmt.util.asTime
 fun ArtistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val artist: Artist? = state.artists.find { it.name == state.openArtist }
 
-    if (artist == null) {
-        ArtistList(state, dispatch)
-    } else {
-        ArtistDetail(artist, state, dispatch)
+    ScrollMemory(state.openArtist ?: "list") {
+        if (artist == null) {
+            ArtistList(state, dispatch)
+        } else {
+            ArtistDetail(artist, state, dispatch)
+        }
     }
 }
 
