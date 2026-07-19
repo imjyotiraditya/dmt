@@ -207,6 +207,42 @@ internal object Mp4Tags {
                 return null
             }
 
+            fun freeformOf(start: Long, end: Long): Pair<String, String>? {
+                var pos = start
+                var name: String? = null
+                var value: String? = null
+                while (pos + 8 <= end) {
+                    raf.seek(pos)
+                    val size = raf.readInt().toLong() and 0xFFFFFFFFL
+                    val type = ByteArray(4).also { raf.readFully(it) }.toString(Charsets.ISO_8859_1)
+                    if (size < 8 || pos + size > end) break
+
+                    when (type) {
+                        "name" -> (size - 12).toInt().takeIf { it > 0 }?.let { payload ->
+                            raf.seek(pos + 12)
+                            val bytes = ByteArray(payload)
+                            raf.readFully(bytes)
+                            name = String(bytes, Charsets.UTF_8)
+                        }
+
+                        "data" -> (size - 16).toInt().takeIf { it > 0 }?.let { payload ->
+                            raf.seek(pos + 16)
+                            val bytes = ByteArray(payload)
+                            raf.readFully(bytes)
+                            value = String(bytes, Charsets.UTF_8).trim()
+                        }
+                    }
+                    pos += size
+                }
+                val resolvedName = name
+                val resolvedValue = value
+                return if (resolvedName != null && resolvedValue != null) {
+                    resolvedName.uppercase() to resolvedValue
+                } else {
+                    null
+                }
+            }
+
             fun scan(start: Long, end: Long) {
                 var pos = start
                 while (pos + 8 <= end) {
@@ -232,6 +268,10 @@ internal object Mp4Tags {
                             scan(contentStart, contentEnd)
 
                         type == "meta" -> scan(contentStart + 4, contentEnd)
+
+                        type == "----" -> freeformOf(contentStart, contentEnd)?.let { (key, value) ->
+                            out.getOrPut(key) { mutableListOf() } += value
+                        }
 
                         MP4_KEYS.containsKey(type) -> dataOf(contentStart, contentEnd)?.let {
                             out.getOrPut(MP4_KEYS.getValue(type)) { mutableListOf() } += it

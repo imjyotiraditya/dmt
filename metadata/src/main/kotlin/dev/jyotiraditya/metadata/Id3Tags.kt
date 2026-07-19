@@ -57,27 +57,46 @@ private fun decodeText(data: ByteArray): String? {
     return text.trim { it <= ' ' }.ifEmpty { null }
 }
 
-private fun decodeUslt(data: ByteArray): String? {
-    if (data.size < 5) return null
-
-    val encoding = data[0].toInt()
-    val wide = encoding == 1 || encoding == 2
-
-    var index = 4
+private fun textEnd(data: ByteArray, from: Int, wide: Boolean): Int {
+    var index = from
     if (wide) {
         while (index + 1 < data.size &&
             !(data[index] == 0.toByte() && data[index + 1] == 0.toByte())
         ) {
             index += 2
         }
-        index += 2
     } else {
         while (index < data.size && data[index] != 0.toByte()) index++
-        index += 1
     }
+    return index
+}
+
+private fun decodeUslt(data: ByteArray): String? {
+    if (data.size < 5) return null
+
+    val encoding = data[0].toInt()
+    val wide = encoding == 1 || encoding == 2
+    val index = textEnd(data, 4, wide) + if (wide) 2 else 1
     if (index >= data.size) return null
 
     return String(data, index, data.size - index, charsetFor(encoding)).trim { it <= ' ' }
+}
+
+private fun decodeTxxx(data: ByteArray): Pair<String, String>? {
+    if (data.size < 2) return null
+
+    val encoding = data[0].toInt()
+    val wide = encoding == 1 || encoding == 2
+    val descEnd = textEnd(data, 1, wide)
+    val valueStart = descEnd + if (wide) 2 else 1
+    if (valueStart >= data.size) return null
+
+    val charset = charsetFor(encoding)
+    val description = String(data, 1, descEnd - 1, charset).trim { it <= ' ' }
+    val value = String(data, valueStart, data.size - valueStart, charset).trim { it <= ' ' }
+    if (description.isEmpty() || value.isEmpty()) return null
+
+    return description.uppercase() to value
 }
 
 private fun encodeText(version: Int, value: String): ByteArray {
@@ -134,8 +153,11 @@ internal object Id3Tags {
             val out = mutableMapOf<String, MutableList<String>>()
             frames(bytes, tag.version, framesStart(bytes, tag)).forEach { frame ->
                 val body = bytes.copyOfRange(frame.start + 10, frame.start + 10 + frame.size)
-                val key = if (frame.id == USLT) TagKey.LYRICS else ID3_KEYS[frame.id]
-                val value = if (frame.id == USLT) decodeUslt(body) else decodeText(body)
+                val (key, value) = when (frame.id) {
+                    USLT -> TagKey.LYRICS to decodeUslt(body)
+                    TXXX -> decodeTxxx(body) ?: (null to null)
+                    else -> ID3_KEYS[frame.id] to decodeText(body)
+                }
 
                 if (key != null && value != null) {
                     out.getOrPut(key) { mutableListOf() } += value

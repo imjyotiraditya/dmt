@@ -47,6 +47,8 @@ import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.windowQueue
+import dev.jyotiraditya.metadata.AudioTags
+import dev.jyotiraditya.metadata.TagKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -57,6 +59,7 @@ import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.pow
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val ROOT_ID = "root"
@@ -94,6 +97,8 @@ class PlaybackService : MediaLibraryService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var sleepJob: Job? = null
     private var sleepEndAt: Long? = null
+    private var normalizeVolume = false
+    private val gainCache = mutableMapOf<Long, Float>()
 
     @Volatile
     private var libraryCache: List<Track>? = null
@@ -152,6 +157,7 @@ class PlaybackService : MediaLibraryService() {
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     saveSession()
+                    applyReplayGain(mediaItem)
                 }
 
                 override fun onAudioSessionIdChanged(audioSessionId: Int) {
@@ -181,6 +187,41 @@ class PlaybackService : MediaLibraryService() {
             )
             .setMediaButtonPreferences(sessionButtons(player))
             .build()
+        scope.launch {
+            preferencesRepository.settings.collect { settings ->
+                if (normalizeVolume != settings.normalizeVolume) {
+                    normalizeVolume = settings.normalizeVolume
+                    applyReplayGain(player.currentMediaItem)
+                }
+            }
+        }
+    }
+
+    private fun applyReplayGain(mediaItem: MediaItem?) {
+        val player = mediaSession?.player ?: return
+        val id = mediaItem?.mediaId?.toLongOrNull()
+        if (!normalizeVolume || id == null) {
+            player.volume = 1f
+            return
+        }
+        scope.launch {
+            val volume = gainCache.getOrPut(id) {
+                val path = library().find { it.id == id }?.path
+                val gainDb = path?.takeIf { it.isNotEmpty() }?.let { file ->
+                    withContext(Dispatchers.IO) {
+                        AudioTags.read(file)[TagKey.REPLAYGAIN_TRACK_GAIN]
+                            ?.firstOrNull()
+                            ?.replace("dB", "", ignoreCase = true)
+                            ?.trim()
+                            ?.toFloatOrNull()
+                    }
+                }
+                gainDb?.let { 10.0.pow(it / 20.0).toFloat().coerceIn(0f, 1f) } ?: 1f
+            }
+            if (mediaSession?.player?.currentMediaItem?.mediaId == mediaItem.mediaId) {
+                mediaSession?.player?.volume = volume
+            }
+        }
     }
 
     @OptIn(UnstableApi::class)

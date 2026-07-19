@@ -65,6 +65,7 @@
     <string name="config">config</string>
     <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
+    <string name="set_normalize">replay gain</string>
     <string name="set_detail">cover detail</string>
     <plurals name="set_detail_value">
         <item quantity="one">%1$d col</item>

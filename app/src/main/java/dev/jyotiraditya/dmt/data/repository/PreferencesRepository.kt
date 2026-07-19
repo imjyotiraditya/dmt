@@ -12,6 +12,7 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_SORT
+import dev.jyotiraditya.dmt.data.source.local.KEY_NORMALIZE
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
 import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
@@ -44,6 +45,7 @@ class PreferencesRepository @Inject constructor(
     val settings: Flow<DmtSettings> = context.dmtStore.data.map { prefs ->
         DmtSettings(
             wave = prefs[KEY_WAVE] ?: true,
+            normalizeVolume = prefs[KEY_NORMALIZE] ?: false,
             cols = prefs[KEY_COLS] ?: 96,
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
@@ -62,6 +64,7 @@ class PreferencesRepository @Inject constructor(
     suspend fun save(settings: DmtSettings) {
         context.dmtStore.edit {
             it[KEY_WAVE] = settings.wave
+            it[KEY_NORMALIZE] = settings.normalizeVolume
             it[KEY_COLS] = settings.cols
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics

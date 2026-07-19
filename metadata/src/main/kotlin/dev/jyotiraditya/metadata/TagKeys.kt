@@ -12,9 +12,11 @@ object TagKey {
     const val COMPOSER = "COMPOSER"
     const val COMMENT = "COMMENT"
     const val LYRICS = "LYRICS"
+    const val REPLAYGAIN_TRACK_GAIN = "REPLAYGAIN_TRACK_GAIN"
 }
 
 internal const val USLT = "USLT"
+internal const val TXXX = "TXXX"
 
 internal val ID3_KEYS = mapOf(
     "TIT2" to TagKey.TITLE,

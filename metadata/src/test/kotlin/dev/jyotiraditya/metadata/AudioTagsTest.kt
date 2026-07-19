@@ -64,14 +64,18 @@ class AudioTagsTest {
         return file
     }
 
-    private fun mp3File(paddingSize: Int): File {
+    private fun rawFrame(id: String, body: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        out.write(id.toByteArray(Charsets.ISO_8859_1))
+        out.write(byteArrayOf(0, 0, 0, body.size.toByte()))
+        out.write(byteArrayOf(0, 0))
+        out.write(body)
+        return out.toByteArray()
+    }
+
+    private fun mp3File(paddingSize: Int, extraFrames: ByteArray = ByteArray(0)): File {
         val title = byteArrayOf(0) + "Song".toByteArray(Charsets.ISO_8859_1)
-        val frame = ByteArrayOutputStream()
-        frame.write("TIT2".toByteArray())
-        frame.write(byteArrayOf(0, 0, 0, title.size.toByte()))
-        frame.write(byteArrayOf(0, 0))
-        frame.write(title)
-        val frames = frame.toByteArray()
+        val frames = rawFrame("TIT2", title) + extraFrames
 
         val tagSize = frames.size + paddingSize
         val out = ByteArrayOutputStream()
@@ -106,7 +110,12 @@ class AudioTagsTest {
     fun `flac reads every tag it carries`() {
         val file = flacFile(
             paddingSize = 64,
-            entries = listOf("TITLE=Song", "ARTIST=Someone", "LYRICS=$LYRICS_TEXT"),
+            entries = listOf(
+                "TITLE=Song",
+                "ARTIST=Someone",
+                "LYRICS=$LYRICS_TEXT",
+                "replaygain_track_gain=-8.10 dB",
+            ),
         )
 
         val tags = AudioTags.read(file.path)
@@ -114,6 +123,24 @@ class AudioTagsTest {
         assertEquals(listOf("Song"), tags[TagKey.TITLE])
         assertEquals(listOf("Someone"), tags[TagKey.ARTIST])
         assertEquals(listOf(LYRICS_TEXT), tags[TagKey.LYRICS])
+        assertEquals(listOf("-8.10 dB"), tags[TagKey.REPLAYGAIN_TRACK_GAIN])
+    }
+
+    @Test
+    fun `id3 reads replaygain from txxx`() {
+        val txxx = rawFrame(
+            "TXXX",
+            byteArrayOf(0) +
+                "replaygain_track_gain".toByteArray(Charsets.ISO_8859_1) +
+                byteArrayOf(0) +
+                "-6.50 dB".toByteArray(Charsets.ISO_8859_1),
+        )
+        val file = mp3File(paddingSize = 64, extraFrames = txxx)
+
+        val tags = AudioTags.read(file.path)
+
+        assertEquals(listOf("Song"), tags[TagKey.TITLE])
+        assertEquals(listOf("-6.50 dB"), tags[TagKey.REPLAYGAIN_TRACK_GAIN])
     }
 
     @Test
@@ -192,6 +219,34 @@ class AudioTagsTest {
         assertEquals(listOf(LYRICS_TEXT), tags[TagKey.LYRICS])
         assertEquals(listOf("Song"), tags[TagKey.TITLE])
         assertAudioIntact(file)
+    }
+
+    private fun box(type: String, payload: ByteArray): ByteArray =
+        beIntBytes(8 + payload.size) + type.toByteArray(Charsets.ISO_8859_1) + payload
+
+    private fun m4aFreeformFile(name: String, value: String): File {
+        val mean = box("mean", ByteArray(4) + "com.apple.iTunes".toByteArray())
+        val nameBox = box("name", ByteArray(4) + name.toByteArray())
+        val data = box("data", byteArrayOf(0, 0, 0, 1) + ByteArray(4) + value.toByteArray())
+        val freeform = box("----", mean + nameBox + data)
+        val ilst = box("ilst", freeform)
+        val meta = box("meta", ByteArray(4) + ilst)
+        val udta = box("udta", meta)
+        val moov = box("moov", udta)
+        val ftyp = box("ftyp", "M4A     ".toByteArray(Charsets.ISO_8859_1))
+
+        val file = temp.newFile("test-${System.nanoTime()}.m4a")
+        file.writeBytes(ftyp + moov)
+        return file
+    }
+
+    @Test
+    fun `m4a reads replaygain from an apple freeform atom`() {
+        val file = m4aFreeformFile("REPLAYGAIN_TRACK_GAIN", "-6.50 dB")
+
+        val tags = AudioTags.read(file.path)
+
+        assertEquals(listOf("-6.50 dB"), tags[TagKey.REPLAYGAIN_TRACK_GAIN])
     }
 
     @Test

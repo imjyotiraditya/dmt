@@ -50,6 +50,16 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             dispatch(DmtAction.Config(settings.copy(wave = !settings.wave)))
         }
         SettingRow(
+            label = stringResource(R.string.set_normalize),
+            value = if (settings.normalizeVolume) on else off,
+        ) {
+            dispatch(
+                DmtAction.Config(
+                    settings.copy(normalizeVolume = !settings.normalizeVolume),
+                ),
+            )
+        }
+        SettingRow(
             label = stringResource(R.string.set_detail),
             value = pluralStringResource(R.plurals.set_detail_value, settings.cols, settings.cols),
         ) {

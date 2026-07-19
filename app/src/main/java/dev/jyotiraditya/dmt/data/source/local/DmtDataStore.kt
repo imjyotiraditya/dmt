@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 val Context.dmtStore by preferencesDataStore(name = "dmt")
 
 val KEY_WAVE = booleanPreferencesKey("wave")
+val KEY_NORMALIZE = booleanPreferencesKey("normalize_volume")
 val KEY_COLS = intPreferencesKey("cols")
 val KEY_SPECS = booleanPreferencesKey("specs")
 val KEY_RAW = booleanPreferencesKey("raw_art")

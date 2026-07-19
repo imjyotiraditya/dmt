@@ -32,6 +32,7 @@ enum class LibrarySort(val label: String) {
 
 data class DmtSettings(
     val wave: Boolean = true,
+    val normalizeVolume: Boolean = false,
     val cols: Int = 96,
     val listSpecs: Boolean = true,
     val romanizedLyrics: Boolean = false,
