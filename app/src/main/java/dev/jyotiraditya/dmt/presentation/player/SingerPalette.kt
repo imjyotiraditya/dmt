@@ -1,13 +1,12 @@
 package dev.jyotiraditya.dmt.presentation.player
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 
 val GroupVoice = Color(0xFFCBBFA3)
 
-private val singerColors = listOf(
+val singerPalette = listOf(
+    TuiAccent,
     Color(0xFF7A9BB3),
     Color(0xFF98A96F),
     Color(0xFFAF87A3),
@@ -20,11 +19,3 @@ private val singerColors = listOf(
     Color(0xFF8C96C0),
     Color(0xFFB97B62),
 )
-
-@Composable
-fun rememberSingerPalette(): List<Color> {
-    val accent = LocalAccent.current
-    return remember(accent) {
-        listOf(accent) + singerColors
-    }
-}

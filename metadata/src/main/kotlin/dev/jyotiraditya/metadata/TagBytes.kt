@@ -2,6 +2,9 @@ package dev.jyotiraditya.metadata
 
 import java.io.File
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.Channels
 
 internal fun ByteArray.startsWith(prefix: String): Boolean =
     prefix.withIndex().all { (index, char) -> this[index] == char.code.toByte() }
@@ -13,16 +16,10 @@ internal fun syncsafe(bytes: ByteArray, offset: Int): Int =
             (bytes[offset + 3].toInt() and 0x7F)
 
 internal fun beInt(bytes: ByteArray, offset: Int): Int =
-    ((bytes[offset].toInt() and 0xFF) shl 24) or
-            ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
-            ((bytes[offset + 2].toInt() and 0xFF) shl 8) or
-            (bytes[offset + 3].toInt() and 0xFF)
+    ByteBuffer.wrap(bytes, offset, 4).int
 
 internal fun leInt(bytes: ByteArray, offset: Int): Int =
-    (bytes[offset].toInt() and 0xFF) or
-            ((bytes[offset + 1].toInt() and 0xFF) shl 8) or
-            ((bytes[offset + 2].toInt() and 0xFF) shl 16) or
-            ((bytes[offset + 3].toInt() and 0xFF) shl 24)
+    ByteBuffer.wrap(bytes, offset, 4).order(ByteOrder.LITTLE_ENDIAN).int
 
 internal fun syncsafeBytes(value: Int): ByteArray =
     byteArrayOf(
@@ -33,20 +30,10 @@ internal fun syncsafeBytes(value: Int): ByteArray =
     )
 
 internal fun beIntBytes(value: Int): ByteArray =
-    byteArrayOf(
-        ((value ushr 24) and 0xFF).toByte(),
-        ((value ushr 16) and 0xFF).toByte(),
-        ((value ushr 8) and 0xFF).toByte(),
-        (value and 0xFF).toByte(),
-    )
+    ByteBuffer.allocate(4).putInt(value).array()
 
 internal fun leIntBytes(value: Int): ByteArray =
-    byteArrayOf(
-        value.toByte(),
-        (value ushr 8).toByte(),
-        (value ushr 16).toByte(),
-        (value ushr 24).toByte(),
-    )
+    ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(value).array()
 
 internal fun RandomAccessFile.rewriteWithTail(
     metaEnd: Long,
@@ -58,24 +45,14 @@ internal fun RandomAccessFile.rewriteWithTail(
     try {
         seek(oldAudioStart)
         tail.outputStream().use { out ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val n = read(buffer)
-                if (n < 0) break
-                out.write(buffer, 0, n)
-            }
+            Channels.newInputStream(channel).copyTo(out)
         }
 
         seek(metaEnd - newHead.size)
         write(newHead)
 
         tail.inputStream().use { input ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val n = input.read(buffer)
-                if (n < 0) break
-                write(buffer, 0, n)
-            }
+            input.copyTo(Channels.newOutputStream(channel))
         }
         setLength(metaEnd + tail.length())
     } finally {

@@ -1,7 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,18 +20,17 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
+import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
-import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 
 @Composable
 fun StatsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
@@ -47,16 +44,10 @@ fun StatsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 
     LazyColumn {
         item {
-            Text(
-                text = stringResource(R.string.back),
-                style = MaterialTheme.typography.labelMedium,
-                color = TuiFg,
-                modifier = Modifier
-                    .padding(top = 6.dp)
-                    .border(1.dp, TuiLine)
-                    .background(TuiSurface.copy(alpha = 0.6f))
-                    .tuiClickable { dispatch(DmtAction.Show(DmtView.SETTINGS)) }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            SubdirHeader(
+                title = stringResource(R.string.stats),
+                meta = "",
+                onBack = { dispatch(DmtAction.Show(DmtView.SETTINGS)) },
             )
 
             Caption(stringResource(R.string.stat_listening))
@@ -144,8 +135,6 @@ private fun TopTrackRow(
     fraction: Float,
     onClick: () -> Unit,
 ) {
-    val accent = LocalAccent.current
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,7 +166,7 @@ private fun TopTrackRow(
         val filled = (fraction.coerceIn(0f, 1f) * cols).toInt().coerceAtLeast(1)
         Text(
             text = buildAnnotatedString {
-                withStyle(SpanStyle(color = accent)) { append("█".repeat(filled)) }
+                withStyle(SpanStyle(color = TuiAccent)) { append("█".repeat(filled)) }
                 withStyle(SpanStyle(color = TuiFaint)) { append("░".repeat(cols - filled)) }
             },
             style = MaterialTheme.typography.labelSmall,

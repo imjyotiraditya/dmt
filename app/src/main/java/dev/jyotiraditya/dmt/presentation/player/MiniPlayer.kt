@@ -1,7 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.player
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,21 +11,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import dev.jyotiraditya.dmt.core.common.CursorTitle
 import dev.jyotiraditya.dmt.core.common.Hairline
 import dev.jyotiraditya.dmt.core.common.TuiKey
-import dev.jyotiraditya.dmt.core.common.rememberCursorAlpha
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
-import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.util.asTime
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MiniPlayer(
     state: DmtState,
@@ -53,19 +45,9 @@ fun MiniPlayer(
                     .weight(1f)
                     .padding(end = 10.dp),
             ) {
-                val cursorAlpha = rememberCursorAlpha()
-                val accent = LocalAccent.current
-                Text(
-                    text = buildAnnotatedString {
-                        append(state.title)
-                        withStyle(SpanStyle(color = accent.copy(alpha = cursorAlpha))) {
-                            append("_")
-                        }
-                    },
+                CursorTitle(
+                    text = state.title,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TuiBright,
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
                 )
                 val position = state.positionMs.asTime()
                 val duration = state.durationMs.asTime()

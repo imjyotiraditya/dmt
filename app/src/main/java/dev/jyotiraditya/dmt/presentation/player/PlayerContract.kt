@@ -30,6 +30,7 @@ data class DmtState(
     val filteredArtists: List<Artist> = emptyList(),
     val filteredFolders: List<Folder> = emptyList(),
     val playlists: List<Playlist> = emptyList(),
+    val filteredPlaylists: List<Playlist> = emptyList(),
     val folders: List<Folder> = emptyList(),
     val view: DmtView = DmtView.LIBRARY,
     val loginSource: SourceMode = SourceMode.JELLYFIN,

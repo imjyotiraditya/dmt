@@ -3,9 +3,6 @@ package dev.jyotiraditya.dmt.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.staticCompositionLocalOf
-
-val LocalAccent = staticCompositionLocalOf { TuiAccent }
 
 private val TuiColorScheme = darkColorScheme(
     primary = TuiBright,

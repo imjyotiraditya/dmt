@@ -9,13 +9,11 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
+import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.guava.await
 import java.nio.ByteBuffer
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 const val QUEUE_CAP = 500
 private const val QUEUE_LOOKBACK = 100
@@ -28,16 +26,20 @@ fun windowQueue(list: List<Track>, index: Int): Pair<List<Track>, Int> {
     return list.subList(start, start + QUEUE_CAP).toList() to (index - start)
 }
 
-suspend fun <T> ListenableFuture<T>.await(): T =
-    suspendCancellableCoroutine { cont ->
-        addListener(
-            {
-                runCatching { get() }.fold(cont::resume) { cont.resumeWithException(it) }
-            },
-            Runnable::run,
-        )
-        cont.invokeOnCancellation { cancel(false) }
+fun LastSession.resolveQueue(tracks: List<Track>): Triple<List<Track>, Int, Long>? {
+    val byId = tracks.associateBy { it.id }
+    val existing = queueIds.mapNotNull { byId[it] }
+    if (existing.isEmpty()) return null
+
+    val savedCurrentId = queueIds.getOrNull(index)
+    var startIndex = existing.indexOfFirst { it.id == savedCurrentId }
+    var position = positionMs
+    if (startIndex < 0) {
+        startIndex = 0
+        position = 0L
     }
+    return Triple(existing, startIndex, position)
+}
 
 suspend fun Context.mediaController(): MediaController =
     MediaController.Builder(

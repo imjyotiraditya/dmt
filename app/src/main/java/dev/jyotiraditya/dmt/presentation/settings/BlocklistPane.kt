@@ -1,14 +1,12 @@
 package dev.jyotiraditya.dmt.presentation.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +21,7 @@ import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -73,7 +71,7 @@ fun BlocklistPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                         Text(
                             text = if (hidden) "[x]" else "[ ]",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (hidden) LocalAccent.current else TuiFaint,
+                            color = if (hidden) TuiAccent else TuiFaint,
                         )
                         Text(
                             text = " " + path.removePrefix("/storage/emulated/0/").ifEmpty { "/" },
@@ -83,12 +81,7 @@ fun BlocklistPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(TuiLine),
-                    )
+                    HorizontalDivider(color = TuiLine)
                 }
             }
         }

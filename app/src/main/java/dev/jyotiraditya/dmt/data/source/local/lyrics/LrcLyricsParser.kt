@@ -138,11 +138,15 @@ object LrcLyricsParser {
 
     private fun scriptOf(text: String): String? =
         text.firstNotNullOfOrNull { c ->
-            when {
-                c.code in 0x3040..0x30FF || c.code in 0x4E00..0x9FFF -> "cjk"
-                c.code in 0x0600..0x06FF -> "arabic"
-                c.code in 0x0400..0x04FF -> "cyrillic"
-                c.isLetter() && c.code < 128 -> "latin"
+            when (Character.UnicodeScript.of(c.code)) {
+                Character.UnicodeScript.HIRAGANA,
+                Character.UnicodeScript.KATAKANA,
+                Character.UnicodeScript.HAN,
+                -> "cjk"
+
+                Character.UnicodeScript.ARABIC -> "arabic"
+                Character.UnicodeScript.CYRILLIC -> "cyrillic"
+                Character.UnicodeScript.LATIN -> "latin"
                 else -> null
             }
         }

@@ -4,13 +4,14 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
@@ -49,8 +50,6 @@ fun SearchRow(
     sort: String? = null,
     onSort: (() -> Unit)? = null,
 ) {
-    val accent = LocalAccent.current
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -60,14 +59,14 @@ fun SearchRow(
         Text(
             text = "/ ",
             style = MaterialTheme.typography.bodyLarge,
-            color = accent,
+            color = TuiAccent,
         )
         BasicTextField(
             value = query,
             onValueChange = onQuery,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = TuiFg),
-            cursorBrush = SolidColor(accent),
+            cursorBrush = SolidColor(TuiAccent),
             modifier = Modifier.weight(1f),
             decorationBox = { inner ->
                 if (query.isEmpty()) {
@@ -173,11 +172,95 @@ fun ListRow(
             }
             trailing?.invoke()
         }
-        Box(
+        HorizontalDivider(color = if (current) Color.Transparent else TuiLine)
+    }
+}
+
+@Composable
+fun SubdirHeader(
+    title: String,
+    meta: String,
+    onBack: () -> Unit,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "[${stringResource(R.string.back)}]",
+                style = MaterialTheme.typography.labelLarge,
+                color = TuiFg,
+                modifier = Modifier
+                    .tuiClickable(onBack)
+                    .padding(vertical = 8.dp)
+                    .padding(end = 8.dp),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            action?.invoke()
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = TuiFg,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (meta.isNotEmpty()) {
+                Text(
+                    text = " · $meta",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TuiDim,
+                    maxLines = 1,
+                )
+            }
+        }
+        HorizontalDivider(color = TuiLine, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+fun HeaderAction(label: String, onClick: () -> Unit) {
+    Text(
+        text = "[$label]",
+        style = MaterialTheme.typography.labelLarge,
+        color = TuiDim,
+        modifier = Modifier
+            .tuiClickable(onClick)
+            .padding(vertical = 8.dp)
+            .padding(start = 8.dp),
+    )
+}
+
+@Composable
+fun NewEntryRow(label: String, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .tuiClickable(onClick),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.dp)
-                .background(if (current) Color.Transparent else TuiLine),
-        )
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+        ) {
+            Text(text = " ", style = MaterialTheme.typography.labelSmall, color = TuiBg)
+            Text(
+                text = "[+]",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = TuiAccent,
+                modifier = Modifier.padding(start = 4.dp, end = 10.dp),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = TuiFg,
+            )
+        }
+        HorizontalDivider(color = TuiLine)
     }
 }

@@ -28,8 +28,6 @@ import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.SourceMode
-import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
-import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -39,12 +37,11 @@ import javax.inject.Singleton
 private const val COUNTED_LISTEN_MS = 30_000L
 
 @Singleton
-class PreferencesRepositoryImpl @Inject constructor(
+class PreferencesRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
-) : SettingsRepository,
-    StatsRepository {
+) {
 
-    override val settings: Flow<DmtSettings> = context.dmtStore.data.map { prefs ->
+    val settings: Flow<DmtSettings> = context.dmtStore.data.map { prefs ->
         DmtSettings(
             wave = prefs[KEY_WAVE] ?: true,
             cols = prefs[KEY_COLS] ?: 96,
@@ -62,7 +59,7 @@ class PreferencesRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun save(settings: DmtSettings) {
+    suspend fun save(settings: DmtSettings) {
         context.dmtStore.edit {
             it[KEY_WAVE] = settings.wave
             it[KEY_COLS] = settings.cols
@@ -84,13 +81,13 @@ class PreferencesRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun savedSpeed(): Float = context.dmtStore.data.first()[KEY_SPEED] ?: 1f
+    suspend fun savedSpeed(): Float = context.dmtStore.data.first()[KEY_SPEED] ?: 1f
 
-    override suspend fun saveSpeed(speed: Float) {
+    suspend fun saveSpeed(speed: Float) {
         context.dmtStore.edit { it[KEY_SPEED] = speed }
     }
 
-    override suspend fun lastSession(): LastSession? {
+    suspend fun lastSession(): LastSession? {
         val prefs = context.dmtStore.data.first()
         val ids = (prefs[KEY_LAST_QUEUE] ?: "")
             .split(',')
@@ -103,7 +100,7 @@ class PreferencesRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun saveSession(session: LastSession) {
+    suspend fun saveSession(session: LastSession) {
         context.dmtStore.edit { prefs ->
             prefs[KEY_LAST_QUEUE] = session.queueIds.joinToString(",")
             prefs[KEY_LAST_INDEX] = session.index
@@ -111,7 +108,7 @@ class PreferencesRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun recordPlayback(playedMs: Long, trackId: Long?) {
+    suspend fun recordPlayback(playedMs: Long, trackId: Long?) {
         context.dmtStore.edit { prefs ->
             prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
             if (playedMs >= COUNTED_LISTEN_MS && trackId != null) {
@@ -122,7 +119,7 @@ class PreferencesRepositoryImpl @Inject constructor(
         }
     }
 
-    override val stats: Flow<DmtStats> = context.dmtStore.data.map { prefs ->
+    val stats: Flow<DmtStats> = context.dmtStore.data.map { prefs ->
         DmtStats(
             totalMs = prefs[KEY_STAT_TOTAL] ?: 0L,
             counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts(),

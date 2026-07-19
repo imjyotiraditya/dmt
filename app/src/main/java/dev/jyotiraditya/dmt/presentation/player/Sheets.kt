@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -32,7 +33,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
@@ -60,12 +60,7 @@ fun TuiSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
         dragHandle = null,
     ) {
         Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(TuiLine),
-            )
+            HorizontalDivider(color = TuiLine)
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 content()
                 Spacer(modifier = Modifier.height(18.dp))
@@ -94,7 +89,7 @@ fun SheetHeader(
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(LocalAccent.current),
+                    .background(TuiAccent),
             )
             Text(
                 text = " $title",
@@ -121,8 +116,6 @@ fun QueueList(
     dispatch: (DmtAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = LocalAccent.current
-
     LazyColumn(modifier = modifier) {
         itemsIndexed(state.queue) { index, label ->
             val current = index == state.queueIndex
@@ -136,7 +129,7 @@ fun QueueList(
                 Box(
                     modifier = Modifier
                         .size(6.dp)
-                        .background(if (current) accent else TuiFaint),
+                        .background(if (current) TuiAccent else TuiFaint),
                 )
                 Text(
                     text = " %02d ".format(index + 1),
@@ -262,7 +255,7 @@ private fun ChainSpecRow(spec: Spec) {
         Text(
             text = spec.value.lowercase(),
             style = MaterialTheme.typography.bodyMedium,
-            color = if (spec.hot) LocalAccent.current else TuiFg,
+            color = if (spec.hot) TuiAccent else TuiFg,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -338,11 +331,6 @@ private fun InfoRow(label: String, value: String) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine)
     }
 }

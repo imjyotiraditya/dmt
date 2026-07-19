@@ -2,9 +2,9 @@ package dev.jyotiraditya.dmt.presentation.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,7 +72,7 @@ import dev.jyotiraditya.dmt.presentation.settings.SettingsPane
 import dev.jyotiraditya.dmt.presentation.settings.SourceLoginPane
 import dev.jyotiraditya.dmt.presentation.settings.SourcesPane
 import dev.jyotiraditya.dmt.presentation.settings.StatsPane
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
@@ -279,7 +283,7 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
             Box(
                 modifier = Modifier
                     .size(9.dp)
-                    .background(LocalAccent.current),
+                    .background(TuiAccent),
             )
             Text(
                 text = " " + stringResource(R.string.app_name),
@@ -287,54 +291,17 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 color = TuiBright,
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine, modifier = Modifier.padding(top = 8.dp))
 
         Spacer(modifier = Modifier.height(12.dp))
-        TuiTab(
-            label = stringResource(R.string.tab_library),
-            active = state.view == DmtView.LIBRARY,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(DmtView.LIBRARY))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        TuiTab(
-            label = stringResource(R.string.tab_albums),
-            active = state.view == DmtView.ALBUMS,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(DmtView.ALBUMS))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        TuiTab(
-            label = stringResource(R.string.tab_artists),
-            active = state.view == DmtView.ARTISTS,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(DmtView.ARTISTS))
-        }
-        if (state.folders.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
+        libraryTabs(state).forEachIndexed { index, (label, view) ->
+            if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             TuiTab(
-                label = stringResource(R.string.tab_folders),
-                active = state.view == DmtView.FOLDERS,
+                label = label,
+                active = state.view == view,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                dispatch(DmtAction.Show(DmtView.FOLDERS))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            TuiTab(
-                label = stringResource(R.string.tab_playlists),
-                active = state.view == DmtView.PLAYLISTS,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                dispatch(DmtAction.Show(DmtView.PLAYLISTS))
+                dispatch(DmtAction.Show(view))
             }
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -371,19 +338,14 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
         Box(
             modifier = Modifier
                 .size(9.dp)
-                .background(LocalAccent.current),
+                .background(TuiAccent),
         )
         Text(
             text = " " + stringResource(R.string.app_name) + " ",
             style = MaterialTheme.typography.titleMedium,
             color = TuiBright,
         )
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine, modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.width(10.dp))
         val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
         TuiTab(
@@ -407,44 +369,41 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun libraryTabs(state: DmtState): List<Pair<String, DmtView>> =
+    buildList {
+        add(stringResource(R.string.tab_library) to DmtView.LIBRARY)
+        add(stringResource(R.string.tab_albums) to DmtView.ALBUMS)
+        add(stringResource(R.string.tab_artists) to DmtView.ARTISTS)
+        if (state.folders.isNotEmpty()) {
+            add(stringResource(R.string.tab_folders) to DmtView.FOLDERS)
+            add(stringResource(R.string.tab_playlists) to DmtView.PLAYLISTS)
+        }
+    }
+
 @Composable
 private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    FlowRow(
+    val tabs = libraryTabs(state)
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(state.view) { requester.bringIntoView() }
+    Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(vertical = 8.dp),
+        modifier = Modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
     ) {
-        TuiTab(
-            label = stringResource(R.string.tab_library),
-            active = state.view == DmtView.LIBRARY,
-        ) {
-            dispatch(DmtAction.Show(DmtView.LIBRARY))
-        }
-        TuiTab(
-            label = stringResource(R.string.tab_albums),
-            active = state.view == DmtView.ALBUMS,
-        ) {
-            dispatch(DmtAction.Show(DmtView.ALBUMS))
-        }
-        TuiTab(
-            label = stringResource(R.string.tab_artists),
-            active = state.view == DmtView.ARTISTS,
-        ) {
-            dispatch(DmtAction.Show(DmtView.ARTISTS))
-        }
-        if (state.folders.isNotEmpty()) {
+        tabs.forEach { (label, view) ->
+            val active = state.view == view
             TuiTab(
-                label = stringResource(R.string.tab_folders),
-                active = state.view == DmtView.FOLDERS,
+                label = label,
+                active = active,
+                modifier = if (active) {
+                    Modifier.bringIntoViewRequester(requester)
+                } else {
+                    Modifier
+                },
             ) {
-                dispatch(DmtAction.Show(DmtView.FOLDERS))
-            }
-            TuiTab(
-                label = stringResource(R.string.tab_playlists),
-                active = state.view == DmtView.PLAYLISTS,
-            ) {
-                dispatch(DmtAction.Show(DmtView.PLAYLISTS))
+                dispatch(DmtAction.Show(view))
             }
         }
     }

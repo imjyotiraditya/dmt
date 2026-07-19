@@ -20,36 +20,38 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
+import dev.jyotiraditya.dmt.data.repository.PlaylistRepository
+import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
+import dev.jyotiraditya.dmt.data.repository.TrackMediaRepository
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
+import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.domain.repository.PlaylistRepository
-import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
-import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
-import dev.jyotiraditya.dmt.domain.usecase.GetCoverArtUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
-import dev.jyotiraditya.dmt.domain.usecase.GetRouteSpecsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import dev.jyotiraditya.dmt.util.DispatcherProvider
 import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.audioPermission
-import dev.jyotiraditya.dmt.util.await
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
 import dev.jyotiraditya.dmt.util.queueLabels
+import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.togglePlayPause
 import dev.jyotiraditya.dmt.util.windowQueue
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,17 +73,14 @@ private data class FilteredLibrary(
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val settingsRepository: SettingsRepository,
-    private val statsRepository: StatsRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val scanLibrary: ScanLibraryUseCase,
     private val jellyfinLogin: JellyfinLoginUseCase,
     private val getLyrics: GetLyricsUseCase,
     private val embedLyrics: EmbedLyricsUseCase,
-    private val getCoverArt: GetCoverArtUseCase,
     private val getTrackTech: GetTrackTechUseCase,
-    private val getRouteSpecs: GetRouteSpecsUseCase,
+    private val trackMediaRepository: TrackMediaRepository,
     private val playlistRepository: PlaylistRepository,
-    private val dispatchers: DispatcherProvider,
 ) : BaseViewModel<DmtAction, DmtState, PlayerEffect>(
     DmtState(
         hasPermission = ContextCompat.checkSelfPermission(
@@ -99,64 +98,62 @@ class PlayerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val settings = settingsRepository.settings.first()
+            val settings = preferencesRepository.settings.first()
             reduce { it.copy(settings = settings) }
         }
         viewModelScope.launch {
-            statsRepository.stats.collect { stats ->
+            preferencesRepository.stats.collect { stats ->
                 reduce { if (it.stats == stats) it else it.copy(stats = stats) }
             }
         }
         viewModelScope.launch {
-            getRouteSpecs().collect { route ->
-                reduce { if (it.route == route) it else it.copy(route = route) }
-            }
+            trackMediaRepository.routeSpecs()
+                .distinctUntilChanged()
+                .flowOn(Dispatchers.IO)
+                .collect { route ->
+                    reduce { if (it.route == route) it else it.copy(route = route) }
+                }
         }
         if (currentState.hasPermission) scan()
         connect()
     }
 
-    private fun filter(tracks: List<Track>, query: String, sort: LibrarySort): List<Track> =
+    private fun <T> List<T>.matching(query: String, fields: (T) -> List<String>): List<T> =
         if (query.isBlank()) {
-            tracks
+            this
         } else {
-            tracks.filter {
-                it.title.contains(query, true) ||
-                        it.artist.contains(query, true) ||
-                        it.album.contains(query, true)
-            }
-        }.sortedWith(sort.comparator)
+            filter { item -> fields(item).any { it.contains(query, true) } }
+        }
+
+    private fun filter(tracks: List<Track>, query: String, sort: LibrarySort): List<Track> =
+        tracks
+            .matching(query) { listOf(it.title, it.artist, it.album) }
+            .sortedWith(sort.comparator)
 
     private fun filterAlbums(albums: List<Album>, query: String): List<Album> =
-        if (query.isBlank()) {
-            albums
-        } else {
-            albums.filter {
-                it.name.contains(query, true) || it.artist.contains(query, true)
-            }
-        }
+        albums.matching(query) { listOf(it.name, it.artist) }
 
     private fun filterArtists(artists: List<Artist>, query: String): List<Artist> =
-        if (query.isBlank()) {
-            artists
-        } else {
-            artists.filter { it.name.contains(query, true) }
-        }
-
-    private fun mutatePlaylists(block: () -> Unit = {}) {
-        viewModelScope.launch(dispatchers.io) {
-            block()
-            val playlists = playlistRepository.load(currentState.tracks)
-            reduce { it.copy(playlists = playlists) }
-        }
-    }
+        artists.matching(query) { listOf(it.name) }
 
     private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
-        if (query.isBlank()) {
-            folders
-        } else {
-            folders.filter { it.name.contains(query, true) }
+        folders.matching(query) { listOf(it.name) }
+
+    private fun filterPlaylists(playlists: List<Playlist>, query: String): List<Playlist> =
+        playlists.matching(query) { listOf(it.name) }
+
+    private fun mutatePlaylists(block: () -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            block()
+            val playlists = playlistRepository.load(currentState.tracks)
+            reduce {
+                it.copy(
+                    playlists = playlists,
+                    filteredPlaylists = filterPlaylists(playlists, it.query),
+                )
+            }
         }
+    }
 
     override fun onIntent(intent: DmtAction) {
         val c = controller
@@ -174,6 +171,7 @@ class PlayerViewModel @Inject constructor(
                     filteredAlbums = filterAlbums(it.albums, intent.value),
                     filteredArtists = filterArtists(it.artists, intent.value),
                     filteredFolders = filterFolders(it.folders, intent.value),
+                    filteredPlaylists = filterPlaylists(it.playlists, intent.value),
                 )
             }
 
@@ -272,7 +270,7 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
                 viewModelScope.launch {
-                    settingsRepository.save(intent.settings)
+                    preferencesRepository.save(intent.settings)
                     if (old.sourceMode != intent.settings.sourceMode ||
                         old.blockedFolders != intent.settings.blockedFolders
                     ) {
@@ -303,7 +301,7 @@ class PlayerViewModel @Inject constructor(
             reduce { it.copy(scanning = true, error = null) }
             jellyfinLogin(intent.url, intent.username, intent.password)
                 .onSuccess {
-                    val settings = settingsRepository.settings.first()
+                    val settings = preferencesRepository.settings.first()
                     reduce { it.copy(settings = settings, view = DmtView.LIBRARY) }
                     scan()
                 }
@@ -454,7 +452,7 @@ class PlayerViewModel @Inject constructor(
                 return@launch
             }
             val (filteredTracks, filteredAlbums, filteredArtists, filteredFolders) = withContext(
-                dispatchers.default,
+                Dispatchers.Default,
             ) {
                 FilteredLibrary(
                     tracks = filter(library.tracks, query, currentState.settings.librarySort),
@@ -492,19 +490,8 @@ class PlayerViewModel @Inject constructor(
         }
         sessionRestored = true
         viewModelScope.launch {
-            val session = settingsRepository.lastSession() ?: return@launch
-
-            val byId = tracks.associateBy { it.id }
-            val existing = session.queueIds.mapNotNull { byId[it] }
-            if (existing.isEmpty()) return@launch
-
-            val savedCurrentId = session.queueIds.getOrNull(session.index)
-            var index = existing.indexOfFirst { it.id == savedCurrentId }
-            var position = session.positionMs
-            if (index < 0) {
-                index = 0
-                position = 0L
-            }
+            val session = preferencesRepository.lastSession() ?: return@launch
+            val (existing, index, position) = session.resolveQueue(tracks) ?: return@launch
             val (queue, startIndex) = windowQueue(existing, index)
             c.setMediaItems(
                 queue.map { it.toMediaItem() },
@@ -582,8 +569,8 @@ class PlayerViewModel @Inject constructor(
         val uri: Uri? = mediaItem?.mediaMetadata?.artworkUri
         val forId = mediaItem?.mediaId
         viewModelScope.launch {
-            val raw = uri?.let { getCoverArt(it) }
-            val cover = withContext(dispatchers.io) {
+            val raw = withContext(Dispatchers.IO) { uri?.let(trackMediaRepository::loadArt) }
+            val cover = withContext(Dispatchers.IO) {
                 raw?.let { art ->
                     runCatching {
                         art.toAsciiBitmap(context, currentState.settings.cols)
@@ -633,7 +620,7 @@ class PlayerViewModel @Inject constructor(
         val next = SPEED_STEPS[(currentIndex + 1).mod(SPEED_STEPS.size)]
         c.setPlaybackSpeed(next)
         viewModelScope.launch {
-            settingsRepository.saveSpeed(next)
+            preferencesRepository.saveSpeed(next)
         }
     }
 
@@ -656,7 +643,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private suspend fun restoreSpeed(c: MediaController) {
-        val saved = settingsRepository.savedSpeed()
+        val saved = preferencesRepository.savedSpeed()
         if (abs(c.playbackParameters.speed - saved) > 0.01f) {
             c.setPlaybackSpeed(saved)
         }

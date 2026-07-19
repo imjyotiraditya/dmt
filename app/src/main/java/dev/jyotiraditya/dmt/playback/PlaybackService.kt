@@ -36,15 +36,15 @@ import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jyotiraditya.dmt.MainActivity
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toAlbums
 import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
-import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
-import dev.jyotiraditya.dmt.domain.repository.StatsRepository
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
+import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.windowQueue
 import kotlinx.coroutines.CoroutineScope
@@ -75,10 +75,7 @@ class PlaybackService : MediaLibraryService() {
     lateinit var mediaSourceProvider: MediaSourceProvider
 
     @Inject
-    lateinit var settingsRepository: SettingsRepository
-
-    @Inject
-    lateinit var statsRepository: StatsRepository
+    lateinit var preferencesRepository: PreferencesRepository
 
     companion object {
         const val KEY_END_AT = "end_at"
@@ -529,56 +526,20 @@ class PlaybackService : MediaLibraryService() {
                     single != null && query != null ->
                         queueOf(searchLibrary(tracks, query).ifEmpty { tracks }, 0)
 
-                    single != null && single.mediaId.startsWith(ALBUM_PREFIX) -> {
-                        val name = single.mediaId
-                            .removePrefix(ALBUM_PREFIX)
-                            .substringBeforeLast('/')
-                        val trackId = single.mediaId.substringAfterLast('/')
-                        val albumTracks = tracks.toAlbums()
-                            .find { it.name == name }
-                            ?.tracks
-                            .orEmpty()
-                        val index = albumTracks.indexOfFirst { it.id.toString() == trackId }
-                        if (index >= 0) {
-                            queueOf(albumTracks, index, startPositionMs)
-                        } else {
-                            queueOf(tracks, 0)
+                    single != null && single.mediaId.startsWith(ALBUM_PREFIX) ->
+                        groupQueue(single.mediaId, ALBUM_PREFIX, tracks, startPositionMs) { key ->
+                            tracks.toAlbums().find { it.name == key }?.tracks
                         }
-                    }
 
-                    single != null && single.mediaId.startsWith(ARTIST_PREFIX) -> {
-                        val name = single.mediaId
-                            .removePrefix(ARTIST_PREFIX)
-                            .substringBeforeLast('/')
-                        val trackId = single.mediaId.substringAfterLast('/')
-                        val artistTracks = tracks.toArtists()
-                            .find { it.name == name }
-                            ?.tracks
-                            .orEmpty()
-                        val index = artistTracks.indexOfFirst { it.id.toString() == trackId }
-                        if (index >= 0) {
-                            queueOf(artistTracks, index, startPositionMs)
-                        } else {
-                            queueOf(tracks, 0)
+                    single != null && single.mediaId.startsWith(ARTIST_PREFIX) ->
+                        groupQueue(single.mediaId, ARTIST_PREFIX, tracks, startPositionMs) { key ->
+                            tracks.toArtists().find { it.name == key }?.tracks
                         }
-                    }
 
-                    single != null && single.mediaId.startsWith(FOLDER_PREFIX) -> {
-                        val path = single.mediaId
-                            .removePrefix(FOLDER_PREFIX)
-                            .substringBeforeLast('/')
-                        val trackId = single.mediaId.substringAfterLast('/')
-                        val folderTracks = tracks.toFolders()
-                            .find { it.path == path }
-                            ?.tracks
-                            .orEmpty()
-                        val index = folderTracks.indexOfFirst { it.id.toString() == trackId }
-                        if (index >= 0) {
-                            queueOf(folderTracks, index, startPositionMs)
-                        } else {
-                            queueOf(tracks, 0)
+                    single != null && single.mediaId.startsWith(FOLDER_PREFIX) ->
+                        groupQueue(single.mediaId, FOLDER_PREFIX, tracks, startPositionMs) { key ->
+                            tracks.toFolders().find { it.path == key }?.tracks
                         }
-                    }
 
                     single != null && single.localConfiguration == null -> {
                         val index = tracks.indexOfFirst { it.id.toString() == single.mediaId }
@@ -600,6 +561,37 @@ class PlaybackService : MediaLibraryService() {
                     )
                 }
             }
+
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            isForPlayback: Boolean,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+            scope.future {
+                val session = preferencesRepository.lastSession()
+                    ?: throw UnsupportedOperationException()
+                val (existing, index, position) = session.resolveQueue(library())
+                    ?: throw UnsupportedOperationException()
+                queueOf(existing, index, position)
+            }
+
+        private fun groupQueue(
+            mediaId: String,
+            prefix: String,
+            tracks: List<Track>,
+            startPositionMs: Long,
+            tracksFor: (String) -> List<Track>?,
+        ): MediaSession.MediaItemsWithStartPosition {
+            val key = mediaId.removePrefix(prefix).substringBeforeLast('/')
+            val trackId = mediaId.substringAfterLast('/')
+            val groupTracks = tracksFor(key).orEmpty()
+            val index = groupTracks.indexOfFirst { it.id.toString() == trackId }
+            return if (index >= 0) {
+                queueOf(groupTracks, index, startPositionMs)
+            } else {
+                queueOf(tracks, 0)
+            }
+        }
 
         private fun queueOf(
             list: List<Track>,
@@ -639,13 +631,13 @@ class PlaybackService : MediaLibraryService() {
             positionMs = player.currentPosition.coerceAtLeast(0L),
         )
         scope.launch {
-            settingsRepository.saveSession(session)
+            preferencesRepository.saveSession(session)
         }
     }
 
     private fun recordStats(playedMs: Long, mediaId: Long?) {
         scope.launch {
-            statsRepository.recordPlayback(playedMs, mediaId)
+            preferencesRepository.recordPlayback(playedMs, mediaId)
         }
     }
 

@@ -7,7 +7,7 @@ import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
-import dev.jyotiraditya.dmt.util.DispatcherProvider
+import kotlinx.coroutines.Dispatchers
 import dev.jyotiraditya.metadata.AudioTags
 import dev.jyotiraditya.metadata.TagKey
 import kotlinx.coroutines.withContext
@@ -16,11 +16,10 @@ import javax.inject.Inject
 
 class EmbedLyricsUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val dispatchers: DispatcherProvider,
 ) {
 
     suspend fun writeRequest(track: Track): IntentSender? =
-        withContext(dispatchers.io) {
+        withContext(Dispatchers.IO) {
             if (track.source != TrackSource.LOCAL || !AudioTags.canWrite(track.path)) {
                 return@withContext null
             }
@@ -31,7 +30,7 @@ class EmbedLyricsUseCase @Inject constructor(
         }
 
     suspend operator fun invoke(track: Track, text: String): Boolean =
-        withContext(dispatchers.io) {
+        withContext(Dispatchers.IO) {
             AudioTags.write(
                 file = File(track.path),
                 tempDir = context.cacheDir,

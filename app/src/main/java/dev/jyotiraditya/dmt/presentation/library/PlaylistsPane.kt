@@ -1,7 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.library
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,12 +19,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
+import dev.jyotiraditya.dmt.core.common.HeaderAction
 import dev.jyotiraditya.dmt.core.common.ListRow
+import dev.jyotiraditya.dmt.core.common.NewEntryRow
+import dev.jyotiraditya.dmt.core.common.SearchRow
+import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Playlist
@@ -34,12 +36,9 @@ import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
-import dev.jyotiraditya.dmt.ui.theme.TuiDim
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
-import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import dev.jyotiraditya.dmt.util.asTime
 
 @Composable
@@ -93,16 +92,37 @@ private fun PlaylistList(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 
     Column {
-        TuiKey(
-            label = "[ ${stringResource(R.string.playlist_new)} ]",
-            modifier = Modifier.padding(top = 6.dp),
-            onClick = { showCreate = true },
+        SearchRow(
+            query = state.query,
+            hint = pluralStringResource(
+                R.plurals.search_playlists_hint,
+                state.playlists.size,
+                state.playlists.size,
+            ),
+            shown = state.filteredPlaylists.size,
+            onQuery = { dispatch(DmtAction.Query(it)) },
         )
-        if (state.playlists.isEmpty()) {
-            Caption(stringResource(R.string.no_playlists))
-        }
         LazyColumn {
-            itemsIndexed(state.playlists, key = { _, p -> p.name }) { index, p ->
+            item {
+                NewEntryRow(
+                    label = stringResource(R.string.playlist_new_title),
+                    onClick = { showCreate = true },
+                )
+            }
+            if (state.filteredPlaylists.isEmpty()) {
+                item {
+                    Caption(
+                        stringResource(
+                            if (state.playlists.isEmpty()) {
+                                R.string.no_playlists
+                            } else {
+                                R.string.no_match
+                            },
+                        ),
+                    )
+                }
+            }
+            itemsIndexed(state.filteredPlaylists, key = { _, p -> p.name }) { index, p ->
                 ListRow(
                     index = index,
                     line1 = p.name,
@@ -142,31 +162,16 @@ private fun PlaylistDetail(
 
     LazyColumn {
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.back),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TuiFg,
-                    modifier = Modifier
-                        .padding(top = 6.dp)
-                        .border(1.dp, TuiLine)
-                        .background(TuiSurface.copy(alpha = 0.6f))
-                        .tuiClickable { dispatch(DmtAction.OpenPlaylist(null)) }
-                        .padding(horizontal = 12.dp, vertical = 7.dp),
-                )
-                TuiKey(
-                    label = "[ ${stringResource(R.string.playlist_add)} ]",
-                    modifier = Modifier.padding(top = 6.dp),
-                    onClick = { showPicker = true },
-                )
-            }
-            Text(
-                text = "${playlist.name} · ${playlist.tracks.size} trk".lowercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = TuiDim,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+            SubdirHeader(
+                title = playlist.name,
+                meta = "${playlist.tracks.size} trk".lowercase(),
+                onBack = { dispatch(DmtAction.OpenPlaylist(null)) },
+                action = {
+                    HeaderAction(
+                        label = "+ ${stringResource(R.string.playlist_add)}",
+                        onClick = { showPicker = true },
+                    )
+                },
             )
         }
         itemsIndexed(playlist.tracks) { index, track ->
@@ -197,7 +202,6 @@ private fun PlaylistDetail(
 
 @Composable
 private fun CreateSheet(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
-    val accent = LocalAccent.current
     var name by remember { mutableStateOf("") }
 
     TuiSheet(onDismiss = onDismiss) {
@@ -209,14 +213,14 @@ private fun CreateSheet(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
             Text(
                 text = " > ",
                 style = MaterialTheme.typography.bodyLarge,
-                color = accent,
+                color = TuiAccent,
             )
             BasicTextField(
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = TuiFg),
-                cursorBrush = SolidColor(accent),
+                cursorBrush = SolidColor(TuiAccent),
                 modifier = Modifier.weight(1f),
                 decorationBox = { inner ->
                     if (name.isEmpty()) {

@@ -4,16 +4,15 @@ import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.toAlbums
 import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.model.toFolders
-import dev.jyotiraditya.dmt.util.DispatcherProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ScanLibraryUseCase @Inject constructor(
     private val mediaSourceProvider: MediaSourceProvider,
-    private val dispatchers: DispatcherProvider,
 ) {
     suspend operator fun invoke(): LibrarySnapshot =
-        withContext(dispatchers.io) {
+        withContext(Dispatchers.IO) {
             val tracks = mediaSourceProvider.current().scan()
             LibrarySnapshot(
                 tracks = tracks,

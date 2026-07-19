@@ -2,8 +2,6 @@ package dev.jyotiraditya.dmt.presentation.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +33,7 @@ import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtView
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
@@ -109,7 +108,7 @@ fun SourceLoginPane(mode: SourceMode, dispatch: (DmtAction) -> Unit) {
             Text(
                 text = stringResource(R.string.source_login_missing),
                 style = MaterialTheme.typography.labelSmall,
-                color = LocalAccent.current,
+                color = TuiAccent,
                 modifier = Modifier.padding(top = 10.dp),
             )
         }
@@ -125,8 +124,6 @@ private fun LoginField(
     keyboardType: KeyboardType = KeyboardType.Text,
     mask: Boolean = false,
 ) {
-    val accent = LocalAccent.current
-
     Column(modifier = Modifier.padding(bottom = 6.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -142,7 +139,7 @@ private fun LoginField(
             Text(
                 text = " > ",
                 style = MaterialTheme.typography.bodyLarge,
-                color = accent,
+                color = TuiAccent,
             )
             BasicTextField(
                 value = value,
@@ -152,7 +149,7 @@ private fun LoginField(
                     color = TuiFg,
                     fontFeatureSettings = if (mask) "calt off" else null,
                 ),
-                cursorBrush = SolidColor(accent),
+                cursorBrush = SolidColor(TuiAccent),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 visualTransformation = if (mask) {
                     PasswordVisualTransformation('*')
@@ -172,11 +169,6 @@ private fun LoginField(
                 },
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine)
     }
 }

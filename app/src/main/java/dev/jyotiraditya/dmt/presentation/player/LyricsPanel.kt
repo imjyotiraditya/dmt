@@ -36,6 +36,7 @@ import dev.jyotiraditya.dmt.domain.model.LyricWord
 import dev.jyotiraditya.dmt.domain.model.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Transliteration
 import dev.jyotiraditya.dmt.domain.model.Voice
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -76,8 +77,6 @@ fun LyricsPanel(
         }
     }
 
-    val palette = rememberSingerPalette()
-
     TuiPanel(modifier = modifier) {
         Box(
             modifier = Modifier
@@ -90,7 +89,6 @@ fun LyricsPanel(
                         romanized = romanized,
                         state = lineState(line, position, lyrics.synced),
                         positionMs = position,
-                        palette = palette,
                         seekable = lyrics.synced && durationMs > 0 && line.startMs >= 0,
                         onClick = {
                             onSeekFraction(
@@ -172,24 +170,16 @@ private fun buildRuns(line: LyricLine): List<LyricRun> {
     return runs
 }
 
-private val arabicScriptRanges = listOf(
-    0x0600..0x06FF,
-    0x0750..0x077F,
-    0x08A0..0x08FF,
-    0xFB50..0xFDFF,
-    0xFE70..0xFEFF,
-)
-
 private fun isArabicScript(text: String): Boolean =
-    text.any { c -> arabicScriptRanges.any { range -> c.code in range } }
+    text.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.ARABIC }
 
 private fun TextUnit.scaledBy(factor: Float): TextUnit = (value * factor).sp
 
-private fun singerColorFor(line: LyricLine, palette: List<Color>): Color =
+private fun singerColorFor(line: LyricLine): Color =
     when {
-        line.interlude -> palette.first()
+        line.interlude -> singerPalette.first()
         line.singer < 0 -> GroupVoice
-        else -> palette[line.singer % palette.size]
+        else -> singerPalette[line.singer % singerPalette.size]
     }
 
 @Composable
@@ -198,7 +188,6 @@ private fun LyricLineRows(
     romanized: Boolean,
     state: LineState,
     positionMs: Long,
-    palette: List<Color>,
     seekable: Boolean,
     onClick: () -> Unit,
 ) {
@@ -216,7 +205,7 @@ private fun LyricLineRows(
         line
     }
 
-    val singerColor = singerColorFor(shown, palette)
+    val singerColor = singerColorFor(shown)
     val hasSinger = !shown.interlude && shown.singer >= 0
     val align = when (shown.voice) {
         Voice.SECONDARY -> TextAlign.End
@@ -233,7 +222,6 @@ private fun LyricLineRows(
             line = shown,
             state = state,
             positionMs = positionMs,
-            accent = palette.first(),
             modifier = rowModifier.padding(
                 top = if (shown.sectionStart) 18.dp else 6.dp,
                 bottom = 6.dp,
@@ -297,7 +285,6 @@ private fun InterludeRow(
     line: LyricLine,
     state: LineState,
     positionMs: Long,
-    accent: Color,
     modifier: Modifier,
 ) {
     val annotated = if (state == LineState.ACTIVE) {
@@ -306,7 +293,7 @@ private fun InterludeRow(
         val filled = ceil(fraction * line.text.length).toInt().coerceIn(0, line.text.length)
         buildAnnotatedString {
             append(line.text)
-            addStyle(SpanStyle(color = accent), 0, filled)
+            addStyle(SpanStyle(color = TuiAccent), 0, filled)
             addStyle(SpanStyle(color = TuiFaint), filled, line.text.length)
         }
     } else {

@@ -6,7 +6,6 @@ import dev.jyotiraditya.dmt.data.remote.jellyfin.JellyfinItem
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
-import dev.jyotiraditya.dmt.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +19,7 @@ private fun String.toJellyfinLong(): Long {
 @Singleton
 class JellyfinMediaRepositoryImpl @Inject constructor(
     private val api: JellyfinApi,
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: PreferencesRepository,
 ) : MediaRepository {
 
     override suspend fun scan(): List<Track> {

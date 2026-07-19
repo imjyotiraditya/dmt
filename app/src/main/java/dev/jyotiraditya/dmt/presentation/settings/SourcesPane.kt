@@ -2,15 +2,13 @@ package dev.jyotiraditya.dmt.presentation.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +26,7 @@ import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
@@ -130,8 +128,6 @@ private fun SourceRow(
     onLogout: (() -> Unit)?,
     onGrant: (() -> Unit)?,
 ) {
-    val accent = LocalAccent.current
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -146,7 +142,7 @@ private fun SourceRow(
             Text(
                 text = if (active) "(*) " else "( ) ",
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (active) accent else TuiFaint,
+                color = if (active) TuiAccent else TuiFaint,
             )
             Column(
                 modifier = Modifier
@@ -188,11 +184,6 @@ private fun SourceRow(
                 )
             }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine)
     }
 }

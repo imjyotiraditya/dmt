@@ -148,4 +148,8 @@
         <item quantity="one">search %1$d folder</item>
         <item quantity="other">search %1$d folders</item>
     </plurals>
+    <plurals name="search_playlists_hint">
+        <item quantity="one">search %1$d list</item>
+        <item quantity="other">search %1$d lists</item>
+    </plurals>
 </resources>

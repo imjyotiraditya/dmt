@@ -24,7 +24,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
-import dev.jyotiraditya.dmt.domain.repository.TrackMediaRepository
 import dev.jyotiraditya.dmt.util.asKHz
 import dev.jyotiraditya.dmt.util.asMB
 import dev.jyotiraditya.dmt.util.codecLabel
@@ -41,11 +40,11 @@ private const val VBR_PROBE_SKIP = 4
 private const val VBR_PROBE_FRAMES = 400
 
 @Singleton
-class TrackMediaRepositoryImpl @Inject constructor(
+class TrackMediaRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
-) : TrackMediaRepository {
+) {
 
-    override fun loadArt(uri: Uri): Bitmap? =
+    fun loadArt(uri: Uri): Bitmap? =
         if (uri.scheme == "http" || uri.scheme == "https") {
             runCatching {
                 URL(uri.toString()).openStream().use(BitmapFactory::decodeStream)
@@ -59,7 +58,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
         }
 
     @OptIn(UnstableApi::class)
-    override fun techSpecs(uri: Uri, track: Track?): List<Spec> {
+    fun techSpecs(uri: Uri, track: Track?): List<Spec> {
         if (track?.source == TrackSource.JELLYFIN) {
             return buildList {
                 if (track.mime.isNotEmpty()) {
@@ -259,7 +258,7 @@ class TrackMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun routeSpecs(): Flow<List<Spec>> = callbackFlow {
+    fun routeSpecs(): Flow<List<Spec>> = callbackFlow {
         val audioManager = context.getSystemService(AudioManager::class.java)
         val callback = object : AudioDeviceCallback() {
             override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {

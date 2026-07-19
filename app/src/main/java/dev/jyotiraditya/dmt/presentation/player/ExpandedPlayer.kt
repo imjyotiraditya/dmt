@@ -45,15 +45,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.AsciiCover
+import dev.jyotiraditya.dmt.core.common.CursorTitle
 import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.ThinSlider
 import dev.jyotiraditya.dmt.core.common.TuiChip
@@ -64,12 +62,10 @@ import dev.jyotiraditya.dmt.core.common.TuiStatus
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isCompactWindow
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
-import dev.jyotiraditya.dmt.core.common.rememberCursorAlpha
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.core.common.windowDpSize
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
-import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -410,21 +406,10 @@ private fun CoverPanel(state: DmtState, modifier: Modifier = Modifier) {
 
 @Composable
 private fun TrackMeta(state: DmtState) {
-    val cursorAlpha = rememberCursorAlpha()
-    val accent = LocalAccent.current
-    Text(
-        text = buildAnnotatedString {
-            append(state.title)
-            withStyle(SpanStyle(color = accent.copy(alpha = cursorAlpha))) {
-                append("_")
-            }
-        },
+    CursorTitle(
+        text = state.title,
         style = MaterialTheme.typography.titleLarge,
-        color = TuiBright,
-        maxLines = 1,
-        modifier = Modifier
-            .padding(top = 18.dp)
-            .basicMarquee(iterations = Int.MAX_VALUE),
+        modifier = Modifier.padding(top = 18.dp),
     )
     Text(
         text = listOf(state.artist, state.album)
@@ -480,8 +465,6 @@ private fun TrackMeta(state: DmtState) {
 private fun SeekRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
     var scrub by remember { mutableStateOf<Float?>(null) }
     var seekPending by remember { mutableStateOf(false) }
-    val accent = LocalAccent.current
-
     LaunchedEffect(state.positionMs) {
         if (!seekPending) return@LaunchedEffect
         val held = scrub ?: return@LaunchedEffect
@@ -514,7 +497,7 @@ private fun SeekRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         Text(
             text = shownPosition.asTime(),
             style = MaterialTheme.typography.labelSmall,
-            color = if (scrub != null) accent else TuiDim,
+            color = if (scrub != null) TuiAccent else TuiDim,
         )
         ThinSlider(
             fraction = scrub ?: playFraction,

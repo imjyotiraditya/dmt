@@ -3,6 +3,7 @@ package dev.jyotiraditya.metadata
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.RandomAccessFile
+import java.nio.channels.Channels
 
 internal const val OGG_MARKER = "OggS"
 private const val BOS_FLAG = 0x02
@@ -232,12 +233,7 @@ internal object OggTags {
                 raf.seek(0)
                 raf.write(head.toByteArray())
                 body.inputStream().use { input ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val n = input.read(buffer)
-                        if (n < 0) break
-                        raf.write(buffer, 0, n)
-                    }
+                    input.copyTo(Channels.newOutputStream(raf.channel))
                 }
                 raf.setLength(head.size().toLong() + body.length())
             } finally {

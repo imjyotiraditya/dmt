@@ -1,15 +1,13 @@
 package dev.jyotiraditya.dmt.presentation.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +26,7 @@ import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
-import dev.jyotiraditya.dmt.ui.theme.LocalAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
@@ -153,7 +151,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             Text(
                 text = "▪ ",
                 style = MaterialTheme.typography.labelMedium,
-                color = LocalAccent.current,
+                color = TuiAccent,
             )
             Text(
                 text = stringResource(R.string.credit),
@@ -163,7 +161,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             Text(
                 text = " ↗",
                 style = MaterialTheme.typography.labelMedium,
-                color = LocalAccent.current,
+                color = TuiAccent,
             )
         }
     }
@@ -193,11 +191,6 @@ private fun SettingRow(
                 onClick = onClick,
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(TuiLine),
-        )
+        HorizontalDivider(color = TuiLine)
     }
 }
