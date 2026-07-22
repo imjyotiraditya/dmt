@@ -4,11 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Typeface
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
@@ -214,12 +215,11 @@ private fun WaveCover(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            keyframes {
-                durationMillis = 4400
-                0f at 0
-                1f at 3000 using LinearEasing
-                1f at 4400
-            },
+            animation = tween(
+                durationMillis = 5200,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
         ),
         label = "phase",
     )
@@ -234,13 +234,15 @@ private fun WaveCover(
             filterQuality = FilterQuality.Medium,
         )
         val cx = (-0.6f + phase * 2.8f) * size.width
-        val band = size.width * 0.22f
+        val band = size.width * 0.28f
         drawRect(
             brush = Brush.linearGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    Color.White.copy(alpha = 0.55f),
-                    Color.Transparent,
+                colorStops = arrayOf(
+                    0.0f to Color.Transparent,
+                    0.3f to Color.White.copy(alpha = 0.12f),
+                    0.5f to Color.White.copy(alpha = 0.55f),
+                    0.7f to Color.White.copy(alpha = 0.12f),
+                    1.0f to Color.Transparent,
                 ),
                 start = Offset(cx - band, 0f),
                 end = Offset(cx + band, size.height * 0.45f),
