@@ -2,6 +2,6 @@
 <resources>
 
     <style name="Theme.DMT" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">#FF121314</item>
+        <item name="android:windowBackground">#FF000000</item>
     </style>
 </resources>
