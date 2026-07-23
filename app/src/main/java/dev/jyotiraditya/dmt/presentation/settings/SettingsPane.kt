@@ -114,6 +114,12 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.Rescan)
         }
+        SettingRow(
+            label = stringResource(R.string.perms_title),
+            value = stringResource(R.string.perms_manage),
+        ) {
+            dispatch(DmtAction.Show(DmtView.PERMISSIONS))
+        }
         if (settings.sourceMode == SourceMode.LOCAL) {
             SettingRow(
                 label = stringResource(R.string.blocklist_title),

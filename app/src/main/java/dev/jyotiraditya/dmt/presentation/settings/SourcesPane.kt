@@ -1,7 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,14 +24,13 @@ import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
+import dev.jyotiraditya.dmt.presentation.player.DmtView
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.util.audioPermission
-import dev.jyotiraditya.dmt.util.runtimePermissions
 
 private data class SourceDescriptor(
     val mode: SourceMode,
@@ -72,12 +69,6 @@ private val SOURCE_REGISTRY = listOf(
 fun SourcesPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val settings = state.settings
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) { grants ->
-        dispatch(DmtAction.Permission(grants[audioPermission] == true))
-    }
-
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Caption(stringResource(R.string.sources_title))
 
@@ -90,7 +81,7 @@ fun SourcesPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 active = settings.sourceMode == source.mode,
                 needsLogin = source.requiresAuth && !connected,
                 onGrant = if (needsGrant) {
-                    { permissionLauncher.launch(runtimePermissions) }
+                    { dispatch(DmtAction.Show(DmtView.PERMISSIONS)) }
                 } else {
                     null
                 },
@@ -157,7 +148,7 @@ private fun SourceRow(
                     color = if (active) TuiBright else TuiFg,
                 )
                 Text(
-                    text = "└ $subtitle",
+                    text = subtitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = TuiDim,
                     maxLines = 1,

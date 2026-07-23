@@ -34,6 +34,21 @@
 
     <string name="grant">[ grant ]</string>
 
+    <string name="perms_title">permissions</string>
+    <string name="perms_manage">manage</string>
+    <string name="perm_settings">[ settings ]</string>
+    <string name="perm_revoke">[ revoke ]</string>
+    <string name="perms_hint">granted permissions can only be revoked from system settings</string>
+    <string name="perm_audio_label">media library</string>
+    <string name="perm_audio_why">read audio files stored on this device</string>
+    <string name="perm_audio_off">off: local source cannot list or play anything</string>
+    <string name="perm_notif_label">notifications</string>
+    <string name="perm_notif_why">show playback controls outside the app</string>
+    <string name="perm_notif_off">off: no media notification, playback still works</string>
+    <string name="perm_net_label">local network</string>
+    <string name="perm_net_why">reach media servers on your home network</string>
+    <string name="perm_net_off">off: jellyfin on the same network cannot connect</string>
+
     <string name="now_playing">now playing</string>
     <string name="no_cover">[ no cover ]</string>
     <string name="close" translatable="false">v</string>

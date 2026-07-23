@@ -10,13 +10,12 @@ val audioPermission: String =
         Manifest.permission.READ_EXTERNAL_STORAGE
     }
 
-val runtimePermissions: Array<String> =
-    buildList {
-        add(audioPermission)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }.toTypedArray()
+val notificationPermission: String? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.POST_NOTIFICATIONS
+    } else {
+        null
+    }
 
 val localNetworkPermission: String? =
     if (Build.VERSION.SDK_INT >= 37) {

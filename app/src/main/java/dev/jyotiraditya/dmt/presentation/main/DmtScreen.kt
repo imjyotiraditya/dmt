@@ -69,6 +69,7 @@ import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
 import dev.jyotiraditya.dmt.presentation.settings.BlocklistPane
+import dev.jyotiraditya.dmt.presentation.settings.PermissionsPane
 import dev.jyotiraditya.dmt.presentation.settings.SettingsPane
 import dev.jyotiraditya.dmt.presentation.settings.SourceLoginPane
 import dev.jyotiraditya.dmt.presentation.settings.SourcesPane
@@ -109,6 +110,8 @@ fun DmtScreen(
             state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
 
             state.view == DmtView.BLOCKLIST -> dispatch(DmtAction.Show(DmtView.SETTINGS))
+
+            state.view == DmtView.PERMISSIONS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
 
             state.view == DmtView.SOURCE_LOGIN -> dispatch(DmtAction.Show(DmtView.SOURCES))
 
@@ -258,6 +261,7 @@ private fun PaneHost(
             when {
                 state.view == DmtView.STATS -> StatsPane(state, dispatch)
                 state.view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
+                state.view == DmtView.PERMISSIONS -> PermissionsPane(state, dispatch)
                 state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
                 state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
                 state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
@@ -318,7 +322,9 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
             dispatch(DmtAction.Show(if (inSources) DmtView.LIBRARY else DmtView.SOURCES))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
+        val inConfig = state.view == DmtView.SETTINGS ||
+                state.view == DmtView.STATS ||
+                state.view == DmtView.PERMISSIONS
         TuiTab(
             label = stringResource(R.string.cfg),
             active = inConfig,
@@ -360,7 +366,9 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
-        val inConfig = state.view == DmtView.SETTINGS || state.view == DmtView.STATS
+        val inConfig = state.view == DmtView.SETTINGS ||
+                state.view == DmtView.STATS ||
+                state.view == DmtView.PERMISSIONS
         TuiTab(
             label = stringResource(R.string.cfg),
             active = inConfig,
