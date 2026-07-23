@@ -2,9 +2,11 @@ package dev.jyotiraditya.dmt.data.remote.lrclib
 
 import dev.jyotiraditya.dmt.BuildConfig
 import dev.jyotiraditya.dmt.domain.model.Track
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,30 +20,25 @@ private fun known(value: String, placeholder: String): String? =
 
 @Singleton
 class LrclibApi @Inject constructor(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
 ) {
 
-    fun fetchLyrics(track: Track): String? {
+    suspend fun fetchLyrics(track: Track): String? {
         val title = known(track.title, "unknown title") ?: return null
         val artist = known(track.artist, "unknown artist") ?: return null
         val album = known(track.album, "unknown album")
 
-        val url = BASE_URL.toHttpUrl().newBuilder()
-            .addQueryParameter("track_name", title)
-            .addQueryParameter("artist_name", artist)
-            .apply { album?.let { addQueryParameter("album_name", it) } }
-            .addQueryParameter("duration", "${track.durationMs / 1000}")
-            .build()
-
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", USER_AGENT)
-            .build()
-
-        val json = client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            JSONObject(response.body.string())
+        val response = client.get(BASE_URL) {
+            url {
+                parameters.append("track_name", title)
+                parameters.append("artist_name", artist)
+                album?.let { parameters.append("album_name", it) }
+                parameters.append("duration", "${track.durationMs / 1000}")
+            }
+            header("User-Agent", USER_AGENT)
         }
+        if (!response.status.isSuccess()) return null
+        val json = JSONObject(response.bodyAsText())
 
         if (json.optBoolean("instrumental")) return null
 

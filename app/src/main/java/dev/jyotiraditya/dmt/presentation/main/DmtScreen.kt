@@ -313,26 +313,44 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
         }
         Spacer(modifier = Modifier.weight(1f))
 
-        val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
-        TuiTab(
-            label = stringResource(R.string.tab_sources),
-            active = inSources,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(if (inSources) DmtView.LIBRARY else DmtView.SOURCES))
-        }
+        SourcesTab(state, dispatch, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
-        val inConfig = state.view == DmtView.SETTINGS ||
-                state.view == DmtView.STATS ||
-                state.view == DmtView.PERMISSIONS
-        TuiTab(
-            label = stringResource(R.string.cfg),
-            active = inConfig,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            dispatch(DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS))
-        }
+        ConfigTab(state, dispatch, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun SourcesTab(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val active = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
+    TuiTab(
+        label = stringResource(R.string.tab_sources),
+        active = active,
+        modifier = modifier,
+    ) {
+        dispatch(DmtAction.Show(if (active) DmtView.LIBRARY else DmtView.SOURCES))
+    }
+}
+
+@Composable
+private fun ConfigTab(
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val active = state.view == DmtView.SETTINGS ||
+            state.view == DmtView.STATS ||
+            state.view == DmtView.PERMISSIONS
+    TuiTab(
+        label = stringResource(R.string.cfg),
+        active = active,
+        modifier = modifier,
+    ) {
+        dispatch(DmtAction.Show(if (active) DmtView.LIBRARY else DmtView.SETTINGS))
     }
 }
 
@@ -356,27 +374,9 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
         )
         HorizontalDivider(color = TuiLine, modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.width(10.dp))
-        val inSources = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
-        TuiTab(
-            label = stringResource(R.string.tab_sources),
-            active = inSources,
-        ) {
-            dispatch(
-                DmtAction.Show(if (inSources) DmtView.LIBRARY else DmtView.SOURCES),
-            )
-        }
+        SourcesTab(state, dispatch)
         Spacer(modifier = Modifier.width(8.dp))
-        val inConfig = state.view == DmtView.SETTINGS ||
-                state.view == DmtView.STATS ||
-                state.view == DmtView.PERMISSIONS
-        TuiTab(
-            label = stringResource(R.string.cfg),
-            active = inConfig,
-        ) {
-            dispatch(
-                DmtAction.Show(if (inConfig) DmtView.LIBRARY else DmtView.SETTINGS),
-            )
-        }
+        ConfigTab(state, dispatch)
     }
 }
 

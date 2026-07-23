@@ -5,10 +5,16 @@ import dev.jyotiraditya.dmt.data.source.local.lyrics.fillLineEnds
 import dev.jyotiraditya.dmt.data.source.local.lyrics.withInterludes
 import dev.jyotiraditya.dmt.domain.model.LyricLine
 import dev.jyotiraditya.dmt.domain.model.Lyrics
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import org.json.JSONObject
 import java.time.Instant
 import javax.inject.Inject
@@ -40,10 +46,10 @@ private const val TICKS_PER_MS = 10_000L
 
 @Singleton
 class JellyfinApi @Inject constructor(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
 ) {
 
-    fun authenticate(baseUrl: String, username: String, password: String): JellyfinAuth {
+    suspend fun authenticate(baseUrl: String, username: String, password: String): JellyfinAuth {
         val credentials = JSONObject()
             .put("Username", username)
             .put("Pw", password)
@@ -59,7 +65,7 @@ class JellyfinApi @Inject constructor(
         )
     }
 
-    fun fetchAudioItems(baseUrl: String, userId: String, token: String): List<JellyfinItem> {
+    suspend fun fetchAudioItems(baseUrl: String, userId: String, token: String): List<JellyfinItem> {
         val json = getJson(
             url = endpoint(
                 baseUrl,
@@ -82,7 +88,7 @@ class JellyfinApi @Inject constructor(
     fun imageUrl(baseUrl: String, itemId: String, token: String): String =
         endpoint(baseUrl, "/Items/$itemId/Images/Primary?api_key=$token")
 
-    fun fetchLyrics(baseUrl: String, itemId: String, token: String): Lyrics? {
+    suspend fun fetchLyrics(baseUrl: String, itemId: String, token: String): Lyrics? {
         val json = runCatching {
             getJson(
                 url = endpoint(baseUrl, "/Audio/$itemId/Lyrics"),
@@ -124,32 +130,23 @@ class JellyfinApi @Inject constructor(
     private fun endpoint(baseUrl: String, path: String): String =
         baseUrl.trimEnd('/') + path
 
-    private fun getJson(url: String, token: String): JSONObject {
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("X-Emby-Authorization", authHeader(token))
-            .get()
-            .build()
+    private suspend fun getJson(url: String, token: String): JSONObject =
+        client.get(url) {
+            header("X-Emby-Authorization", authHeader(token))
+        }.toJson()
 
-        return executeForJson(request)
+    private suspend fun postJson(url: String, body: JSONObject): JSONObject =
+        client.post(url) {
+            header("X-Emby-Authorization", authHeader())
+            contentType(ContentType.Application.Json)
+            setBody(body.toString())
+        }.toJson()
+
+    private suspend fun HttpResponse.toJson(): JSONObject {
+        check(status.isSuccess()) { "request failed: ${status.value}" }
+
+        return JSONObject(bodyAsText())
     }
-
-    private fun postJson(url: String, body: JSONObject): JSONObject {
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("X-Emby-Authorization", authHeader())
-            .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        return executeForJson(request)
-    }
-
-    private fun executeForJson(request: Request): JSONObject =
-        client.newCall(request).execute().use { response ->
-            check(response.isSuccessful) { "request failed: ${response.code}" }
-
-            JSONObject(response.body.string())
-        }
 
     private fun authHeader(token: String? = null): String =
         buildString {
