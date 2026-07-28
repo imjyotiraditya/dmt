@@ -96,6 +96,9 @@ class PlayerViewModel @Inject constructor(
     private var controller: MediaController? = null
     private var pendingEmbed: Pair<Track, String>? = null
     private var noticeJob: Job? = null
+    private var coverJob: Job? = null
+    private var techJob: Job? = null
+    private var lyricsJob: Job? = null
     private var sleepEndAt: Long? = null
     private var sessionRestored = false
 
@@ -578,7 +581,8 @@ class PlayerViewModel @Inject constructor(
     private fun loadLyrics(mediaItem: MediaItem?) {
         val forId = mediaItem?.mediaId
         reduce { it.copy(lyricsFetching = true) }
-        viewModelScope.launch {
+        lyricsJob?.cancel()
+        lyricsJob = viewModelScope.launch {
             val track = currentState.tracks.find { it.id.toString() == forId }
             val lyrics = track?.let { getLyrics(it) }
             reduce {
@@ -595,7 +599,8 @@ class PlayerViewModel @Inject constructor(
         val uri: Uri? = mediaItem?.mediaMetadata?.artworkUri
         val fileUri: Uri? = mediaItem?.localConfiguration?.uri
         val forId = mediaItem?.mediaId
-        viewModelScope.launch {
+        coverJob?.cancel()
+        coverJob = viewModelScope.launch {
             val raw = withContext(Dispatchers.IO) {
                 uri?.let { coverArtRepository.loadArt(it, fileUri) }
             }
@@ -621,7 +626,8 @@ class PlayerViewModel @Inject constructor(
     private fun loadTech(mediaItem: MediaItem?) {
         val uri = mediaItem?.localConfiguration?.uri
         val id = mediaItem?.mediaId
-        viewModelScope.launch {
+        techJob?.cancel()
+        techJob = viewModelScope.launch {
             val track = currentState.tracks.find { t -> t.id.toString() == id }
             val tech = uri?.let { getTrackTech(it, track) }.orEmpty()
             reduce {
