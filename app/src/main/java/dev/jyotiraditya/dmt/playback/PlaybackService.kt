@@ -15,10 +15,12 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.BitmapLoader
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSourceBitmapLoader
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
@@ -80,6 +82,9 @@ class PlaybackService : MediaLibraryService() {
     @Inject
     lateinit var preferencesRepository: PreferencesRepository
 
+    @Inject
+    lateinit var dataSourceFactory: DataSource.Factory
+
     companion object {
         const val KEY_END_AT = "end_at"
         const val KEY_AUDIO_SESSION = "audio_session"
@@ -118,6 +123,7 @@ class PlaybackService : MediaLibraryService() {
         val renderersFactory = DefaultRenderersFactory(this)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
         val player = ExoPlayer.Builder(this, renderersFactory)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
