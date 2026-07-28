@@ -2,8 +2,6 @@ package dev.jyotiraditya.dmt.data.repository
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
@@ -14,7 +12,6 @@ import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.util.Size
 import androidx.annotation.OptIn
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.MediaFormatUtil
@@ -32,7 +29,6 @@ import dev.jyotiraditya.dmt.util.probeFrames
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,26 +39,6 @@ private const val VBR_PROBE_FRAMES = 400
 class TrackMediaRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
-
-    fun loadArt(uri: Uri, fileUri: Uri? = null): Bitmap? =
-        if (uri.scheme == "http" || uri.scheme == "https") {
-            runCatching {
-                URL(uri.toString()).openStream().use(BitmapFactory::decodeStream)
-            }.getOrNull()
-        } else {
-            fileUri?.let(::loadEmbeddedArt) ?: runCatching {
-                context.contentResolver.loadThumbnail(uri, Size(512, 512), null)
-            }.recoverCatching {
-                context.contentResolver.openInputStream(uri).use(BitmapFactory::decodeStream)
-            }.getOrNull()
-        }
-
-    private fun loadEmbeddedArt(fileUri: Uri): Bitmap? = runCatching {
-        MediaMetadataRetriever().use { retriever ->
-            retriever.setDataSource(context, fileUri)
-            retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-        }
-    }.getOrNull()
 
     @OptIn(UnstableApi::class)
     fun techSpecs(uri: Uri, track: Track?): List<Spec> {

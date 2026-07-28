@@ -20,6 +20,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.base.BaseViewModel
 import dev.jyotiraditya.dmt.core.common.generateAsciiPlaceholder
 import dev.jyotiraditya.dmt.core.common.toAsciiBitmap
+import dev.jyotiraditya.dmt.data.repository.CoverArtRepository
 import dev.jyotiraditya.dmt.data.repository.PlaylistRepository
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.data.repository.TrackMediaRepository
@@ -81,6 +82,7 @@ class PlayerViewModel @Inject constructor(
     private val embedLyrics: EmbedLyricsUseCase,
     private val getTrackTech: GetTrackTechUseCase,
     private val trackMediaRepository: TrackMediaRepository,
+    private val coverArtRepository: CoverArtRepository,
     private val playlistRepository: PlaylistRepository,
 ) : BaseViewModel<DmtAction, DmtState, PlayerEffect>(
     DmtState(
@@ -595,7 +597,7 @@ class PlayerViewModel @Inject constructor(
         val forId = mediaItem?.mediaId
         viewModelScope.launch {
             val raw = withContext(Dispatchers.IO) {
-                uri?.let { trackMediaRepository.loadArt(it, fileUri) }
+                uri?.let { coverArtRepository.loadArt(it, fileUri) }
             }
             val cover = withContext(Dispatchers.IO) {
                 raw?.let { art ->

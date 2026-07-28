@@ -99,6 +99,8 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
+    implementation(libs.coil)
+    implementation(libs.coil.network.ktor3)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
