@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -426,6 +427,7 @@ private fun LyricRunText(
             } else {
                 FontWeight.Normal
             },
+            fontStyle = if (run.background) FontStyle.Italic else FontStyle.Normal,
             letterSpacing = 0.sp,
             textDirection = TextDirection.Content,
         ),
