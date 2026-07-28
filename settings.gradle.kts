@@ -26,3 +26,4 @@ rootProject.name = "DMT"
 include(":app")
 include(":metadata")
 include(":lyrics")
+include(":baselineprofile")

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val appVersionName = (project.findProperty("versionOverride") as String?) ?: "1.0"
@@ -81,6 +82,10 @@ android {
     }
 }
 
+baselineProfile {
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -101,6 +106,8 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.coil)
     implementation(libs.coil.network.ktor3)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
