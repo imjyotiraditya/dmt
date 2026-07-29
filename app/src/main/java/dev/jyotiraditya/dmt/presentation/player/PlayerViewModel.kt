@@ -37,7 +37,6 @@ import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
@@ -45,7 +44,6 @@ import dev.jyotiraditya.dmt.util.queueLabels
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.togglePlayPause
-import dev.jyotiraditya.dmt.util.windowQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -232,10 +230,9 @@ class PlayerViewModel @Inject constructor(
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
-                val (queue, startIndex) = windowQueue(intent.list, intent.index)
                 setMediaItems(
-                    queue.map { it.toMediaItem() },
-                    startIndex,
+                    intent.list.map { it.toMediaItem() },
+                    intent.index,
                     0L,
                 )
                 prepare()
@@ -243,7 +240,7 @@ class PlayerViewModel @Inject constructor(
             }
 
             is DmtAction.Enqueue -> c?.run {
-                addMediaItems(intent.list.take(QUEUE_CAP).map { it.toMediaItem() })
+                addMediaItems(intent.list.map { it.toMediaItem() })
                 prepare()
                 notify(context.getString(R.string.queued, intent.label))
             }
@@ -521,10 +518,9 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val session = preferencesRepository.lastSession() ?: return@launch
             val (existing, index, position) = session.resolveQueue(tracks) ?: return@launch
-            val (queue, startIndex) = windowQueue(existing, index)
             c.setMediaItems(
-                queue.map { it.toMediaItem() },
-                startIndex,
+                existing.map { it.toMediaItem() },
+                index,
                 position,
             )
             c.prepare()

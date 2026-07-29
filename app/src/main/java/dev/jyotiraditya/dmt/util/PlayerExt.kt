@@ -15,17 +15,6 @@ import dev.jyotiraditya.dmt.playback.PlaybackService
 import kotlinx.coroutines.guava.await
 import java.nio.ByteBuffer
 
-const val QUEUE_CAP = 500
-private const val QUEUE_LOOKBACK = 100
-
-fun windowQueue(list: List<Track>, index: Int): Pair<List<Track>, Int> {
-    if (list.size <= QUEUE_CAP) return list to index
-    val start = (index - QUEUE_LOOKBACK)
-        .coerceAtLeast(0)
-        .coerceAtMost(list.size - QUEUE_CAP)
-    return list.subList(start, start + QUEUE_CAP).toList() to (index - start)
-}
-
 fun LastSession.resolveQueue(tracks: List<Track>): Triple<List<Track>, Int, Long>? {
     val byId = tracks.associateBy { it.id }
     val existing = queueIds.mapNotNull { byId[it] }
