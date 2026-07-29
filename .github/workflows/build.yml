@@ -51,7 +51,6 @@ jobs:
         with:
           name: dmt-release
           path: app/build/outputs/apk/release/*.apk
-          archive: false
           retention-days: 1
 
       - name: upload apks to telegram

@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.di
 
 import android.content.Context
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -20,6 +21,7 @@ object PlaybackModule {
 
     @Provides
     @Singleton
+    @UnstableApi
     fun dataSourceFactory(@ApplicationContext context: Context): DataSource.Factory {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(CONNECT_TIMEOUT_MS)
