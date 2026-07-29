@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
@@ -55,6 +57,8 @@ import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.ArtistsPane
+import dev.jyotiraditya.dmt.presentation.library.FolderAction
+import dev.jyotiraditya.dmt.presentation.library.FolderViewModel
 import dev.jyotiraditya.dmt.presentation.library.FoldersPane
 import dev.jyotiraditya.dmt.presentation.library.LibraryPane
 import dev.jyotiraditya.dmt.presentation.library.PlaylistsPane
@@ -91,6 +95,9 @@ fun DmtScreen(
     val imeVisible = WindowInsets.isImeVisible
     val landscape = isLandscapeWindow()
 
+    val folderViewModel: FolderViewModel = hiltViewModel()
+    val folderState by folderViewModel.state.collectAsState()
+
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(state.expanded, state.view, showQueueSheet, showInfoSheet) {
@@ -104,6 +111,7 @@ fun DmtScreen(
 
     val backHandled = !state.expanded &&
             ((state.view == DmtView.ALBUMS && state.openAlbum != null) ||
+                    (state.view == DmtView.FOLDERS && folderState.currentPath != null) ||
                     state.view != DmtView.LIBRARY)
     BackHandler(enabled = backHandled) {
         when {
@@ -121,8 +129,8 @@ fun DmtScreen(
             state.view == DmtView.ARTISTS && state.openArtist != null ->
                 dispatch(DmtAction.OpenArtist(null))
 
-            state.view == DmtView.FOLDERS && state.openFolder != null ->
-                dispatch(DmtAction.OpenFolder(null))
+            state.view == DmtView.FOLDERS && folderState.currentPath != null ->
+                folderViewModel.onIntent(FolderAction.Back)
 
             state.view == DmtView.PLAYLISTS && state.openPlaylist != null ->
                 dispatch(DmtAction.OpenPlaylist(null))
@@ -150,6 +158,7 @@ fun DmtScreen(
                         PaneHost(
                             state = state,
                             dispatch = dispatch,
+                            folderViewModel = folderViewModel,
                             modifier = Modifier.weight(1f),
                         )
 
@@ -174,6 +183,7 @@ fun DmtScreen(
                 PaneHost(
                     state = state,
                     dispatch = dispatch,
+                    folderViewModel = folderViewModel,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -254,6 +264,7 @@ private fun MiniPlayerAnchor(
 private fun PaneHost(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
+    folderViewModel: FolderViewModel,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -268,7 +279,7 @@ private fun PaneHost(
                 state.scanning -> Caption(stringResource(R.string.scanning))
                 state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
                 state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
-                state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
+                state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch, folderViewModel)
                 state.view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
                 else -> LibraryPane(state, dispatch)
             }

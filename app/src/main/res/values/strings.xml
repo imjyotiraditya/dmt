@@ -98,10 +98,16 @@
     <string name="set_eq_open">open</string>
     <string name="no_eq">no equalizer app found</string>
     <string name="queued">queued: %1$s</string>
+    <string name="queued_next">next up: %1$s</string>
     <string name="playback_error">playback error: %1$s</string>
     <string name="set_rescan">rescan library</string>
     <string name="action_play">play</string>
     <string name="action_queue">queue</string>
+    <string name="action_shuffle">shuffle</string>
+    <string name="action_play_next">play next</string>
+    <string name="action_add_to_playlist">add to playlist</string>
+    <string name="folder_add_to_playlist_title">add folder to playlist · tap to add</string>
+    <string name="folder_sort_title">sort folders</string>
     <string name="open_album" translatable="false">[↗]</string>
     <string name="blocklist_title">folder blocklist</string>
     <string name="blocklist_edit">edit</string>

@@ -48,6 +48,26 @@ data class Folder(
     val tracks: List<Track>,
 )
 
+/**
+ * One directory in the indexed music library's storage hierarchy.
+ *
+ * Only directories that contain indexed tracks (directly or in a subfolder) are
+ * ever materialized as a [FolderNode] — this is never a raw filesystem listing.
+ */
+@Immutable
+data class FolderNode(
+    val id: String,
+    val name: String,
+    val absolutePath: String,
+    val parentPath: String?,
+    val childFolderCount: Int,
+    val songCount: Int,
+    val artwork: Uri?,
+    val lastModified: Long,
+    val children: List<FolderNode>,
+    val songs: List<Track>,
+)
+
 @Immutable
 data class Playlist(
     val name: String,
