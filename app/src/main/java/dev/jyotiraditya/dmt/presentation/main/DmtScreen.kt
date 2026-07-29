@@ -197,7 +197,7 @@ fun DmtScreen(
 
         if (showQueueSheet) {
             TuiSheet(onDismiss = { showQueueSheet = false }) {
-                val position = (state.queueIndex + 1).coerceAtMost(state.queue.size)
+                val position = (state.queuePosition + 1).coerceAtLeast(1)
                 SheetHeader(
                     title = stringResource(R.string.queue_title),
                     meta = "$position/${state.queue.size}",

@@ -4,9 +4,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import dev.jyotiraditya.dmt.domain.model.LastSession
@@ -80,10 +82,32 @@ fun MediaController.cycleRepeat() {
     }
 }
 
-fun MediaController.queueLabels(): List<String> =
-    (0 until mediaItemCount).map { i ->
-        getMediaItemAt(i).mediaMetadata.run { "$title · $artist" }
+data class QueueEntry(val index: Int, val label: String)
+
+fun MediaController.queueEntries(): List<QueueEntry> {
+    val timeline = currentTimeline
+    if (timeline.isEmpty) return emptyList()
+
+    val window = Timeline.Window()
+
+    return buildList {
+        var index = timeline.getFirstWindowIndex(shuffleModeEnabled)
+
+        while (index != C.INDEX_UNSET) {
+            timeline.getWindow(index, window)
+
+            val label = window.mediaItem.mediaMetadata.run { "$title · $artist" }
+            add(QueueEntry(index, label))
+
+            index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffleModeEnabled)
+        }
     }
+}
+
+fun MediaController.queueWithPosition(): Pair<List<QueueEntry>, Int> {
+    val entries = queueEntries()
+    return entries to entries.indexOfFirst { it.index == currentMediaItemIndex }
+}
 
 fun Long.asTime(): String {
     val totalSeconds = (this / 1000).coerceAtLeast(0)

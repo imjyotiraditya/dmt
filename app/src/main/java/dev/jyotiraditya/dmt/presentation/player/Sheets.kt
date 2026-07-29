@@ -117,13 +117,13 @@ fun QueueList(
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
-        itemsIndexed(state.queue) { index, label ->
-            val current = index == state.queueIndex
+        itemsIndexed(state.queue) { position, entry ->
+            val current = entry.index == state.queueIndex
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .tuiClickable { dispatch(DmtAction.Jump(index)) }
+                    .tuiClickable { dispatch(DmtAction.Jump(entry.index)) }
                     .padding(vertical = 8.dp),
             ) {
                 Box(
@@ -132,12 +132,12 @@ fun QueueList(
                         .background(if (current) TuiAccent else TuiFaint),
                 )
                 Text(
-                    text = " %02d ".format(index + 1),
+                    text = " %02d ".format(position + 1),
                     style = MaterialTheme.typography.labelSmall,
                     color = TuiFaint,
                 )
                 Text(
-                    text = label,
+                    text = entry.label,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (current) TuiBright else TuiDim,
                     maxLines = 1,
@@ -149,7 +149,7 @@ fun QueueList(
                     style = MaterialTheme.typography.labelMedium,
                     color = TuiFaint,
                     modifier = Modifier
-                        .tuiClickable { dispatch(DmtAction.RemoveAt(index)) }
+                        .tuiClickable { dispatch(DmtAction.RemoveAt(entry.index)) }
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }

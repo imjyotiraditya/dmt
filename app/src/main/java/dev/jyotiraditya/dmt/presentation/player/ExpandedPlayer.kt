@@ -633,7 +633,7 @@ private fun StatusRow(
 
 @Composable
 private fun QueueFooter(state: DmtState, onQueue: () -> Unit) {
-    val next = state.queue.getOrNull(state.queueIndex + 1)
+    val next = state.queue.getOrNull(state.queuePosition + 1)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -644,13 +644,13 @@ private fun QueueFooter(state: DmtState, onQueue: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {
         Text(
-            text = stringResource(R.string.queue_key, state.queueIndex + 1, state.queue.size),
+            text = stringResource(R.string.queue_key, state.queuePosition + 1, state.queue.size),
             style = MaterialTheme.typography.labelMedium,
             color = TuiFg,
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = next?.let { stringResource(R.string.next_up, it).lowercase() }
+            text = next?.let { stringResource(R.string.next_up, it.label).lowercase() }
                 ?: stringResource(R.string.end_of_queue),
             style = MaterialTheme.typography.labelSmall,
             color = TuiFaint,
