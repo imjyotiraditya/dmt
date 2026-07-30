@@ -91,27 +91,6 @@ fun ArtistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-fun FoldersPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    GroupPane(
-        spec = GroupSpec(
-            items = state.folders,
-            filtered = state.filteredFolders,
-            openKey = state.openFolder,
-            searchHint = R.plurals.search_folders_hint,
-            emptyText = R.string.no_files,
-            key = { it.path },
-            title = { it.name },
-            listMeta = { "${it.tracks.size} trk" },
-            trackMeta = { "${it.artist} · ${it.durationMs.asTime()}" },
-            tracks = { it.tracks },
-            open = { DmtAction.OpenFolder(it) },
-        ),
-        state = state,
-        dispatch = dispatch,
-    )
-}
-
-@Composable
 private fun <T> GroupPane(
     spec: GroupSpec<T>,
     state: DmtState,

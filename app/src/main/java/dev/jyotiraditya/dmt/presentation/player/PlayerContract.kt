@@ -30,7 +30,6 @@ data class DmtState(
     val filtered: List<Track> = emptyList(),
     val filteredAlbums: List<Album> = emptyList(),
     val filteredArtists: List<Artist> = emptyList(),
-    val filteredFolders: List<Folder> = emptyList(),
     val playlists: List<Playlist> = emptyList(),
     val filteredPlaylists: List<Playlist> = emptyList(),
     val folders: List<Folder> = emptyList(),
@@ -38,7 +37,6 @@ data class DmtState(
     val loginSource: SourceMode = SourceMode.JELLYFIN,
     val openAlbum: String? = null,
     val openArtist: String? = null,
-    val openFolder: String? = null,
     val openPlaylist: String? = null,
     val nowPlayingId: String? = null,
     val title: String = "",
@@ -75,7 +73,6 @@ sealed interface DmtAction {
     data class Show(val view: DmtView) : DmtAction
     data class OpenAlbum(val name: String?) : DmtAction
     data class OpenArtist(val name: String?) : DmtAction
-    data class OpenFolder(val path: String?) : DmtAction
     data class OpenPlaylist(val name: String?) : DmtAction
     data class CreatePlaylist(val name: String) : DmtAction
     data class DeletePlaylist(val name: String) : DmtAction
@@ -83,6 +80,7 @@ sealed interface DmtAction {
     data class RemoveFromPlaylist(val name: String, val path: String) : DmtAction
     data class PlayAt(val list: List<Track>, val index: Int) : DmtAction
     data class Enqueue(val list: List<Track>, val label: String) : DmtAction
+    data class PlayNext(val list: List<Track>, val label: String) : DmtAction
     data class Jump(val index: Int) : DmtAction
     data object TogglePlay : DmtAction
     data object Next : DmtAction
