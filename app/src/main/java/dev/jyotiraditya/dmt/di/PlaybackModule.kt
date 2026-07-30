@@ -23,6 +23,7 @@ object PlaybackModule {
     @OptIn(UnstableApi::class)
     @Provides
     @Singleton
+    @UnstableApi
     fun dataSourceFactory(@ApplicationContext context: Context): DataSource.Factory {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(CONNECT_TIMEOUT_MS)

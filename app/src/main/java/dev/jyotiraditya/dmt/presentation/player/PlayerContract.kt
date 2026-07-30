@@ -13,6 +13,7 @@ import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.util.QueueEntry
 
 enum class DmtView {
     LIBRARY, ALBUMS, ARTISTS, FOLDERS, PLAYLISTS, SETTINGS, STATS, BLOCKLIST, SOURCES, SOURCE_LOGIN,
@@ -45,8 +46,9 @@ data class DmtState(
     val repeat: Int = Player.REPEAT_MODE_OFF,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
-    val queue: List<String> = emptyList(),
+    val queue: List<QueueEntry> = emptyList(),
     val queueIndex: Int = 0,
+    val queuePosition: Int = 0,
     val album: String = "",
     val cover: Bitmap? = null,
     val artRaw: Bitmap? = null,

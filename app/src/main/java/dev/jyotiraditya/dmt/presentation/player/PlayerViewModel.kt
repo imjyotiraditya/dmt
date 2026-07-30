@@ -37,15 +37,13 @@ import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import dev.jyotiraditya.dmt.util.QUEUE_CAP
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
-import dev.jyotiraditya.dmt.util.queueLabels
+import dev.jyotiraditya.dmt.util.queueWithPosition
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.togglePlayPause
-import dev.jyotiraditya.dmt.util.windowQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -225,10 +223,9 @@ class PlayerViewModel @Inject constructor(
 
             is DmtAction.PlayAt -> c?.run {
                 reduce { it.copy(error = null) }
-                val (queue, startIndex) = windowQueue(intent.list, intent.index)
                 setMediaItems(
-                    queue.map { it.toMediaItem() },
-                    startIndex,
+                    intent.list.map { it.toMediaItem() },
+                    intent.index,
                     0L,
                 )
                 prepare()
@@ -236,7 +233,7 @@ class PlayerViewModel @Inject constructor(
             }
 
             is DmtAction.Enqueue -> c?.run {
-                addMediaItems(intent.list.take(QUEUE_CAP).map { it.toMediaItem() })
+                addMediaItems(intent.list.map { it.toMediaItem() })
                 prepare()
                 notify(context.getString(R.string.queued, intent.label))
             }
@@ -379,6 +376,11 @@ class PlayerViewModel @Inject constructor(
                             positionMs = position,
                             durationMs = duration,
                             queueIndex = index,
+                            queuePosition = if (index == it.queueIndex) {
+                                it.queuePosition
+                            } else {
+                                it.queue.indexOfFirst { entry -> entry.index == index }
+                            },
                             sleepLeftMs = sleepLeft,
                             sleepMinutes = if (sleepExpired) 0 else it.sleepMinutes,
                         )
@@ -417,7 +419,16 @@ class PlayerViewModel @Inject constructor(
         }
 
         override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-            reduce { it.copy(shuffle = shuffleModeEnabled) }
+            controller?.let { c ->
+                val (queue, queuePosition) = c.queueWithPosition()
+                reduce {
+                    it.copy(
+                        shuffle = shuffleModeEnabled,
+                        queue = queue,
+                        queuePosition = queuePosition,
+                    )
+                }
+            }
         }
 
         override fun onRepeatModeChanged(repeatMode: Int) {
@@ -429,7 +440,10 @@ class PlayerViewModel @Inject constructor(
         }
 
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
-            controller?.let { c -> reduce { it.copy(queue = c.queueLabels()) } }
+            controller?.let { c ->
+                val (queue, queuePosition) = c.queueWithPosition()
+                reduce { it.copy(queue = queue, queuePosition = queuePosition) }
+            }
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -441,6 +455,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun syncFrom(c: MediaController) {
+        val (queue, queuePosition) = c.queueWithPosition()
         reduce {
             it.copy(
                 nowPlayingId = c.currentMediaItem?.mediaId,
@@ -451,7 +466,8 @@ class PlayerViewModel @Inject constructor(
                 repeat = c.repeatMode,
                 album = c.mediaMetadata.albumTitle?.toString().orEmpty(),
                 speed = c.playbackParameters.speed,
-                queue = c.queueLabels(),
+                queue = queue,
+                queuePosition = queuePosition,
             )
         }
     }
@@ -520,10 +536,9 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val session = preferencesRepository.lastSession() ?: return@launch
             val (existing, index, position) = session.resolveQueue(tracks) ?: return@launch
-            val (queue, startIndex) = windowQueue(existing, index)
             c.setMediaItems(
-                queue.map { it.toMediaItem() },
-                startIndex,
+                existing.map { it.toMediaItem() },
+                index,
                 position,
             )
             c.prepare()

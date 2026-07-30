@@ -48,7 +48,6 @@ import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
-import dev.jyotiraditya.dmt.util.windowQueue
 import dev.jyotiraditya.metadata.AudioTags
 import dev.jyotiraditya.metadata.TagKey
 import kotlinx.coroutines.CoroutineScope
@@ -644,14 +643,12 @@ class PlaybackService : MediaLibraryService() {
             list: List<Track>,
             index: Int,
             positionMs: Long = 0L,
-        ): MediaSession.MediaItemsWithStartPosition {
-            val (queue, start) = windowQueue(list, index)
-            return MediaSession.MediaItemsWithStartPosition(
-                queue.map { it.toMediaItem() },
-                start,
+        ): MediaSession.MediaItemsWithStartPosition =
+            MediaSession.MediaItemsWithStartPosition(
+                list.map { it.toMediaItem() },
+                index,
                 positionMs,
             )
-        }
 
         private suspend fun resolveItems(mediaItems: List<MediaItem>): List<MediaItem> {
             val tracks = library()

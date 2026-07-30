@@ -51,21 +51,12 @@ jobs:
         with:
           name: dmt-release
           path: app/build/outputs/apk/release/*.apk
-          archive: false
           retention-days: 1
 
-      - name: upload apk to telegram
+      - name: upload apks to telegram
         if: github.event_name != 'pull_request'
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        run: |
-          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          subject=$(git log -1 --pretty=%s)
-          curl -fsS \
-            -F chat_id=-1003667635705 \
-            -F message_thread_id=1908 \
-            -F document=@"$apk" \
-            -F caption="dmt ${{ steps.version.outputs.name }}
-          $subject" \
-            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" > /dev/null
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: ./scripts/upload-telegram.sh app/build/outputs/apk/release/*.apk
