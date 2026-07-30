@@ -240,7 +240,7 @@ class PlayerViewModel @Inject constructor(
 
             is DmtAction.PlayNext -> c?.run {
                 val insertAt = (currentMediaItemIndex + 1).coerceAtLeast(0)
-                addMediaItems(insertAt, intent.list.take(QUEUE_CAP).map { it.toMediaItem() })
+                addMediaItems(insertAt, intent.list.map { it.toMediaItem() })
                 prepare()
                 notify(context.getString(R.string.queued_next, intent.label))
             }
