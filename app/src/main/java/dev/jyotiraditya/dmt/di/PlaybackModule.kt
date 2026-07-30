@@ -1,6 +1,8 @@
 package dev.jyotiraditya.dmt.di
 
 import android.content.Context
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -18,6 +20,7 @@ private const val READ_TIMEOUT_MS = 15_000
 @InstallIn(SingletonComponent::class)
 object PlaybackModule {
 
+    @OptIn(UnstableApi::class)
     @Provides
     @Singleton
     fun dataSourceFactory(@ApplicationContext context: Context): DataSource.Factory {
