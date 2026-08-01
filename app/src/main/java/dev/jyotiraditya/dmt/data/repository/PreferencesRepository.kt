@@ -13,6 +13,7 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_SORT
 import dev.jyotiraditya.dmt.data.source.local.KEY_NORMALIZE
+import dev.jyotiraditya.dmt.data.source.local.KEY_LYRICS_FROM_FILE
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
 import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
@@ -50,6 +51,7 @@ class PreferencesRepository @Inject constructor(
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
             rawArt = prefs[KEY_RAW] ?: false,
+            lyricsFromFile = prefs[KEY_LYRICS_FROM_FILE] ?: false,
             blockedFolders = prefs[KEY_BLOCKED_FOLDERS] ?: emptySet(),
             sourceMode = SourceMode.entries[(prefs[KEY_SOURCE_MODE]
                 ?: 0).mod(SourceMode.entries.size)],
@@ -69,6 +71,7 @@ class PreferencesRepository @Inject constructor(
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics
             it[KEY_RAW] = settings.rawArt
+            it[KEY_LYRICS_FROM_FILE] = settings.lyricsFromFile
             it[KEY_BLOCKED_FOLDERS] = settings.blockedFolders
             it[KEY_SOURCE_MODE] = settings.sourceMode.ordinal
             it[KEY_LIBRARY_SORT] = settings.librarySort.ordinal

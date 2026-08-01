@@ -4,6 +4,7 @@ import dev.jyotiraditya.dmt.data.remote.jellyfin.JellyfinApi
 import dev.jyotiraditya.dmt.data.remote.lrclib.LrclibApi
 import dev.jyotiraditya.lyrics.LyricsParser
 import dev.jyotiraditya.lyrics.Lyrics
+import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.data.repository.LyricsRepository
@@ -22,10 +23,12 @@ class GetLyricsUseCase @Inject constructor(
 
     suspend operator fun invoke(track: Track): Lyrics? =
         withContext(Dispatchers.IO) {
+            val settings = settingsRepository.settings.first()
+
             if (track.source == TrackSource.JELLYFIN) {
-                jellyfinLyrics(track)
+                jellyfinLyrics(track, settings)
             } else {
-                lyricsRepository.lyricsFor(track.path, track.mime)
+                lyricsRepository.lyricsFor(track.path, track.mime, settings.lyricsFromFile)
             }
         }
 
@@ -39,10 +42,9 @@ class GetLyricsUseCase @Inject constructor(
             LyricsParser.parse(text)
         }
 
-    private suspend fun jellyfinLyrics(track: Track): Lyrics? {
+    private suspend fun jellyfinLyrics(track: Track, settings: DmtSettings): Lyrics? {
         val remoteId = track.remoteId ?: return null
 
-        val settings = settingsRepository.settings.first()
         val url = settings.jellyfinUrl ?: return null
         val token = settings.jellyfinToken ?: return null
 

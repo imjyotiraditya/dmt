@@ -61,8 +61,8 @@
     <string name="perm_notif_why">show playback controls outside the app</string>
     <string name="perm_notif_off">off: no media notification, playback still works</string>
     <string name="perm_files_label">all files access</string>
-    <string name="perm_files_why">read cue sheets stored next to albums</string>
-    <string name="perm_files_off">off: cue albums play as one long track</string>
+    <string name="perm_files_why">read cue sheets and lyrics files stored next to songs</string>
+    <string name="perm_files_off">off: cue albums play as one long track, .lrc and .ttml files are skipped</string>
     <string name="perm_net_label">local network</string>
     <string name="perm_net_why">reach media servers on your home network</string>
     <string name="perm_net_off">off: jellyfin on the same network cannot connect</string>
@@ -106,6 +106,11 @@
     </plurals>
     <string name="set_specs">format chips</string>
     <string name="set_raw">raw artwork</string>
+    <string name="lyrics_files_needed">all files access needed</string>
+    <string name="lyrics_files_why">android only lets apps read .lrc and .ttml files next to songs with all files access. without it dmt can still read lyrics stored inside the file tags.</string>
+    <string name="set_lyrics_source">lyrics source</string>
+    <string name="lyrics_source_tag">tag first</string>
+    <string name="lyrics_source_file">file first</string>
     <string name="set_lyrics_script">lyrics script</string>
     <string name="lyrics_script_original">original</string>
     <string name="lyrics_script_romanized">romanized</string>

@@ -11,6 +11,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -26,11 +30,14 @@ import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.DmtView
+import dev.jyotiraditya.dmt.presentation.player.SheetHeader
+import dev.jyotiraditya.dmt.presentation.player.TuiSheet
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.util.allFilesAccess
 
 private val COVER_COLS_STEPS = listOf(48, 64, 80, 96)
 
@@ -39,6 +46,26 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val settings = state.settings
     val on = stringResource(R.string.on)
     val off = stringResource(R.string.off)
+    var askFilesAccess by remember { mutableStateOf(false) }
+
+    if (askFilesAccess) {
+        TuiSheet(onDismiss = { askFilesAccess = false }) {
+            SheetHeader(title = stringResource(R.string.lyrics_files_needed))
+            Text(
+                text = stringResource(R.string.lyrics_files_why),
+                style = MaterialTheme.typography.labelMedium,
+                color = TuiDim,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            TuiKey(
+                label = stringResource(R.string.grant),
+                modifier = Modifier.padding(bottom = 8.dp),
+            ) {
+                askFilesAccess = false
+                dispatch(DmtAction.Show(DmtView.PERMISSIONS))
+            }
+        }
+    }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Caption(stringResource(R.string.section_general))
@@ -72,6 +99,22 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             value = if (settings.rawArt) on else off,
         ) {
             dispatch(DmtAction.Config(settings.copy(rawArt = !settings.rawArt)))
+        }
+        SettingRow(
+            label = stringResource(R.string.set_lyrics_source),
+            value = stringResource(
+                if (settings.lyricsFromFile) {
+                    R.string.lyrics_source_file
+                } else {
+                    R.string.lyrics_source_tag
+                },
+            ),
+        ) {
+            if (!settings.lyricsFromFile && !allFilesAccess) {
+                askFilesAccess = true
+            } else {
+                dispatch(DmtAction.Config(settings.copy(lyricsFromFile = !settings.lyricsFromFile)))
+            }
         }
         SettingRow(
             label = stringResource(R.string.set_lyrics_script),
