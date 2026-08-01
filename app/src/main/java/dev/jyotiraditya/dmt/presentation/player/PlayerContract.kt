@@ -60,6 +60,7 @@ data class DmtState(
     val sleepLeftMs: Long = 0L,
     val speed: Float = 1f,
     val settings: DmtSettings = DmtSettings(),
+    val settingsLoaded: Boolean = false,
     val stats: DmtStats = DmtStats(),
     val tech: List<Spec> = emptyList(),
     val route: List<Spec> = emptyList(),

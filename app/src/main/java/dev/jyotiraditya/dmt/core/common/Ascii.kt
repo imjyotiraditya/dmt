@@ -182,19 +182,53 @@ fun generateAsciiPlaceholder(context: Context, seed: Long, cols: Int = 96): Bitm
     }
 }
 
+fun generateCoverPlaceholder(seed: Long, size: Int = 256): Bitmap {
+    val random = Random(seed)
+    val f1 = 0.10f + random.nextFloat() * 0.25f
+    val f2 = 0.10f + random.nextFloat() * 0.25f
+    val f3 = 0.05f + random.nextFloat() * 0.15f
+    val p1 = random.nextFloat() * 6.28f
+    val p2 = random.nextFloat() * 6.28f
+    val p3 = random.nextFloat() * 6.28f
+    val hue = random.nextFloat() * 360f
+    val hsv = FloatArray(3)
+    val cells = 32f
+
+    val pixels = IntArray(size * size)
+    for (y in 0 until size) {
+        for (x in 0 until size) {
+            val u = x * cells / size
+            val v = y * cells / size
+            val field = (
+                    sin(u * f1 + p1) +
+                            sin(v * f2 + p2) +
+                            sin((u + v) * f3 + p3) +
+                            3f
+                    ) / 6f
+            hsv[0] = hue
+            hsv[1] = 0.30f
+            hsv[2] = 0.10f + field * 0.75f
+            pixels[y * size + x] = AndroidColor.HSVToColor(hsv)
+        }
+    }
+
+    return createBitmap(size, size).apply { setPixels(pixels, 0, size, 0, 0, size, size) }
+}
+
 @Composable
 fun AsciiCover(
     cover: Bitmap,
     playing: Boolean,
     modifier: Modifier = Modifier,
     wave: Boolean = true,
+    fitHeight: Boolean = false,
 ) {
     val image = remember(cover) { cover.asImageBitmap() }
     val aspect = cover.width.toFloat() / cover.height
     if (playing && wave) {
-        WaveCover(image, aspect, modifier)
+        WaveCover(image, aspect, fitHeight, modifier)
     } else {
-        Canvas(modifier = modifier.aspectRatio(aspect)) {
+        Canvas(modifier = modifier.aspectRatio(aspect, matchHeightConstraintsFirst = fitHeight)) {
             drawImage(
                 image = image,
                 dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
@@ -208,6 +242,7 @@ fun AsciiCover(
 private fun WaveCover(
     image: ImageBitmap,
     aspect: Float,
+    fitHeight: Boolean,
     modifier: Modifier,
 ) {
     val transition = rememberInfiniteTransition(label = "wave")
@@ -225,7 +260,7 @@ private fun WaveCover(
     )
     Canvas(
         modifier = modifier
-            .aspectRatio(aspect)
+            .aspectRatio(aspect, matchHeightConstraintsFirst = fitHeight)
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen),
     ) {
         drawImage(

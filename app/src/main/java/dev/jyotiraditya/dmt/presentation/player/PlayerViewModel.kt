@@ -110,7 +110,7 @@ class PlayerViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val settings = preferencesRepository.settings.first()
-            reduce { it.copy(settings = settings) }
+            reduce { it.copy(settings = settings, settingsLoaded = true) }
         }
         viewModelScope.launch {
             preferencesRepository.stats.collect { stats ->

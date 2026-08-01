@@ -41,6 +41,9 @@ import dev.jyotiraditya.dmt.util.allFilesAccess
 
 private val COVER_COLS_STEPS = listOf(48, 64, 80, 96)
 
+fun nextCoverCols(current: Int): Int =
+    COVER_COLS_STEPS[(COVER_COLS_STEPS.indexOf(current) + 1).mod(COVER_COLS_STEPS.size)]
+
 @Composable
 fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val settings = state.settings
@@ -133,9 +136,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             label = stringResource(R.string.set_detail),
             value = pluralStringResource(R.plurals.set_detail_value, settings.cols, settings.cols),
         ) {
-            val currentIndex = COVER_COLS_STEPS.indexOf(settings.cols)
-            val next = COVER_COLS_STEPS[(currentIndex + 1).mod(COVER_COLS_STEPS.size)]
-            dispatch(DmtAction.Config(settings.copy(cols = next)))
+            dispatch(DmtAction.Config(settings.copy(cols = nextCoverCols(settings.cols))))
         }
         SettingRow(
             label = stringResource(R.string.set_raw),
@@ -239,7 +240,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-private fun SettingRow(
+fun SettingRow(
     label: String,
     value: String,
     onClick: () -> Unit,

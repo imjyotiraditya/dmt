@@ -40,6 +40,7 @@ data class DmtSettings(
     val rawArt: Boolean = false,
     val lyricsFromFile: Boolean = false,
     val stopOnDismiss: Boolean = false,
+    val setupDone: Boolean = false,
     val blockedFolders: Set<String> = emptySet(),
     val sourceMode: SourceMode = SourceMode.LOCAL,
     val librarySort: LibrarySort = LibrarySort.TITLE,

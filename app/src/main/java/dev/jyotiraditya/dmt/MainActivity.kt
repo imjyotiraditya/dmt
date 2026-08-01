@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jyotiraditya.dmt.presentation.main.DmtScreen
+import dev.jyotiraditya.dmt.presentation.main.SetupScreen
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.PlayerEffect
 import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
@@ -66,11 +67,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    DmtScreen(
-                        state = state,
-                        dispatch = playerViewModel::onIntent,
-                        art = playerViewModel::homeArt,
-                    )
+                    when {
+                        !state.settingsLoaded -> Unit
+                        !state.settings.setupDone -> SetupScreen(
+                            state = state,
+                            dispatch = playerViewModel::onIntent,
+                        )
+
+                        else -> DmtScreen(
+                            state = state,
+                            dispatch = playerViewModel::onIntent,
+                            art = playerViewModel::homeArt,
+                        )
+                    }
                 }
             }
         }

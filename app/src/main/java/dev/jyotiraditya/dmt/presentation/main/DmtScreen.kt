@@ -478,16 +478,7 @@ private fun SideRail(route: String, onNav: (NavItem) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 12.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(9.dp)
-                    .background(TuiAccent),
-            )
-            Text(
-                text = " " + stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleMedium,
-                color = TuiBright,
-            )
+            BrandMark()
         }
         HorizontalDivider(color = TuiLine, modifier = Modifier.padding(top = 8.dp))
 
@@ -540,23 +531,28 @@ private fun subLabel(view: DmtView): Int =
     }
 
 @Composable
-private fun Titlebar(label: String) {
+fun BrandMark(trailingSpace: Boolean = false) {
+    Box(
+        modifier = Modifier
+            .size(9.dp)
+            .background(TuiAccent),
+    )
+    Text(
+        text = " " + stringResource(R.string.app_name) + if (trailingSpace) " " else "",
+        style = MaterialTheme.typography.titleMedium,
+        color = TuiBright,
+    )
+}
+
+@Composable
+fun Titlebar(label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp, bottom = 10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(9.dp)
-                .background(TuiAccent),
-        )
-        Text(
-            text = " " + stringResource(R.string.app_name) + " ",
-            style = MaterialTheme.typography.titleMedium,
-            color = TuiBright,
-        )
+        BrandMark(trailingSpace = true)
         HorizontalDivider(color = TuiLine, modifier = Modifier.weight(1f))
         Text(
             text = " $label",

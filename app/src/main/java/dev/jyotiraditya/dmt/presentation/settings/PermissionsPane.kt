@@ -1,12 +1,7 @@
 package dev.jyotiraditya.dmt.presentation.settings
 
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,24 +12,25 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.common.PermissionGrants
 import dev.jyotiraditya.dmt.core.common.TuiKey
+import dev.jyotiraditya.dmt.core.common.rememberPermissionGrants
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
@@ -42,20 +38,22 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.util.allFilesAccess
-import dev.jyotiraditya.dmt.util.allFilesAccessIntent
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.localNetworkPermission
 import dev.jyotiraditya.dmt.util.notificationPermission
 
-private data class PermissionEntry(
-    val permission: String,
-    @StringRes val label: Int,
-    @StringRes val why: Int,
-    @StringRes val whenOff: Int,
-)
+private val STACK_WIDTH = 340.dp
 
-private val PERMISSION_REGISTRY: List<PermissionEntry> =
+data class PermissionEntry(
+    val permission: String,
+    @param:StringRes val label: Int,
+    @param:StringRes val why: Int,
+    @param:StringRes val whenOff: Int,
+) {
+    val isFilesAccess: Boolean get() = permission.isEmpty()
+}
+
+val PERMISSION_REGISTRY: List<PermissionEntry> =
     buildList {
         add(
             PermissionEntry(
@@ -87,103 +85,35 @@ private val PERMISSION_REGISTRY: List<PermissionEntry> =
         }
     }
 
+val FILES_ENTRY = PermissionEntry(
+    permission = "",
+    label = R.string.perm_files_label,
+    why = R.string.perm_files_why,
+    whenOff = R.string.perm_files_off,
+)
+
 @Composable
 fun PermissionsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    val context = LocalContext.current
-    var refresh by remember { mutableIntStateOf(0) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) refresh++
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val granted = remember(refresh) {
-        PERMISSION_REGISTRY.associate { entry ->
-            entry.permission to
-                    (ContextCompat.checkSelfPermission(context, entry.permission) ==
-                            PackageManager.PERMISSION_GRANTED)
-        }
-    }
-
-    LaunchedEffect(granted) {
-        val audioGranted = granted[audioPermission] == true
-        if (audioGranted != state.hasPermission) {
-            dispatch(DmtAction.Permission(audioGranted))
-        }
-    }
-
-    var denied by remember { mutableStateOf(emptySet<String>()) }
-    var requested by remember { mutableStateOf<String?>(null) }
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        requested?.let { if (!isGranted) denied = denied + it }
-        requested = null
-        refresh++
-    }
-
-    val openAppSettings = {
-        runCatching {
-            context.startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.fromParts("package", context.packageName, null),
-                ),
-            )
-        }
-    }
+    val grants = rememberPermissionGrants(PERMISSION_REGISTRY.map { it.permission })
+    SyncPermissionState(grants, state, dispatch)
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         PERMISSION_REGISTRY.forEach { entry ->
-            val isGranted = granted[entry.permission] == true
             PermissionRow(
-                label = stringResource(entry.label),
-                why = stringResource(entry.why),
-                whenOff = stringResource(entry.whenOff),
-                granted = isGranted,
-                actionLabel = stringResource(
-                    when {
-                        isGranted -> R.string.perm_revoke
-                        entry.permission in denied -> R.string.perm_settings
-                        else -> R.string.grant
-                    },
-                ),
-                onAction = {
-                    if (isGranted || entry.permission in denied) {
-                        openAppSettings()
-                    } else {
-                        requested = entry.permission
-                        launcher.launch(entry.permission)
-                    }
-                },
+                entry = entry,
+                granted = grants.isGranted(entry.permission),
+                actionLabel = stringResource(grants.actionLabel(entry.permission)),
+                onAction = { grants.act(entry.permission) },
             )
         }
-
-        val filesGranted = remember(refresh) { allFilesAccess }
-        var hadFilesAccess by remember { mutableStateOf(filesGranted) }
-        LaunchedEffect(filesGranted) {
-            if (filesGranted && !hadFilesAccess) dispatch(DmtAction.Rescan)
-            hadFilesAccess = filesGranted
-        }
         PermissionRow(
-            label = stringResource(R.string.perm_files_label),
-            why = stringResource(R.string.perm_files_why),
-            whenOff = stringResource(R.string.perm_files_off),
-            granted = filesGranted,
+            entry = FILES_ENTRY,
+            granted = grants.filesAccess,
             actionLabel = stringResource(
-                if (filesGranted) R.string.perm_revoke else R.string.grant,
+                if (grants.filesAccess) R.string.perm_revoke else R.string.grant,
             ),
-            onAction = {
-                runCatching {
-                    context.startActivity(allFilesAccessIntent(context.packageName))
-                }
-            },
+            onAction = grants::openFilesAccess,
         )
-
         Text(
             text = stringResource(R.string.perms_hint),
             style = MaterialTheme.typography.labelSmall,
@@ -194,55 +124,108 @@ fun PermissionsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-private fun PermissionRow(
-    label: String,
-    why: String,
-    whenOff: String,
+fun SyncPermissionState(
+    grants: PermissionGrants,
+    state: DmtState,
+    dispatch: (DmtAction) -> Unit,
+) {
+    val audioGranted = grants.isGranted(audioPermission)
+    LaunchedEffect(audioGranted) {
+        if (audioGranted != state.hasPermission) dispatch(DmtAction.Permission(audioGranted))
+    }
+    var hadFilesAccess by remember { mutableStateOf(grants.filesAccess) }
+    LaunchedEffect(grants.filesAccess) {
+        if (grants.filesAccess && !hadFilesAccess) dispatch(DmtAction.Rescan)
+        hadFilesAccess = grants.filesAccess
+    }
+}
+
+@Composable
+fun PermissionRow(
+    entry: PermissionEntry,
     granted: Boolean,
     actionLabel: String,
     onAction: () -> Unit,
+    showWhenOff: Boolean = true,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-        ) {
-            Text(
-                text = if (granted) "[x] " else "[ ] ",
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (granted) TuiAccent else TuiFaint,
-                modifier = Modifier.align(Alignment.Top),
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 10.dp),
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TuiFg,
-                )
-                Text(
-                    text = why,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TuiDim,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-                Text(
-                    text = whenOff,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TuiFaint,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+    BoxWithConstraints {
+        val stacked = maxWidth < STACK_WIDTH
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (stacked) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                ) {
+                    PermissionText(entry, granted, showWhenOff)
+                    TuiKey(
+                        label = actionLabel,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 8.dp),
+                        onClick = onAction,
+                    )
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 10.dp),
+                    ) {
+                        PermissionText(entry, granted, showWhenOff)
+                    }
+                    TuiKey(
+                        label = actionLabel,
+                        onClick = onAction,
+                    )
+                }
             }
-            TuiKey(
-                label = actionLabel,
-                onClick = onAction,
-            )
+            HorizontalDivider(color = TuiLine)
         }
-        HorizontalDivider(color = TuiLine)
+    }
+}
+
+@Composable
+private fun PermissionText(entry: PermissionEntry, granted: Boolean, showWhenOff: Boolean) {
+    val mark = if (granted) "[x] " else "[ ] "
+    val indent = markWidth(mark)
+
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(color = if (granted) TuiAccent else TuiFaint)) { append(mark) }
+            withStyle(SpanStyle(color = TuiFg)) { append(stringResource(entry.label)) }
+        },
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    Text(
+        text = stringResource(entry.why),
+        style = MaterialTheme.typography.labelSmall,
+        color = TuiDim,
+        modifier = Modifier.padding(start = indent, top = 2.dp),
+    )
+    if (showWhenOff) {
+        Text(
+            text = stringResource(entry.whenOff),
+            style = MaterialTheme.typography.labelSmall,
+            color = TuiFaint,
+            modifier = Modifier.padding(start = indent, top = 2.dp),
+        )
+    }
+}
+
+@Composable
+fun markWidth(mark: String): Dp {
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.bodyLarge
+    val density = LocalDensity.current
+    return remember(mark, style, density) {
+        with(density) { measurer.measure(mark, style).size.width.toDp() }
     }
 }
