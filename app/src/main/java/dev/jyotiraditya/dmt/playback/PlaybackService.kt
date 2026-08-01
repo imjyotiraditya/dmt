@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
@@ -151,8 +152,12 @@ class PlaybackService : MediaLibraryService() {
         )
         player.addListener(
             object : Player.Listener {
-                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) =
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    if (shuffleModeEnabled) {
+                        player.setShuffleOrder(DefaultShuffleOrder(player.mediaItemCount))
+                    }
                     publishButtons()
+                }
 
                 override fun onRepeatModeChanged(repeatMode: Int) = publishButtons()
 
