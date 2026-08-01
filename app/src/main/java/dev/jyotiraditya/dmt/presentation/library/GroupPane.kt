@@ -23,7 +23,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.ScrollMemory
-import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -38,11 +37,13 @@ private class GroupSpec<T>(
     val items: List<T>,
     val filtered: List<T>,
     val openKey: String?,
-    @param:PluralsRes val searchHint: Int,
     @param:StringRes val emptyText: Int,
+    @param:PluralsRes val countPlural: Int,
     val key: (T) -> String,
     val title: (T) -> String,
     val listMeta: (T) -> String,
+    val detailMeta: (T) -> String,
+    val countLead: (T) -> String = { "" },
     val trackMeta: (Track) -> String,
     val tracks: (T) -> List<Track>,
     val open: (String?) -> DmtAction,
@@ -55,11 +56,12 @@ fun AlbumsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             items = state.albums,
             filtered = state.filteredAlbums,
             openKey = state.openAlbum,
-            searchHint = R.plurals.search_albums_hint,
             emptyText = R.string.no_albums,
+            countPlural = R.plurals.album_count,
             key = { it.name },
             title = { it.name },
             listMeta = { "${it.artist} · ${it.tracks.size} trk" },
+            detailMeta = { it.artist },
             trackMeta = { "${it.artist} · ${it.durationMs.asTime()}" },
             tracks = { it.tracks },
             open = { DmtAction.OpenAlbum(it) },
@@ -76,11 +78,13 @@ fun ArtistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             items = state.artists,
             filtered = state.filteredArtists,
             openKey = state.openArtist,
-            searchHint = R.plurals.search_artists_hint,
             emptyText = R.string.no_artists,
+            countPlural = R.plurals.artist_count,
             key = { it.name },
             title = { it.name },
             listMeta = { "${it.albums} alb · ${it.tracks.size} trk" },
+            detailMeta = { "" },
+            countLead = { "${it.albums} alb" },
             trackMeta = { "${it.album} · ${it.durationMs.asTime()}" },
             tracks = { it.tracks },
             open = { DmtAction.OpenArtist(it) },
@@ -97,11 +101,12 @@ fun FoldersPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             items = state.folders,
             filtered = state.filteredFolders,
             openKey = state.openFolder,
-            searchHint = R.plurals.search_folders_hint,
             emptyText = R.string.no_files,
+            countPlural = R.plurals.folder_count,
             key = { it.path },
             title = { it.name },
             listMeta = { "${it.tracks.size} trk" },
+            detailMeta = { it.path },
             trackMeta = { "${it.artist} · ${it.durationMs.asTime()}" },
             tracks = { it.tracks },
             open = { DmtAction.OpenFolder(it) },
@@ -121,7 +126,7 @@ private fun <T> GroupPane(
 
     ScrollMemory(spec.openKey ?: "list") {
         if (openItem == null) {
-            GroupList(spec, state, dispatch)
+            GroupList(spec, dispatch)
         } else {
             GroupDetail(spec, openItem, state, dispatch)
         }
@@ -131,7 +136,6 @@ private fun <T> GroupPane(
 @Composable
 private fun <T> GroupList(
     spec: GroupSpec<T>,
-    state: DmtState,
     dispatch: (DmtAction) -> Unit,
 ) {
     if (spec.items.isEmpty()) {
@@ -159,20 +163,12 @@ private fun <T> GroupList(
         }
     }
 
+    val tracks = spec.items.flatMap(spec.tracks)
     Column {
-        SearchRow(
-            query = state.query,
-            hint = pluralStringResource(
-                spec.searchHint,
-                spec.items.size,
-                spec.items.size,
-            ),
-            shown = spec.filtered.size,
-            onQuery = { dispatch(DmtAction.Query(it)) },
+        Caption(
+            "${pluralStringResource(spec.countPlural, spec.items.size, spec.items.size)} · " +
+                totalTime(tracks),
         )
-        if (spec.filtered.isEmpty()) {
-            Caption(stringResource(R.string.no_match))
-        }
         LazyColumn {
             itemsIndexed(spec.filtered, key = { _, item -> spec.key(item) }) { index, item ->
                 ListRow(
@@ -208,7 +204,10 @@ private fun <T> GroupDetail(
         item {
             SubdirHeader(
                 title = spec.title(item),
-                meta = spec.listMeta(item).lowercase(),
+                meta = spec.detailMeta(item).lowercase(),
+                counts = listOf(spec.countLead(item), "${tracks.size} trk", totalTime(tracks))
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · "),
                 onBack = { dispatch(spec.open(null)) },
             )
         }

@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     DmtScreen(
                         state = state,
                         dispatch = playerViewModel::onIntent,
+                        art = playerViewModel::homeArt,
                     )
                 }
             }

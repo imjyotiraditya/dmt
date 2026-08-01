@@ -28,7 +28,6 @@ import dev.jyotiraditya.dmt.core.common.HeaderAction
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.NewEntryRow
 import dev.jyotiraditya.dmt.core.common.ScrollMemory
-import dev.jyotiraditya.dmt.core.common.SearchRow
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.tuiClickable
@@ -95,15 +94,12 @@ private fun PlaylistList(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 
     Column {
-        SearchRow(
-            query = state.query,
-            hint = pluralStringResource(
-                R.plurals.search_playlists_hint,
+        Caption(
+            "${pluralStringResource(
+                R.plurals.playlist_count,
                 state.playlists.size,
                 state.playlists.size,
-            ),
-            shown = state.filteredPlaylists.size,
-            onQuery = { dispatch(DmtAction.Query(it)) },
+            )} · " + totalTime(state.playlists.flatMap { it.tracks }),
         )
         LazyColumn {
             item {
@@ -112,24 +108,16 @@ private fun PlaylistList(state: DmtState, dispatch: (DmtAction) -> Unit) {
                     onClick = { showCreate = true },
                 )
             }
-            if (state.filteredPlaylists.isEmpty()) {
+            if (state.playlists.isEmpty()) {
                 item {
-                    Caption(
-                        stringResource(
-                            if (state.playlists.isEmpty()) {
-                                R.string.no_playlists
-                            } else {
-                                R.string.no_match
-                            },
-                        ),
-                    )
+                    Caption(stringResource(R.string.no_playlists))
                 }
             }
-            itemsIndexed(state.filteredPlaylists, key = { _, p -> p.name }) { index, p ->
+            itemsIndexed(state.playlists, key = { _, p -> p.name }) { index, p ->
                 ListRow(
                     index = index,
                     line1 = p.name,
-                    line2 = "${p.tracks.size} trk",
+                    line2 = "${p.tracks.size} trk · ${totalTime(p.tracks)}",
                     current = false,
                     onClick = { dispatch(DmtAction.OpenPlaylist(p.name)) },
                     onLongClick = { sheetPlaylist = p },
@@ -167,7 +155,8 @@ private fun PlaylistDetail(
         item {
             SubdirHeader(
                 title = playlist.name,
-                meta = "${playlist.tracks.size} trk".lowercase(),
+                meta = "",
+                counts = "${playlist.tracks.size} trk · ${totalTime(playlist.tracks)}",
                 onBack = { dispatch(DmtAction.OpenPlaylist(null)) },
                 action = {
                     HeaderAction(

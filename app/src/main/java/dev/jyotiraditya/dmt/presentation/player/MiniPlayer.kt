@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.core.common.CursorTitle
 import dev.jyotiraditya.dmt.core.common.Hairline
 import dev.jyotiraditya.dmt.core.common.TuiKey
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.util.asTime
@@ -33,7 +34,7 @@ fun MiniPlayer(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        Hairline(fraction)
+        Hairline(fraction, color = TuiAccent)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -51,8 +52,11 @@ fun MiniPlayer(
                 )
                 val position = state.positionMs.asTime()
                 val duration = state.durationMs.asTime()
+                val meta = listOf(state.artist, state.album)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · ")
                 Text(
-                    text = "${state.artist} · $position/$duration".lowercase(),
+                    text = "$meta · $position/$duration".lowercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = TuiDim,
                     maxLines = 1,
@@ -65,9 +69,14 @@ fun MiniPlayer(
                 color = TuiFaint,
                 modifier = Modifier.padding(end = 10.dp),
             )
-            TuiKey(if (state.isPlaying) "||" else "|>") { dispatch(DmtAction.TogglePlay) }
+            TuiKey(
+                label = if (state.isPlaying) "||" else "|>",
+                dark = true,
+            ) {
+                dispatch(DmtAction.TogglePlay)
+            }
             Spacer(modifier = Modifier.width(8.dp))
-            TuiKey(">>|") { dispatch(DmtAction.Next) }
+            TuiKey(label = ">>|", dark = true) { dispatch(DmtAction.Next) }
         }
     }
 }

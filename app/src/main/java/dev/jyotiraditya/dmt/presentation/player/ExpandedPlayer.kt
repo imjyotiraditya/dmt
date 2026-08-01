@@ -653,7 +653,7 @@ private fun QueueFooter(state: DmtState, onQueue: () -> Unit) {
             text = next?.let { stringResource(R.string.next_up, it.label).lowercase() }
                 ?: stringResource(R.string.end_of_queue),
             style = MaterialTheme.typography.labelSmall,
-            color = TuiFaint,
+            color = TuiDim,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
