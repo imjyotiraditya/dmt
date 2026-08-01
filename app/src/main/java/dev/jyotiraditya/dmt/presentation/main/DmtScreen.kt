@@ -245,7 +245,7 @@ fun DmtScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(horizontal = 16.dp),
             ) {
-                Titlebar(label = stringResource(pageLabel(route)))
+                Titlebar(label = stringResource(pageLabel(route, state.view)))
                 PaneNavHost(
                     navController = navController,
                     state = state,
@@ -522,13 +522,21 @@ private fun MiniPlayerAnchor(
     }
 }
 
-private fun pageLabel(route: String): Int =
+private fun pageLabel(route: String, view: DmtView): Int =
     when (route) {
         ROUTE_LIBRARY -> R.string.page_library
         ROUTE_SEARCH -> R.string.page_search
-        ROUTE_SOURCES -> R.string.page_sources
-        ROUTE_CFG -> R.string.page_cfg
+        ROUTE_SOURCES -> if (view in SOURCE_SUBVIEWS) subLabel(view) else R.string.page_sources
+        ROUTE_CFG -> if (view in CFG_SUBVIEWS) subLabel(view) else R.string.page_cfg
         else -> R.string.page_home
+    }
+
+private fun subLabel(view: DmtView): Int =
+    when (view) {
+        DmtView.STATS -> R.string.page_stats
+        DmtView.BLOCKLIST -> R.string.page_blocklist
+        DmtView.PERMISSIONS -> R.string.page_perms
+        else -> R.string.page_login
     }
 
 @Composable
@@ -537,7 +545,7 @@ private fun Titlebar(label: String) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
+            .padding(top = 12.dp, bottom = 10.dp),
     ) {
         Box(
             modifier = Modifier

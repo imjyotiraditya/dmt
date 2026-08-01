@@ -34,7 +34,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
@@ -139,8 +138,6 @@ fun PermissionsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Caption(stringResource(R.string.perms_title))
-
         PERMISSION_REGISTRY.forEach { entry ->
             val isGranted = granted[entry.permission] == true
             PermissionRow(

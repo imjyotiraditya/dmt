@@ -20,12 +20,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
-import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.DmtView
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
@@ -44,12 +42,6 @@ fun StatsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
 
     LazyColumn {
         item {
-            SubdirHeader(
-                title = stringResource(R.string.stats),
-                meta = "",
-                onBack = { dispatch(DmtAction.Show(DmtView.SETTINGS)) },
-            )
-
             Caption(stringResource(R.string.stat_listening))
             StatRow(
                 label = stringResource(R.string.stat_time),

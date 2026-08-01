@@ -68,14 +68,8 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Caption(stringResource(R.string.section_general))
+        Caption(stringResource(R.string.section_playback))
 
-        SettingRow(
-            label = stringResource(R.string.set_wave),
-            value = if (settings.wave) on else off,
-        ) {
-            dispatch(DmtAction.Config(settings.copy(wave = !settings.wave)))
-        }
         SettingRow(
             label = stringResource(R.string.set_normalize),
             value = if (settings.normalizeVolume) on else off,
@@ -87,19 +81,14 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             )
         }
         SettingRow(
-            label = stringResource(R.string.set_detail),
-            value = pluralStringResource(R.plurals.set_detail_value, settings.cols, settings.cols),
+            label = stringResource(R.string.set_stop_on_dismiss),
+            value = if (settings.stopOnDismiss) on else off,
         ) {
-            val currentIndex = COVER_COLS_STEPS.indexOf(settings.cols)
-            val next = COVER_COLS_STEPS[(currentIndex + 1).mod(COVER_COLS_STEPS.size)]
-            dispatch(DmtAction.Config(settings.copy(cols = next)))
+            dispatch(DmtAction.Config(settings.copy(stopOnDismiss = !settings.stopOnDismiss)))
         }
-        SettingRow(
-            label = stringResource(R.string.set_raw),
-            value = if (settings.rawArt) on else off,
-        ) {
-            dispatch(DmtAction.Config(settings.copy(rawArt = !settings.rawArt)))
-        }
+
+        Caption(stringResource(R.string.section_lyrics))
+
         SettingRow(
             label = stringResource(R.string.set_lyrics_source),
             value = stringResource(
@@ -132,11 +121,27 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 ),
             )
         }
+        Caption(stringResource(R.string.section_display))
+
         SettingRow(
-            label = stringResource(R.string.set_stop_on_dismiss),
-            value = if (settings.stopOnDismiss) on else off,
+            label = stringResource(R.string.set_wave),
+            value = if (settings.wave) on else off,
         ) {
-            dispatch(DmtAction.Config(settings.copy(stopOnDismiss = !settings.stopOnDismiss)))
+            dispatch(DmtAction.Config(settings.copy(wave = !settings.wave)))
+        }
+        SettingRow(
+            label = stringResource(R.string.set_detail),
+            value = pluralStringResource(R.plurals.set_detail_value, settings.cols, settings.cols),
+        ) {
+            val currentIndex = COVER_COLS_STEPS.indexOf(settings.cols)
+            val next = COVER_COLS_STEPS[(currentIndex + 1).mod(COVER_COLS_STEPS.size)]
+            dispatch(DmtAction.Config(settings.copy(cols = next)))
+        }
+        SettingRow(
+            label = stringResource(R.string.set_raw),
+            value = if (settings.rawArt) on else off,
+        ) {
+            dispatch(DmtAction.Config(settings.copy(rawArt = !settings.rawArt)))
         }
         SettingRow(
             label = stringResource(R.string.set_specs),
@@ -144,6 +149,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         ) {
             dispatch(DmtAction.Config(settings.copy(listSpecs = !settings.listSpecs)))
         }
+
         Caption(stringResource(R.string.tools))
         SettingRow(
             label = stringResource(R.string.set_eq),

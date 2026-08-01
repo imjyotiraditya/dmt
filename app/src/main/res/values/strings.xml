@@ -22,6 +22,10 @@
     <string name="page_search">Search</string>
     <string name="page_sources">Sources</string>
     <string name="page_cfg">Config</string>
+    <string name="page_stats">Stats</string>
+    <string name="page_blocklist">Blocklist</string>
+    <string name="page_perms">Permissions</string>
+    <string name="page_login">Log in</string>
     <string name="home_favourites">Your favourites</string>
     <string name="home_artists">Artists</string>
     <string name="home_albums">Albums</string>
@@ -95,7 +99,9 @@
     <string name="tab_info">info</string>
     <string name="tab_chain">chain</string>
 
-    <string name="section_general">general</string>
+    <string name="section_playback">playback</string>
+    <string name="section_lyrics">lyrics</string>
+    <string name="section_display">display</string>
     <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
     <string name="set_normalize">replay gain</string>

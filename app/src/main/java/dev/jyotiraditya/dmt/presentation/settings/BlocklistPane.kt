@@ -37,7 +37,6 @@ fun BlocklistPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 
     Column {
-        Caption(stringResource(R.string.blocklist_title))
         if (paths.isEmpty()) {
             Caption(stringResource(R.string.no_files))
             return
