@@ -11,6 +11,7 @@ import dev.jyotiraditya.dmt.R
 
 val PlexMono = FontFamily(
     Font(R.font.plex_mono, FontWeight.Normal),
+    Font(R.font.plex_mono_medium, FontWeight.Medium),
     Font(R.font.plex_mono_bold, FontWeight.Bold),
     Font(R.font.plex_mono_italic, FontWeight.Normal, FontStyle.Italic),
 )
@@ -35,5 +36,5 @@ val Typography = Typography(
     bodySmall = mono(11, tracking = 0.5f),
     labelLarge = mono(13, FontWeight.Bold, tracking = 1f),
     labelMedium = mono(12, tracking = 1.5f),
-    labelSmall = mono(10, tracking = 1.5f),
+    labelSmall = mono(11, FontWeight.Medium, tracking = 0.5f),
 )
