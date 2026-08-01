@@ -300,6 +300,9 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
                 if (old.cols != intent.settings.cols) loadCover(c?.currentMediaItem)
+                if (old.lyricsFromFile != intent.settings.lyricsFromFile) {
+                    loadLyrics(c?.currentMediaItem)
+                }
             }
 
             is DmtAction.ShowLogin ->
