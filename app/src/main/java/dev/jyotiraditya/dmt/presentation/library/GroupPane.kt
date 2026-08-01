@@ -83,7 +83,7 @@ fun ArtistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             countPlural = R.plurals.artist_count,
             key = { it.name },
             title = { it.name },
-            listMeta = { "${it.albums} alb · ${it.tracks.size} trk" },
+            listMeta = { artistLine2(it) },
             detailMeta = { "" },
             countLead = { "${it.albums} alb" },
             trackMeta = { trackLine2(it, artist = false) },

@@ -14,6 +14,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.SearchRow
+import dev.jyotiraditya.dmt.presentation.library.artistLine2
 import dev.jyotiraditya.dmt.presentation.library.trackLine2
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
@@ -66,7 +67,7 @@ fun SearchPane(
                     ListRow(
                         index = index,
                         line1 = artist.name,
-                        line2 = "${artist.albums} alb · ${artist.tracks.size} trk",
+                        line2 = artistLine2(artist),
                         current = false,
                         onClick = { onOpenArtist(artist.name) },
                     )

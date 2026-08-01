@@ -37,6 +37,7 @@ import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
+import dev.jyotiraditya.dmt.presentation.library.artistLine2
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
@@ -214,7 +215,7 @@ private fun ArtistCard(
     ShelfCard(
         seed = artist.tracks.first(),
         title = artist.name,
-        meta = "",
+        meta = artistLine2(artist),
         art = art,
         artKey = artKey,
         onClick = onClick,

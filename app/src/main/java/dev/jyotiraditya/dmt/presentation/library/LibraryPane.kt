@@ -19,6 +19,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.tuiClickable
+import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
@@ -92,6 +93,9 @@ fun trackLine2(
         .filter { it.isNotBlank() }
         .joinToString(" · ")
         .lowercase()
+
+fun artistLine2(artist: Artist): String =
+    "${artist.albums} alb · ${artist.tracks.size} trk"
 
 fun totalTime(tracks: List<Track>): String {
     val minutes = tracks.sumOf { it.durationMs } / 60_000
