@@ -71,14 +71,11 @@ fun MiniPlayer(
                 color = TuiFaint,
                 modifier = Modifier.padding(end = 10.dp),
             )
-            TuiKey(
-                label = if (state.isPlaying) "||" else "|>",
-                dark = true,
-            ) {
+            TuiKey(label = if (state.isPlaying) "||" else "|>") {
                 dispatch(DmtAction.TogglePlay)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            TuiKey(label = ">>|", dark = true) { dispatch(DmtAction.Next) }
+            TuiKey(label = ">>|") { dispatch(DmtAction.Next) }
         }
     }
 }

@@ -213,7 +213,6 @@ fun TuiKey(
     modifier: Modifier = Modifier,
     bright: Boolean = false,
     big: Boolean = false,
-    dark: Boolean = false,
     fill: Boolean = false,
     accent: Boolean = false,
     onClick: () -> Unit,
@@ -225,11 +224,7 @@ fun TuiKey(
         else -> TuiFg
     }
     val restBorder = if (bright) TuiFg else TuiLine
-    val restBg = when {
-        bright -> TuiFg
-        dark -> TuiBg
-        else -> TuiRaised
-    }
+    val restBg = if (bright) TuiFg else TuiRaised
     val pressText = if (bright) TuiFg else TuiBg
     val pressBorder = if (bright) TuiLine else TuiFg
     val pressBg = if (bright) TuiRaised else TuiFg
