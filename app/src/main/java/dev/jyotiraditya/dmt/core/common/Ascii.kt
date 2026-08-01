@@ -54,7 +54,7 @@ private fun monoTypeface(context: Context): Typeface =
         ?: loadMonoTypeface(context).also { cachedMonoTypeface = it }
 
 private fun loadMonoTypeface(context: Context): Typeface =
-    ResourcesCompat.getFont(context, R.font.jetbrains_mono)
+    ResourcesCompat.getFont(context, R.font.plex_mono)
         ?: Typeface.MONOSPACE
 
 private fun asciiPaint(context: Context): Paint = Paint().apply {

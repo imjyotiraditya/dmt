@@ -165,7 +165,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 .tuiClickable { runCatching { uriHandler.openUri(creditUrl) } },
         ) {
             Text(
-                text = "▪ ",
+                text = "▌ ",
                 style = MaterialTheme.typography.labelMedium,
                 color = TuiAccent,
             )

@@ -216,7 +216,7 @@ fun ChainContent(state: DmtState) {
 private fun ChainStageBlock(stage: ChainStage, last: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = "■ ",
+            text = "█ ",
             style = MaterialTheme.typography.bodyMedium,
             color = stage.color,
         )
