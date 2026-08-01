@@ -71,6 +71,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.ui.theme.TuiRed
 import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import dev.jyotiraditya.dmt.util.asTime
 import kotlin.math.abs
@@ -423,6 +424,16 @@ private fun TrackMeta(state: DmtState) {
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(top = 3.dp),
     )
+    state.fault?.let { fault ->
+        Text(
+            text = fault,
+            style = MaterialTheme.typography.labelSmall,
+            color = TuiRed,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 3.dp),
+        )
+    }
     if (state.settings.listSpecs && state.tech.isNotEmpty()) {
         val chipScroll = rememberScrollState()
         Row(

@@ -238,6 +238,14 @@ class TrackMediaRepository @Inject constructor(
                     value = "BUNDLED",
                 ),
             )
+        } else {
+            add(
+                Spec(
+                    label = "DEC",
+                    value = "NONE",
+                    hot = true,
+                ),
+            )
         }
     }
 

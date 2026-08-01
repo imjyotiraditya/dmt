@@ -63,6 +63,7 @@ data class DmtState(
     val stats: DmtStats = DmtStats(),
     val tech: List<Spec> = emptyList(),
     val route: List<Spec> = emptyList(),
+    val fault: String? = null,
     val error: String? = null,
     val notice: String? = null,
 )

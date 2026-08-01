@@ -114,6 +114,7 @@
     <string name="no_eq">no equalizer app found</string>
     <string name="queued">queued: %1$s</string>
     <string name="playback_error">playback error: %1$s</string>
+    <string name="playback_unsupported">no decoder for %1$s on this device</string>
     <string name="set_rescan">rescan library</string>
     <string name="action_play">play</string>
     <string name="action_queue">queue</string>

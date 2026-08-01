@@ -20,6 +20,7 @@ import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
+import dev.jyotiraditya.dmt.ui.theme.TuiRed
 import dev.jyotiraditya.dmt.util.asTime
 
 @Composable
@@ -57,9 +58,9 @@ fun MiniPlayer(
                     .filter { it.isNotBlank() }
                     .joinToString(" · ")
                 Text(
-                    text = "$meta · $position/$duration".lowercase(),
+                    text = state.fault ?: "$meta · $position/$duration".lowercase(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = TuiDim,
+                    color = if (state.fault != null) TuiRed else TuiDim,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

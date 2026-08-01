@@ -15,6 +15,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
 import androidx.media3.session.MediaController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -391,6 +392,7 @@ class PlayerViewModel @Inject constructor(
                 it.copy(
                     nowPlayingId = mediaItem?.mediaId,
                     lyrics = null,
+                    fault = null,
                     error = null,
                 )
             }
@@ -441,10 +443,23 @@ class PlayerViewModel @Inject constructor(
             }
         }
 
+        override fun onTracksChanged(tracks: Tracks) {
+            if (tracks.groups.isEmpty() || tracks.isTypeSupported(C.TRACK_TYPE_AUDIO)) return
+            controller?.pause()
+            reduce {
+                val format = currentState.tech
+                    .firstOrNull { spec -> spec.label == "FMT" }
+                    ?.value
+                    ?.lowercase()
+                    .orEmpty()
+                it.copy(fault = context.getString(R.string.playback_unsupported, format))
+            }
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             reduce {
                 val name = error.errorCodeName.lowercase()
-                it.copy(error = context.getString(R.string.playback_error, name))
+                it.copy(fault = context.getString(R.string.playback_error, name))
             }
         }
     }
