@@ -105,6 +105,7 @@
         <item quantity="other">%1$d cols</item>
     </plurals>
     <string name="set_specs">format chips</string>
+    <string name="set_stop_on_dismiss">stop on app close</string>
     <string name="set_raw">raw artwork</string>
     <string name="lyrics_files_needed">all files access needed</string>
     <string name="lyrics_files_why">android only lets apps read .lrc and .ttml files next to songs with all files access. without it dmt can still read lyrics stored inside the file tags.</string>

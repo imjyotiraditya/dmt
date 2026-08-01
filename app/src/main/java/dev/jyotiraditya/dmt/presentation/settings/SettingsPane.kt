@@ -133,6 +133,12 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             )
         }
         SettingRow(
+            label = stringResource(R.string.set_stop_on_dismiss),
+            value = if (settings.stopOnDismiss) on else off,
+        ) {
+            dispatch(DmtAction.Config(settings.copy(stopOnDismiss = !settings.stopOnDismiss)))
+        }
+        SettingRow(
             label = stringResource(R.string.set_specs),
             value = if (settings.listSpecs) on else off,
         ) {

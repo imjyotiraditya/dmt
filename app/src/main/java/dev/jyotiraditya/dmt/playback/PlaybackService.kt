@@ -103,6 +103,7 @@ class PlaybackService : MediaLibraryService() {
     private var sleepJob: Job? = null
     private var sleepEndAt: Long? = null
     private var normalizeVolume = false
+    private var stopOnDismiss = false
     private val gainCache = mutableMapOf<Long, Float>()
 
     @Volatile
@@ -199,6 +200,7 @@ class PlaybackService : MediaLibraryService() {
             .build()
         scope.launch {
             preferencesRepository.settings.collect { settings ->
+                stopOnDismiss = settings.stopOnDismiss
                 if (normalizeVolume != settings.normalizeVolume) {
                     normalizeVolume = settings.normalizeVolume
                     applyReplayGain(player.currentMediaItem)
@@ -727,7 +729,10 @@ class PlaybackService : MediaLibraryService() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         saveSession()
         val player = mediaSession?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
+        if (player == null || stopOnDismiss || !player.playWhenReady ||
+            player.mediaItemCount == 0
+        ) {
+            player?.pause()
             stopSelf()
         }
     }
