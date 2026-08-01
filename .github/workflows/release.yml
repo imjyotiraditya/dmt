@@ -31,13 +31,21 @@ jobs:
       - name: decode keystore
         run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
 
-      - name: build signed release apk and aab
+      - name: build signed release apk
         env:
           SIGNING_KEYSTORE_PATH: dmt.keystore
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease bundleRelease -PversionOverride=${{ steps.version.outputs.name }}
+        run: ./gradlew assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
+
+      - name: build signed release aab
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease -PversionOverride=${{ steps.version.outputs.name }} -PabiSplits=false
 
       - name: publish release
         uses: softprops/action-gh-release@v3

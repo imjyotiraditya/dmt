@@ -9,6 +9,7 @@ plugins {
 }
 
 val appVersionName = (project.findProperty("versionOverride") as String?) ?: "1.0"
+val abiSplits = (project.findProperty("abiSplits") as String?)?.toBoolean() ?: true
 val appVersionCode =
     appVersionName
         .substringBefore("-")
@@ -47,7 +48,7 @@ android {
 
     splits {
         abi {
-            isEnable = true
+            isEnable = abiSplits
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true
