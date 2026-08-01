@@ -32,8 +32,14 @@ this is the thank you note.
   server instead: sources get their own screen, tap to switch, log in once
   and it remembers the server and token (never the password). covers, lyrics
   and format info come from the server too
-- library and albums tabs, both searchable; tap an album to play it, [↗] to open it,
-  long-press for play/queue actions
+- home screen with shelves for your most played albums, tracks and artists,
+  plus a "try something new" row of things you have never got round to playing
+- bottom nav across home, library, search, sources and cfg
+- library tabs for tracks, albums, artists, folders and playlists, each showing
+  how many and how long; tap an album to play it, [↗] to open it, long-press
+  for play/queue actions
+- one search across tracks, albums and artists, so typing a guest artist finds
+  the track they feature on
 - a folder blocklist in cfg keeps voice notes and other junk out of the library
 - cover art rendered as colored ascii with a light sweep while playing.
   tracks without art get a generated ascii pattern of their own.
@@ -49,7 +55,13 @@ this is the thank you note.
   deleted files silently drop out
 - format nerd info when you want it: codec, bitrate, sample rate, bit depth, size,
   down to spotting he-aac and vbr encodes
-- bundled ffmpeg decoders, so formats the platform won't touch still play
+- bundled ffmpeg decoders, so formats the platform won't touch still play,
+  dolby ac-4 included: mainline ffmpeg has no ac-4 decoder and android only
+  ships one on licensed devices, so this uses paul b mahol's decoder from
+  librempeg, built by
+  [dmt-decoder-ffmpeg](https://github.com/imjyotiraditya/dmt-decoder-ffmpeg)
+- if a track really can't be decoded it says so on the player instead of
+  running silently to the end
 - four accents (orange, moss, steel, mono) and the launcher icon follows
 - hooks into the system equalizer, media notification with album art
 - handles big libraries without falling over
@@ -62,6 +74,8 @@ this is the thank you note.
   demand - never automatically
 - shows up in external media widgets (kustom and the like) so they can read
   what's playing
+- artists come from the album artist tag, so a feature doesn't split the
+  artist into a new entry or turn the album into "various artists"
 
 ## building
 
@@ -72,7 +86,12 @@ ci builds a signed release apk on every push.
 
 ## stack
 
-kotlin, compose, media3, datastore. single state + actions, no magic.
+kotlin, compose, media3, datastore, ibm plex mono. single state + actions,
+no magic.
+
+the ffmpeg decoder and media3 itself are built from
+[dmt-ffmpeg](https://github.com/imjyotiraditya/dmt-ffmpeg) and
+[dmt-media3](https://github.com/imjyotiraditya/dmt-media3).
 
 no ads, no analytics. the network is only ever used to talk to your own
 jellyfin server, and to lrclib when you ask for missing lyrics. it just
