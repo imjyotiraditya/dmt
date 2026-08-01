@@ -29,6 +29,7 @@ object CueLibrary {
                 id = -(track.id * VIRTUAL_ID_STRIDE + cue.number),
                 title = cue.title ?: "${track.title} #${cue.number}",
                 artist = cue.performer ?: sheet.performer ?: track.artist,
+                albumArtist = sheet.performer ?: track.albumArtist,
                 album = sheet.title ?: track.album,
                 durationMs = durationMs,
                 size = track.size * durationMs / track.durationMs,

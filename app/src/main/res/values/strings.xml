@@ -40,7 +40,6 @@
     <string name="no_artists">no artists</string>
     <string name="no_files">no folders</string>
     <string name="no_playlists">no playlists yet</string>
-    <string name="playlist_new">new</string>
     <string name="playlist_new_title">new playlist</string>
     <string name="playlist_name_hint">playlist name</string>
     <string name="playlist_create">create</string>

@@ -26,6 +26,7 @@ data class JellyfinItem(
     val id: String,
     val title: String,
     val artist: String,
+    val albumArtist: String,
     val album: String,
     val albumId: String?,
     val trackNumber: Int,
@@ -161,14 +162,17 @@ class JellyfinApi @Inject constructor(
     private fun JSONObject.toJellyfinItem(): JellyfinItem {
         val mediaSource = optJSONArray("MediaSources")?.optJSONObject(0)
 
-        val artist = optString("AlbumArtist").ifBlank {
-            optJSONArray("Artists")?.optString(0).orEmpty()
-        }
+        val albumArtist = optString("AlbumArtist")
+        val artist = optJSONArray("Artists")
+            ?.let { names -> (0 until names.length()).joinToString("; ") { names.optString(it) } }
+            .orEmpty()
+            .ifBlank { albumArtist }
 
         return JellyfinItem(
             id = getString("Id"),
             title = optString("Name", "unknown title"),
             artist = artist.ifBlank { "unknown artist" },
+            albumArtist = albumArtist,
             album = optString("Album", "unknown album"),
             albumId = if (has("AlbumId")) optString("AlbumId") else null,
             trackNumber = optInt("IndexNumber", 0),

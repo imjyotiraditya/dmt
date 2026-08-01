@@ -26,6 +26,7 @@ import dev.jyotiraditya.dmt.core.common.ScrollMemory
 import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
@@ -62,7 +63,7 @@ fun AlbumsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             title = { it.name },
             listMeta = { "${it.artist} · ${it.tracks.size} trk" },
             detailMeta = { it.artist },
-            trackMeta = { "${it.artist} · ${it.durationMs.asTime()}" },
+            trackMeta = { trackLine2(it, album = false) },
             tracks = { it.tracks },
             open = { DmtAction.OpenAlbum(it) },
         ),
@@ -85,7 +86,7 @@ fun ArtistsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             listMeta = { "${it.albums} alb · ${it.tracks.size} trk" },
             detailMeta = { "" },
             countLead = { "${it.albums} alb" },
-            trackMeta = { "${it.album} · ${it.durationMs.asTime()}" },
+            trackMeta = { trackLine2(it, artist = false) },
             tracks = { it.tracks },
             open = { DmtAction.OpenArtist(it) },
         ),
@@ -107,7 +108,7 @@ fun FoldersPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
             title = { it.name },
             listMeta = { "${it.tracks.size} trk" },
             detailMeta = { it.path },
-            trackMeta = { "${it.artist} · ${it.durationMs.asTime()}" },
+            trackMeta = { trackLine2(it, album = false) },
             tracks = { it.tracks },
             open = { DmtAction.OpenFolder(it) },
         ),
@@ -215,7 +216,7 @@ private fun <T> GroupDetail(
             ListRow(
                 index = index,
                 line1 = track.title,
-                line2 = spec.trackMeta(track).lowercase(),
+                line2 = spec.trackMeta(track),
                 current = track.id.toString() == state.nowPlayingId,
                 onClick = { dispatch(DmtAction.PlayAt(tracks, index)) },
             )

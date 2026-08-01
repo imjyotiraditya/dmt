@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.core.common.CursorTitle
 import dev.jyotiraditya.dmt.core.common.Hairline
 import dev.jyotiraditya.dmt.core.common.TuiKey
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
@@ -52,7 +53,7 @@ fun MiniPlayer(
                 )
                 val position = state.positionMs.asTime()
                 val duration = state.durationMs.asTime()
-                val meta = listOf(state.artist, state.album)
+                val meta = listOf(state.artist.asCredit(), state.album)
                     .filter { it.isNotBlank() }
                     .joinToString(" · ")
                 Text(

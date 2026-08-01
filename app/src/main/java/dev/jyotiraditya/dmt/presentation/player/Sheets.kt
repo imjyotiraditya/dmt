@@ -33,6 +33,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
@@ -167,7 +168,7 @@ fun InfoContent(state: DmtState) {
     )
     InfoRow(
         label = stringResource(R.string.info_artist),
-        value = state.artist.lowercase(),
+        value = state.artist.asCredit().lowercase(),
     )
     if (state.album.isNotBlank()) {
         InfoRow(

@@ -41,6 +41,7 @@ class JellyfinMediaRepositoryImpl @Inject constructor(
             uri = api.streamUrl(baseUrl, id, token).toUri(),
             title = title,
             artist = artist,
+            albumArtist = albumArtist,
             album = album,
             path = "",
             durationMs = durationMs,

@@ -64,6 +64,7 @@ import dev.jyotiraditya.dmt.core.common.isCompactWindow
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.core.common.windowDpSize
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.ui.theme.TuiAccent
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
@@ -412,7 +413,7 @@ private fun TrackMeta(state: DmtState) {
         modifier = Modifier.padding(top = 18.dp),
     )
     Text(
-        text = listOf(state.artist, state.album)
+        text = listOf(state.artist.asCredit(), state.album)
             .filter { it.isNotBlank() }
             .joinToString(" · ")
             .lowercase(),

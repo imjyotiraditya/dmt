@@ -11,6 +11,7 @@ data class Track(
     val uri: Uri,
     val title: String,
     val artist: String,
+    val albumArtist: String = "",
     val album: String,
     val path: String,
     val durationMs: Long,

@@ -13,9 +13,10 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import kotlinx.coroutines.guava.await
 import java.nio.ByteBuffer
+import kotlinx.coroutines.guava.await
 
 fun LastSession.resolveQueue(tracks: List<Track>): Triple<List<Track>, Int, Long>? {
     val byId = tracks.associateBy { it.id }
@@ -96,7 +97,7 @@ fun MediaController.queueEntries(): List<QueueEntry> {
         while (index != C.INDEX_UNSET) {
             timeline.getWindow(index, window)
 
-            val label = window.mediaItem.mediaMetadata.run { "$title · $artist" }
+            val label = window.mediaItem.mediaMetadata.run { "$title · ${artist?.toString().orEmpty().asCredit()}" }
             add(QueueEntry(index, label))
 
             index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffleModeEnabled)

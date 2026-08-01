@@ -32,6 +32,7 @@ import dev.jyotiraditya.dmt.core.common.SubdirHeader
 import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Playlist
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
@@ -170,7 +171,7 @@ private fun PlaylistDetail(
             ListRow(
                 index = index,
                 line1 = track.title,
-                line2 = "${track.artist} · ${track.durationMs.asTime()}".lowercase(),
+                line2 = trackLine2(track, album = false),
                 current = track.id.toString() == state.nowPlayingId,
                 onClick = { dispatch(DmtAction.PlayAt(playlist.tracks, index)) },
                 trailing = {
@@ -259,7 +260,7 @@ private fun PickerSheet(
                 ListRow(
                     index = index,
                     line1 = track.title,
-                    line2 = "${track.artist} · ${track.durationMs.asTime()}".lowercase(),
+                    line2 = trackLine2(track, album = false),
                     current = false,
                     onClick = { dispatch(DmtAction.AddToPlaylist(playlist.name, track)) },
                 )

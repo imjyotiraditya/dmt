@@ -20,6 +20,7 @@ import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.ListRow
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.theme.TuiDim
@@ -78,8 +79,16 @@ fun LibraryPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
-fun trackLine2(track: Track): String =
-    listOf(track.artist, track.album, track.durationMs.asTime())
+fun trackLine2(
+    track: Track,
+    artist: Boolean = true,
+    album: Boolean = true,
+): String =
+    listOfNotNull(
+        track.artist.asCredit().takeIf { artist },
+        track.album.takeIf { album },
+        track.durationMs.asTime(),
+    )
         .filter { it.isNotBlank() }
         .joinToString(" · ")
         .lowercase()
