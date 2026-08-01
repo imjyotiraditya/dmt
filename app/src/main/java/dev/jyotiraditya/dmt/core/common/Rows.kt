@@ -47,8 +47,6 @@ fun SearchRow(
     hint: String,
     shown: Int,
     onQuery: (String) -> Unit,
-    sort: String? = null,
-    onSort: (() -> Unit)? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -91,16 +89,6 @@ fun SearchRow(
                 color = TuiFg,
                 modifier = Modifier
                     .tuiClickable { onQuery("") }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-            )
-        }
-        if (sort != null && onSort != null) {
-            Text(
-                text = "[$sort]",
-                style = MaterialTheme.typography.labelLarge,
-                color = TuiDim,
-                modifier = Modifier
-                    .tuiClickable(onSort)
                     .padding(horizontal = 8.dp, vertical = 6.dp),
             )
         }
@@ -181,6 +169,7 @@ fun SubdirHeader(
     title: String,
     meta: String,
     onBack: () -> Unit,
+    counts: String = "",
     action: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -200,23 +189,29 @@ fun SubdirHeader(
             Spacer(modifier = Modifier.weight(1f))
             action?.invoke()
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = TuiFg,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (meta.isNotEmpty()) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = TuiFg,
+                text = meta,
+                style = MaterialTheme.typography.labelSmall,
+                color = TuiDim,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
             )
-            if (meta.isNotEmpty()) {
-                Text(
-                    text = " · $meta",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TuiDim,
-                    maxLines = 1,
-                )
-            }
+        }
+        if (counts.isNotEmpty()) {
+            Text(
+                text = counts,
+                style = MaterialTheme.typography.labelSmall,
+                color = TuiDim,
+                maxLines = 1,
+            )
         }
         HorizontalDivider(color = TuiLine, modifier = Modifier.padding(top = 8.dp))
     }

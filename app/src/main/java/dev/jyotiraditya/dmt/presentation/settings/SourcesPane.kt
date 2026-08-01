@@ -70,7 +70,7 @@ fun SourcesPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val settings = state.settings
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Caption(stringResource(R.string.sources_title))
+        Caption(stringResource(R.string.sources_hint))
 
         SOURCE_REGISTRY.forEach { source ->
             val connected = source.connected(settings)
@@ -99,13 +99,6 @@ fun SourcesPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 },
             )
         }
-
-        Text(
-            text = stringResource(R.string.sources_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = TuiFaint,
-            modifier = Modifier.padding(top = 12.dp),
-        )
     }
 }
 

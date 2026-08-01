@@ -2,8 +2,10 @@ package dev.jyotiraditya.dmt.presentation.player
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.util.LruCache
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
@@ -61,13 +63,14 @@ import kotlin.time.Duration.Companion.seconds
 
 private val SPEED_STEPS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 private val SLEEP_STEPS = listOf(0, 15, 30, 60)
+private const val HOME_ART_COLS = 48
+private const val HOME_ART_CACHE_BYTES = 32 * 1024 * 1024
 
 private data class FilteredLibrary(
     val tracks: List<Track>,
     val albums: List<Album>,
     val artists: List<Artist>,
     val folders: List<Folder>,
-    val playlists: List<Playlist> = emptyList(),
 )
 
 @HiltViewModel
@@ -92,6 +95,9 @@ class PlayerViewModel @Inject constructor(
 ) {
 
     private var controller: MediaController? = null
+    private val homeArtCache = object : LruCache<String, Bitmap>(HOME_ART_CACHE_BYTES) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
     private var pendingEmbed: Pair<Track, String>? = null
     private var noticeJob: Job? = null
     private var coverJob: Job? = null
@@ -143,19 +149,11 @@ class PlayerViewModel @Inject constructor(
     private fun filterFolders(folders: List<Folder>, query: String): List<Folder> =
         folders.matching(query) { listOf(it.name) }
 
-    private fun filterPlaylists(playlists: List<Playlist>, query: String): List<Playlist> =
-        playlists.matching(query) { listOf(it.name) }
-
     private fun mutatePlaylists(block: () -> Unit = {}) {
         viewModelScope.launch(Dispatchers.IO) {
             block()
             val playlists = playlistRepository.load(currentState.tracks)
-            reduce {
-                it.copy(
-                    playlists = playlists,
-                    filteredPlaylists = filterPlaylists(playlists, it.query),
-                )
-            }
+            reduce { it.copy(playlists = playlists) }
         }
     }
 
@@ -175,17 +173,15 @@ class PlayerViewModel @Inject constructor(
                 val albums = currentState.albums
                 val artists = currentState.artists
                 val folders = currentState.folders
-                val playlists = currentState.playlists
                 val sort = currentState.settings.librarySort
                 viewModelScope.launch {
-                    val (filteredTracks, filteredAlbums, filteredArtists, filteredFolders, filteredPlaylists) =
+                    val (filteredTracks, filteredAlbums, filteredArtists, filteredFolders) =
                         withContext(Dispatchers.Default) {
                             FilteredLibrary(
                                 tracks = filter(tracks, query, sort),
                                 albums = filterAlbums(albums, query),
                                 artists = filterArtists(artists, query),
                                 folders = filterFolders(folders, query),
-                                playlists = filterPlaylists(playlists, query),
                             )
                         }
                     if (currentState.query == query) {
@@ -195,7 +191,6 @@ class PlayerViewModel @Inject constructor(
                                 filteredAlbums = filteredAlbums,
                                 filteredArtists = filteredArtists,
                                 filteredFolders = filteredFolders,
-                                filteredPlaylists = filteredPlaylists,
                             )
                         }
                     }
@@ -607,6 +602,25 @@ class PlayerViewModel @Inject constructor(
                     it.copy(lyrics = lyrics, lyricsFetching = false)
                 }
             }
+        }
+    }
+
+    suspend fun homeArt(track: Track): Bitmap {
+        val rawMode = currentState.settings.rawArt
+        val key = "${track.id}:$rawMode"
+        homeArtCache.get(key)?.let { return it }
+        return withContext(Dispatchers.IO) {
+            val raw = track.coverUri?.let { coverArtRepository.loadArt(it) }
+            val art = when {
+                raw != null && rawMode -> raw
+                raw != null ->
+                    runCatching { raw.toAsciiBitmap(context, HOME_ART_COLS) }.getOrNull()
+                        ?: generateAsciiPlaceholder(context, track.id, HOME_ART_COLS)
+
+                else -> generateAsciiPlaceholder(context, track.id, HOME_ART_COLS)
+            }
+            homeArtCache.put(key, art)
+            art
         }
     }
 

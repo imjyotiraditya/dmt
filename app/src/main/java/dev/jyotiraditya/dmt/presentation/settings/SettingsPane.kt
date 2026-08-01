@@ -41,7 +41,7 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
     val off = stringResource(R.string.off)
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Caption(stringResource(R.string.config))
+        Caption(stringResource(R.string.section_general))
 
         SettingRow(
             label = stringResource(R.string.set_wave),

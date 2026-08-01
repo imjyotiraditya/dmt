@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
@@ -211,12 +212,23 @@ fun TuiKey(
     modifier: Modifier = Modifier,
     bright: Boolean = false,
     big: Boolean = false,
+    dark: Boolean = false,
+    fill: Boolean = false,
+    accent: Boolean = false,
     onClick: () -> Unit,
 ) {
     val press = rememberTuiPress()
-    val restText = if (bright) TuiBg else TuiFg
+    val restText = when {
+        accent -> TuiAccent
+        bright -> TuiBg
+        else -> TuiFg
+    }
     val restBorder = if (bright) TuiFg else TuiLine
-    val restBg = if (bright) TuiFg else TuiSurface.copy(alpha = 0.4f)
+    val restBg = when {
+        bright -> TuiFg
+        dark -> TuiBg
+        else -> TuiSurface.copy(alpha = 0.4f)
+    }
     val pressText = if (bright) TuiFg else TuiBg
     val pressBorder = if (bright) TuiLine else TuiFg
     val pressBg = if (bright) TuiSurface.copy(alpha = 0.4f) else TuiFg
@@ -225,6 +237,8 @@ fun TuiKey(
         style = MaterialTheme.typography.labelLarge,
         color = lerp(restText, pressText, press.fraction),
         textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false,
         modifier = modifier
             .border(1.dp, lerp(restBorder, pressBorder, press.fraction))
             .background(lerp(restBg, pressBg, press.fraction))
@@ -235,7 +249,11 @@ fun TuiKey(
                 press.click(onClick)
             }
             .padding(
-                horizontal = if (big) 22.dp else 14.dp,
+                horizontal = when {
+                    fill -> 4.dp
+                    big -> 22.dp
+                    else -> 14.dp
+                },
                 vertical = if (big) 15.dp else 11.dp,
             ),
     )
@@ -316,10 +334,14 @@ fun TuiStatus(
 }
 
 @Composable
-fun Hairline(fraction: Float, modifier: Modifier = Modifier) {
+fun Hairline(
+    fraction: Float,
+    modifier: Modifier = Modifier,
+    color: Color = TuiFg,
+) {
     LinearProgressIndicator(
         progress = { fraction.coerceIn(0f, 1f) },
-        color = TuiFg,
+        color = color,
         trackColor = TuiFaint,
         strokeCap = StrokeCap.Butt,
         gapSize = 0.dp,

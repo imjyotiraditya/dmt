@@ -9,10 +9,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import dev.jyotiraditya.dmt.R
 
-val JetBrainsMono = FontFamily(
-    Font(R.font.jetbrains_mono, FontWeight.Normal),
-    Font(R.font.jetbrains_mono_bold, FontWeight.Bold),
-    Font(R.font.jetbrains_mono_italic, FontWeight.Normal, FontStyle.Italic),
+val IoskeleyMono = FontFamily(
+    Font(R.font.ioskeley_mono, FontWeight.Normal),
+    Font(R.font.ioskeley_mono_bold, FontWeight.Bold),
+    Font(R.font.ioskeley_mono_italic, FontWeight.Normal, FontStyle.Italic),
 )
 
 private fun mono(
@@ -20,7 +20,7 @@ private fun mono(
     weight: FontWeight = FontWeight.Normal,
     tracking: Float = 0f,
 ) = TextStyle(
-    fontFamily = JetBrainsMono,
+    fontFamily = IoskeleyMono,
     fontSize = size.sp,
     fontWeight = weight,
     letterSpacing = tracking.sp,

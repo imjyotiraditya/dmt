@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">dmt</string>
 
-    <string name="tab_library">1:library</string>
+    <string name="tab_library">1:tracks</string>
     <string name="tab_albums">2:albums</string>
     <string name="tab_artists">3:artists</string>
     <string name="tab_folders">4:folders</string>
@@ -12,8 +12,24 @@
     <string name="auto_folders">folders</string>
     <string name="auto_shuffle">shuffle</string>
     <string name="auto_repeat">repeat</string>
-    <string name="cfg" translatable="false">cfg</string>
-    <string name="tab_sources" translatable="false">src</string>
+    <string name="nav_home" translatable="false">[~]</string>
+    <string name="nav_library" translatable="false">[&amp;]</string>
+    <string name="nav_sources" translatable="false">[src]</string>
+    <string name="nav_search" translatable="false">[?]</string>
+    <string name="nav_cfg" translatable="false">[cfg]</string>
+    <string name="page_home">Home</string>
+    <string name="page_library">Library</string>
+    <string name="page_search">Search</string>
+    <string name="page_sources">Sources</string>
+    <string name="page_cfg">Config</string>
+    <string name="home_favourites">Your favourites</string>
+    <string name="home_artists">Artists</string>
+    <string name="home_albums">Albums</string>
+    <string name="home_tracks">Tracks</string>
+    <string name="home_try_new">Try something new</string>
+    <string name="home_try_new_hint">Unplayed tracks from your library, picked using your listening stats.</string>
+    <string name="search_hint">search library</string>
+    <string name="search_empty">type to search tracks, albums, artists</string>
 
     <string name="clear" translatable="false">[x]</string>
     <string name="scanning">scanning library...</string>
@@ -80,7 +96,7 @@
     <string name="tab_info">info</string>
     <string name="tab_chain">chain</string>
 
-    <string name="config">config</string>
+    <string name="section_general">general</string>
     <string name="tools">tools</string>
     <string name="set_wave">cover wave effect</string>
     <string name="set_normalize">replay gain</string>
@@ -111,7 +127,6 @@
     </plurals>
     <string name="blocklist_hint">[x] folders are hidden from the library</string>
     <string name="run">run</string>
-    <string name="sources_title">sources</string>
     <string name="sources_hint">(*) active source - tap to switch</string>
     <string name="source_login">log in</string>
     <string name="source_logout">log out</string>
@@ -151,24 +166,24 @@
     <string name="info_album">album</string>
     <string name="info_duration">duration</string>
     <string name="info_uri">uri</string>
-    <plurals name="search_tracks_hint">
-        <item quantity="one">search %1$d track</item>
-        <item quantity="other">search %1$d tracks</item>
+    <plurals name="album_count">
+        <item quantity="one">%1$d album</item>
+        <item quantity="other">%1$d albums</item>
     </plurals>
-    <plurals name="search_albums_hint">
-        <item quantity="one">search %1$d album</item>
-        <item quantity="other">search %1$d albums</item>
+    <plurals name="artist_count">
+        <item quantity="one">%1$d artist</item>
+        <item quantity="other">%1$d artists</item>
     </plurals>
-    <plurals name="search_artists_hint">
-        <item quantity="one">search %1$d artist</item>
-        <item quantity="other">search %1$d artists</item>
+    <plurals name="folder_count">
+        <item quantity="one">%1$d folder</item>
+        <item quantity="other">%1$d folders</item>
     </plurals>
-    <plurals name="search_folders_hint">
-        <item quantity="one">search %1$d folder</item>
-        <item quantity="other">search %1$d folders</item>
+    <plurals name="playlist_count">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
     </plurals>
-    <plurals name="search_playlists_hint">
-        <item quantity="one">search %1$d list</item>
-        <item quantity="other">search %1$d lists</item>
+    <plurals name="track_count">
+        <item quantity="one">%1$d track</item>
+        <item quantity="other">%1$d tracks</item>
     </plurals>
 </resources>

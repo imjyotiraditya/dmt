@@ -61,6 +61,7 @@ fun PlayerSheet(
     dispatch: (DmtAction) -> Unit,
     anchor: Rect?,
     hidden: Boolean,
+    fraction: Animatable<Float, AnimationVector1D>,
     onInfo: () -> Unit,
     onQueue: () -> Unit,
 ) {
@@ -73,7 +74,6 @@ fun PlayerSheet(
         val collapsedY = anchor.top
 
         val scope = rememberCoroutineScope()
-        val fraction = remember { Animatable(if (state.expanded) 1f else 0f) }
         val sheetY = remember { Animatable(if (state.expanded) 0f else collapsedY) }
         val mutex = remember { MutatorMutex() }
         val sheetSpec = remember {
@@ -185,7 +185,7 @@ fun PlayerSheet(
                 }
                 .drawBehind {
                     val f = fraction.value
-                    drawRect(lerp(TuiSurface.copy(alpha = 0.85f), TuiBg, f))
+                    drawRect(lerp(TuiSurface.copy(alpha = 0.4f), TuiBg, f))
                     if (f < 1f) {
                         val inset = 0.5.dp.toPx()
                         drawRect(

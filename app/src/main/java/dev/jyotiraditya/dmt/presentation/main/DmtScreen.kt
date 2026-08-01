@@ -1,6 +1,8 @@
 package dev.jyotiraditya.dmt.presentation.main
 
+import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -33,26 +35,37 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.Caption
 import dev.jyotiraditya.dmt.core.common.FitScaled
 import dev.jyotiraditya.dmt.core.common.ScrollMemory
+import dev.jyotiraditya.dmt.core.common.TuiKey
 import dev.jyotiraditya.dmt.core.common.TuiNotice
 import dev.jyotiraditya.dmt.core.common.TuiTab
 import dev.jyotiraditya.dmt.core.common.fitScaleFor
 import dev.jyotiraditya.dmt.core.common.isLandscapeWindow
+import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.presentation.home.HomePane
 import dev.jyotiraditya.dmt.presentation.library.AlbumsPane
 import dev.jyotiraditya.dmt.presentation.library.ArtistsPane
 import dev.jyotiraditya.dmt.presentation.library.FoldersPane
@@ -68,6 +81,7 @@ import dev.jyotiraditya.dmt.presentation.player.PlayerSheet
 import dev.jyotiraditya.dmt.presentation.player.QueueList
 import dev.jyotiraditya.dmt.presentation.player.SheetHeader
 import dev.jyotiraditya.dmt.presentation.player.TuiSheet
+import dev.jyotiraditya.dmt.presentation.search.SearchPane
 import dev.jyotiraditya.dmt.presentation.settings.BlocklistPane
 import dev.jyotiraditya.dmt.presentation.settings.PermissionsPane
 import dev.jyotiraditya.dmt.presentation.settings.SettingsPane
@@ -79,11 +93,64 @@ import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiBright
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
 
+private const val ROUTE_HOME = "home"
+private const val ROUTE_LIBRARY = "library"
+private const val ROUTE_SEARCH = "search"
+private const val ROUTE_SOURCES = "sources"
+private const val ROUTE_CFG = "cfg"
+
+private val LIBRARY_VIEWS = setOf(
+    DmtView.LIBRARY,
+    DmtView.ALBUMS,
+    DmtView.ARTISTS,
+    DmtView.FOLDERS,
+    DmtView.PLAYLISTS,
+)
+private val SOURCE_VIEWS = setOf(DmtView.SOURCES, DmtView.SOURCE_LOGIN, DmtView.PERMISSIONS)
+private val SOURCE_SUBVIEWS = setOf(DmtView.SOURCE_LOGIN, DmtView.PERMISSIONS)
+private val CFG_SUBVIEWS = setOf(DmtView.STATS, DmtView.BLOCKLIST, DmtView.PERMISSIONS)
+private val CFG_VIEWS = setOf(
+    DmtView.SETTINGS,
+    DmtView.STATS,
+    DmtView.BLOCKLIST,
+    DmtView.PERMISSIONS,
+)
+
+private fun backStep(route: String, state: DmtState): DmtAction? =
+    when (route) {
+        ROUTE_LIBRARY -> when (state.view) {
+            DmtView.ALBUMS -> state.openAlbum?.let { DmtAction.OpenAlbum(null) }
+            DmtView.ARTISTS -> state.openArtist?.let { DmtAction.OpenArtist(null) }
+            DmtView.FOLDERS -> state.openFolder?.let { DmtAction.OpenFolder(null) }
+            DmtView.PLAYLISTS -> state.openPlaylist?.let { DmtAction.OpenPlaylist(null) }
+            else -> null
+        }
+
+        ROUTE_SOURCES ->
+            DmtAction.Show(DmtView.SOURCES).takeIf { state.view in SOURCE_SUBVIEWS }
+
+        ROUTE_CFG ->
+            DmtAction.Show(DmtView.SETTINGS).takeIf { state.view in CFG_SUBVIEWS }
+
+        else -> null
+    }
+
+private data class NavItem(val labelRes: Int, val route: String, val view: DmtView?)
+
+private val NAV_ITEMS = listOf(
+    NavItem(R.string.nav_home, ROUTE_HOME, null),
+    NavItem(R.string.nav_library, ROUTE_LIBRARY, DmtView.LIBRARY),
+    NavItem(R.string.nav_search, ROUTE_SEARCH, null),
+    NavItem(R.string.nav_sources, ROUTE_SOURCES, DmtView.SOURCES),
+    NavItem(R.string.nav_cfg, ROUTE_CFG, DmtView.SETTINGS),
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DmtScreen(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
+    art: suspend (Track) -> Bitmap,
 ) {
     var showQueueSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
@@ -91,9 +158,42 @@ fun DmtScreen(
     val imeVisible = WindowInsets.isImeVisible
     val landscape = isLandscapeWindow()
 
+    val navController = rememberNavController()
+    val backStack by navController.currentBackStackEntryAsState()
+    val route = backStack?.destination?.route ?: ROUTE_HOME
+
+    val sheetFraction = remember { Animatable(0f) }
+    LaunchedEffect(state.nowPlayingId == null) {
+        if (state.nowPlayingId == null) sheetFraction.snapTo(0f)
+    }
+
+    fun navTo(item: NavItem) {
+        navController.navigate(item.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+        item.view?.let { dispatch(DmtAction.Show(it)) }
+    }
+
+    val viewNow = rememberUpdatedState(state.view)
+    LaunchedEffect(route) {
+        if (route != ROUTE_SEARCH) dispatch(DmtAction.Query(""))
+        when (route) {
+            ROUTE_LIBRARY ->
+                if (viewNow.value !in LIBRARY_VIEWS) dispatch(DmtAction.Show(DmtView.LIBRARY))
+
+            ROUTE_SOURCES ->
+                if (viewNow.value !in SOURCE_VIEWS) dispatch(DmtAction.Show(DmtView.SOURCES))
+
+            ROUTE_CFG ->
+                if (viewNow.value !in CFG_VIEWS) dispatch(DmtAction.Show(DmtView.SETTINGS))
+        }
+    }
+
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(state.expanded, state.view, showQueueSheet, showInfoSheet) {
+    LaunchedEffect(state.expanded, route, state.view, showQueueSheet, showInfoSheet) {
         focusManager.clearFocus()
         keyboard?.hide()
     }
@@ -102,34 +202,7 @@ fun DmtScreen(
         if (state.queue.isEmpty()) showQueueSheet = false
     }
 
-    val backHandled = !state.expanded &&
-            ((state.view == DmtView.ALBUMS && state.openAlbum != null) ||
-                    state.view != DmtView.LIBRARY)
-    BackHandler(enabled = backHandled) {
-        when {
-            state.view == DmtView.STATS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
-
-            state.view == DmtView.BLOCKLIST -> dispatch(DmtAction.Show(DmtView.SETTINGS))
-
-            state.view == DmtView.PERMISSIONS -> dispatch(DmtAction.Show(DmtView.SETTINGS))
-
-            state.view == DmtView.SOURCE_LOGIN -> dispatch(DmtAction.Show(DmtView.SOURCES))
-
-            state.view == DmtView.ALBUMS && state.openAlbum != null ->
-                dispatch(DmtAction.OpenAlbum(null))
-
-            state.view == DmtView.ARTISTS && state.openArtist != null ->
-                dispatch(DmtAction.OpenArtist(null))
-
-            state.view == DmtView.FOLDERS && state.openFolder != null ->
-                dispatch(DmtAction.OpenFolder(null))
-
-            state.view == DmtView.PLAYLISTS && state.openPlaylist != null ->
-                dispatch(DmtAction.OpenPlaylist(null))
-
-            else -> dispatch(DmtAction.Show(DmtView.LIBRARY))
-        }
-    }
+    val backAction = if (state.expanded) null else backStep(route, state)
 
     Box(
         modifier = Modifier
@@ -144,12 +217,15 @@ fun DmtScreen(
                         .windowInsetsPadding(WindowInsets.safeDrawing)
                         .padding(horizontal = 16.dp),
                 ) {
-                    SideRail(state, dispatch)
+                    SideRail(route, ::navTo)
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        PaneHost(
+                        PaneNavHost(
+                            navController = navController,
                             state = state,
                             dispatch = dispatch,
+                            art = art,
+                            navTo = ::navTo,
                             modifier = Modifier.weight(1f),
                         )
 
@@ -169,11 +245,13 @@ fun DmtScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(horizontal = 16.dp),
             ) {
-                Titlebar(state, dispatch)
-                TabsRow(state, dispatch)
-                PaneHost(
+                Titlebar(label = stringResource(pageLabel(route)))
+                PaneNavHost(
+                    navController = navController,
                     state = state,
                     dispatch = dispatch,
+                    art = art,
+                    navTo = ::navTo,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -181,9 +259,21 @@ fun DmtScreen(
 
                 if (state.nowPlayingId != null && !imeVisible) {
                     MiniPlayerAnchor(state) { miniAnchor = it }
+                    Spacer(modifier = Modifier.height(14.dp))
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                if (!imeVisible) {
+                    BottomNav(
+                        route = route,
+                        fraction = { sheetFraction.value },
+                        onNav = ::navTo,
+                    )
+                }
+                Spacer(modifier = Modifier.height(14.dp))
             }
+        }
+
+        BackHandler(enabled = backAction != null) {
+            backAction?.let(dispatch)
         }
 
         PlayerSheet(
@@ -191,6 +281,7 @@ fun DmtScreen(
             dispatch = dispatch,
             anchor = miniAnchor,
             hidden = imeVisible && !state.expanded,
+            fraction = sheetFraction,
             onInfo = { showInfoSheet = true },
             onQueue = { showQueueSheet = true },
         )
@@ -235,41 +326,111 @@ fun DmtScreen(
 }
 
 @Composable
-private fun MiniPlayerAnchor(
+private fun PaneNavHost(
+    navController: NavHostController,
     state: DmtState,
-    onAnchor: (Rect) -> Unit,
+    dispatch: (DmtAction) -> Unit,
+    art: suspend (Track) -> Bitmap,
+    navTo: (NavItem) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { onAnchor(it.boundsInRoot()) }
-            .alpha(0f)
-            .clearAndSetSemantics {},
+    fun openLibrary(view: DmtView) {
+        navTo(NavItem(R.string.nav_library, ROUTE_LIBRARY, view))
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination = ROUTE_HOME,
+        modifier = modifier,
     ) {
-        MiniPlayer(state = state, dispatch = {})
+        composable(ROUTE_HOME) {
+            ScrollMemory(ROUTE_HOME) {
+                HomePane(
+                    state = state,
+                    dispatch = dispatch,
+                    art = art,
+                    onOpenAlbum = { name ->
+                        openLibrary(DmtView.ALBUMS)
+                        dispatch(DmtAction.OpenAlbum(name))
+                    },
+                    onOpenAlbums = { openLibrary(DmtView.ALBUMS) },
+                    onOpenTracks = { openLibrary(DmtView.LIBRARY) },
+                    onOpenArtist = { name ->
+                        openLibrary(DmtView.ARTISTS)
+                        dispatch(DmtAction.OpenArtist(name))
+                    },
+                    onOpenArtists = { openLibrary(DmtView.ARTISTS) },
+                )
+            }
+        }
+        composable(ROUTE_LIBRARY) {
+            Column {
+                TabsRow(state, dispatch)
+                SectionPane(
+                    state = state,
+                    dispatch = dispatch,
+                    allowed = LIBRARY_VIEWS,
+                    fallback = DmtView.LIBRARY,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        composable(ROUTE_SEARCH) {
+            SearchPane(
+                state = state,
+                dispatch = dispatch,
+                onOpenAlbum = { name ->
+                    openLibrary(DmtView.ALBUMS)
+                    dispatch(DmtAction.OpenAlbum(name))
+                },
+                onOpenArtist = { name ->
+                    openLibrary(DmtView.ARTISTS)
+                    dispatch(DmtAction.OpenArtist(name))
+                },
+            )
+        }
+        composable(ROUTE_SOURCES) {
+            SectionPane(
+                state = state,
+                dispatch = dispatch,
+                allowed = SOURCE_VIEWS,
+                fallback = DmtView.SOURCES,
+            )
+        }
+        composable(ROUTE_CFG) {
+            SectionPane(
+                state = state,
+                dispatch = dispatch,
+                allowed = CFG_VIEWS,
+                fallback = DmtView.SETTINGS,
+            )
+        }
     }
 }
 
 @Composable
-private fun PaneHost(
+private fun SectionPane(
     state: DmtState,
     dispatch: (DmtAction) -> Unit,
+    allowed: Set<DmtView>,
+    fallback: DmtView,
     modifier: Modifier = Modifier,
 ) {
+    val view = if (state.view in allowed) state.view else fallback
     Column(modifier = modifier) {
-        ScrollMemory(state.view.name) {
+        ScrollMemory(view.name) {
             when {
-                state.view == DmtView.STATS -> StatsPane(state, dispatch)
-                state.view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
-                state.view == DmtView.PERMISSIONS -> PermissionsPane(state, dispatch)
-                state.view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
-                state.view == DmtView.SOURCES -> SourcesPane(state, dispatch)
-                state.view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
+                view == DmtView.STATS -> StatsPane(state, dispatch)
+                view == DmtView.BLOCKLIST -> BlocklistPane(state, dispatch)
+                view == DmtView.PERMISSIONS -> PermissionsPane(state, dispatch)
+                view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
+                view == DmtView.SOURCES -> SourcesPane(state, dispatch)
+                view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
                 state.scanning -> Caption(stringResource(R.string.scanning))
-                state.view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
-                state.view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
-                state.view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
-                state.view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
+                view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
+                view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
+                view == DmtView.FOLDERS -> FoldersPane(state, dispatch)
+                view == DmtView.PLAYLISTS -> PlaylistsPane(state, dispatch)
                 else -> LibraryPane(state, dispatch)
             }
         }
@@ -277,7 +438,37 @@ private fun PaneHost(
 }
 
 @Composable
-private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
+private fun BottomNav(
+    route: String,
+    fraction: () -> Float,
+    onNav: (NavItem) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                val f = fraction().coerceIn(0f, 1f)
+                translationY = (size.height + 14.dp.toPx()) * f
+                alpha = 1f - f
+            },
+    ) {
+        NAV_ITEMS.forEach { item ->
+            TuiKey(
+                label = stringResource(item.labelRes),
+                accent = route == item.route,
+                big = true,
+                fill = true,
+                modifier = Modifier.weight(1f),
+            ) {
+                onNav(item)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SideRail(route: String, onNav: (NavItem) -> Unit) {
     Column(
         modifier = Modifier
             .width(IntrinsicSize.Max)
@@ -301,61 +492,47 @@ private fun SideRail(state: DmtState, dispatch: (DmtAction) -> Unit) {
         HorizontalDivider(color = TuiLine, modifier = Modifier.padding(top = 8.dp))
 
         Spacer(modifier = Modifier.height(12.dp))
-        libraryTabs(state).forEachIndexed { index, (label, view) ->
+        NAV_ITEMS.forEachIndexed { index, item ->
             if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             TuiTab(
-                label = label,
-                active = state.view == view,
+                label = stringResource(item.labelRes),
+                active = route == item.route,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                dispatch(DmtAction.Show(view))
+                onNav(item)
             }
         }
         Spacer(modifier = Modifier.weight(1f))
-
-        SourcesTab(state, dispatch, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        ConfigTab(state, dispatch, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 
 @Composable
-private fun SourcesTab(
+private fun MiniPlayerAnchor(
     state: DmtState,
-    dispatch: (DmtAction) -> Unit,
-    modifier: Modifier = Modifier,
+    onAnchor: (Rect) -> Unit,
 ) {
-    val active = state.view == DmtView.SOURCES || state.view == DmtView.SOURCE_LOGIN
-    TuiTab(
-        label = stringResource(R.string.tab_sources),
-        active = active,
-        modifier = modifier,
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { onAnchor(it.boundsInRoot()) }
+            .alpha(0f)
+            .clearAndSetSemantics {},
     ) {
-        dispatch(DmtAction.Show(if (active) DmtView.LIBRARY else DmtView.SOURCES))
+        MiniPlayer(state = state, dispatch = {})
     }
 }
 
-@Composable
-private fun ConfigTab(
-    state: DmtState,
-    dispatch: (DmtAction) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val active = state.view == DmtView.SETTINGS ||
-            state.view == DmtView.STATS ||
-            state.view == DmtView.PERMISSIONS
-    TuiTab(
-        label = stringResource(R.string.cfg),
-        active = active,
-        modifier = modifier,
-    ) {
-        dispatch(DmtAction.Show(if (active) DmtView.LIBRARY else DmtView.SETTINGS))
+private fun pageLabel(route: String): Int =
+    when (route) {
+        ROUTE_LIBRARY -> R.string.page_library
+        ROUTE_SEARCH -> R.string.page_search
+        ROUTE_SOURCES -> R.string.page_sources
+        ROUTE_CFG -> R.string.page_cfg
+        else -> R.string.page_home
     }
-}
 
 @Composable
-private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
+private fun Titlebar(label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -373,10 +550,11 @@ private fun Titlebar(state: DmtState, dispatch: (DmtAction) -> Unit) {
             color = TuiBright,
         )
         HorizontalDivider(color = TuiLine, modifier = Modifier.weight(1f))
-        Spacer(modifier = Modifier.width(10.dp))
-        SourcesTab(state, dispatch)
-        Spacer(modifier = Modifier.width(8.dp))
-        ConfigTab(state, dispatch)
+        Text(
+            text = " $label",
+            style = MaterialTheme.typography.titleMedium,
+            color = TuiBright,
+        )
     }
 }
 
@@ -419,4 +597,3 @@ private fun TabsRow(state: DmtState, dispatch: (DmtAction) -> Unit) {
         }
     }
 }
-
