@@ -71,8 +71,8 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.ui.theme.TuiRaised
 import dev.jyotiraditya.dmt.ui.theme.TuiRed
-import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import dev.jyotiraditya.dmt.util.asTime
 import kotlin.math.abs
 
@@ -651,7 +651,7 @@ private fun QueueFooter(state: DmtState, onQueue: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, TuiLine)
-            .background(TuiSurface.copy(alpha = 0.4f))
+            .background(TuiRaised)
             .tuiClickable(onQueue)
             .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {

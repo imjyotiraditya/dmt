@@ -60,6 +60,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFaint
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
+import dev.jyotiraditya.dmt.ui.theme.TuiRaised
 import dev.jyotiraditya.dmt.ui.theme.TuiSurface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -227,11 +228,11 @@ fun TuiKey(
     val restBg = when {
         bright -> TuiFg
         dark -> TuiBg
-        else -> TuiSurface.copy(alpha = 0.4f)
+        else -> TuiRaised
     }
     val pressText = if (bright) TuiFg else TuiBg
     val pressBorder = if (bright) TuiLine else TuiFg
-    val pressBg = if (bright) TuiSurface.copy(alpha = 0.4f) else TuiFg
+    val pressBg = if (bright) TuiRaised else TuiFg
     Text(
         text = label,
         style = MaterialTheme.typography.labelLarge,
@@ -272,7 +273,7 @@ fun TuiTab(
         color = if (active) TuiBg else TuiDim,
         modifier = modifier
             .border(1.dp, if (active) TuiFg else TuiLine)
-            .background(if (active) TuiFg else TuiSurface.copy(alpha = 0.4f))
+            .background(if (active) TuiFg else TuiRaised)
             .tuiClickable(onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp),
     )
@@ -305,7 +306,7 @@ fun TuiStatus(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .border(1.dp, lerp(TuiLine, TuiFg, press.fraction))
-            .background(lerp(TuiSurface.copy(alpha = 0.4f), TuiFg, press.fraction))
+            .background(lerp(TuiRaised, TuiFg, press.fraction))
             .clickable(
                 interactionSource = press.interactionSource,
                 indication = null,

@@ -43,7 +43,7 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
 import dev.jyotiraditya.dmt.ui.theme.TuiBg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
-import dev.jyotiraditya.dmt.ui.theme.TuiSurface
+import dev.jyotiraditya.dmt.ui.theme.TuiRaised
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -185,7 +185,7 @@ fun PlayerSheet(
                 }
                 .drawBehind {
                     val f = fraction.value
-                    drawRect(lerp(TuiSurface.copy(alpha = 0.4f), TuiBg, f))
+                    drawRect(lerp(TuiRaised, TuiBg, f))
                     if (f < 1f) {
                         val inset = 0.5.dp.toPx()
                         drawRect(

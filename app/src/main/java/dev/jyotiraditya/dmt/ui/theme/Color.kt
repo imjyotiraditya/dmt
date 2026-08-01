@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 val TuiBg = Color(0xFF000000)
 val TuiSurface = Color(0xFF131415)
+val TuiRaised = Color(0xFF080808)
 val TuiFg = Color(0xFFC6CBCC)
 val TuiBright = Color(0xFFDFE4E5)
 val TuiDim = Color(0xFF767D80)
