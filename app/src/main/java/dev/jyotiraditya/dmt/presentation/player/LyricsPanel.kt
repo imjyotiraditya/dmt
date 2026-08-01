@@ -54,7 +54,6 @@ fun LyricsPanel(
     durationMs: Long,
     isPlaying: Boolean,
     romanized: Boolean,
-    contentAspect: Float,
     onSeekFraction: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -80,10 +79,7 @@ fun LyricsPanel(
     }
 
     TuiPanel(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .aspectRatio(contentAspect),
-        ) {
+        Box {
             LazyColumn(state = listState) {
                 itemsIndexed(lyrics.lines) { _, line ->
                     LyricLineRows(

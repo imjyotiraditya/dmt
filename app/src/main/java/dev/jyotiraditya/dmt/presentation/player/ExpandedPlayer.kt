@@ -163,9 +163,14 @@ private fun PortraitPlayer(
                     .padding(top = 14.dp)
                     .fillMaxWidth(),
             ) {
+                val lyricsShown = showLyrics && state.lyrics != null
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.aspectRatio(1f),
+                    modifier = if (lyricsShown) {
+                        Modifier.fillMaxSize()
+                    } else {
+                        Modifier.aspectRatio(1f)
+                    },
                 ) {
                     ArtSlot(state, dispatch, showLyrics)
                 }
@@ -341,7 +346,6 @@ private fun ArtSlot(
 ) {
     val lyrics = state.lyrics
     if (showLyrics && lyrics != null) {
-        val aspect = state.cover?.let { it.width.toFloat() / it.height } ?: 1f
         LyricsPanel(
             lyrics = lyrics,
             trackId = state.nowPlayingId,
@@ -349,7 +353,6 @@ private fun ArtSlot(
             durationMs = state.durationMs,
             isPlaying = state.isPlaying,
             romanized = state.settings.romanizedLyrics,
-            contentAspect = aspect,
             onSeekFraction = {
                 dispatch(DmtAction.Seek(it))
                 if (!state.isPlaying) dispatch(DmtAction.TogglePlay)
