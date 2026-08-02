@@ -4,14 +4,20 @@ import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Environment
 import android.provider.MediaStore
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.data.source.local.file.FileTracks
 import dev.jyotiraditya.dmt.data.source.local.cue.CueLibrary
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,6 +44,7 @@ class MediaRepositoryImpl @Inject constructor(
         MediaStore.Audio.Media.DATE_MODIFIED,
     )
 
+    @OptIn(UnstableApi::class)
     override suspend fun scan(): List<Track> {
         val blocked = settingsRepository.settings.first().blockedFolders
         val base = buildList {
@@ -56,7 +63,11 @@ class MediaRepositoryImpl @Inject constructor(
                 }
             }
         }
-        return CueLibrary.expand(base).sortedBy { it.title.lowercase() }
+        val files = withContext(Dispatchers.IO) {
+            FileTracks.scan(context, Environment.getExternalStorageDirectory(), blocked)
+        }
+
+        return CueLibrary.expand(base + files).sortedBy { it.title.lowercase() }
     }
 }
 

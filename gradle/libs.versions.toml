@@ -34,6 +34,7 @@ androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplaye
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
 androidx-media3-exoplayer-midi = { group = "androidx.media3", name = "media3-exoplayer-midi", version.ref = "media3" }
 androidx-media3-decoder-ffmpeg = { group = "androidx.media3", name = "media3-decoder-ffmpeg", version.ref = "media3" }
+androidx-media3-inspector = { group = "androidx.media3", name = "media3-inspector", version.ref = "media3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

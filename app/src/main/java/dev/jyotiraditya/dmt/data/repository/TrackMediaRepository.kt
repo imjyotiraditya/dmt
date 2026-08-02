@@ -124,9 +124,11 @@ class TrackMediaRepository @Inject constructor(
             }
         }
         played?.averageBitrate?.takeIf { it > 0 && bitrate <= 0 }?.let { bitrate = it }
+        played?.sampleRate?.takeIf { it > 0 && sampleRate == null }?.let { sampleRate = it }
+        played?.channelCount?.takeIf { it > 0 && channels == null }?.let { channels = it }
 
         return buildList {
-            val cueTrack = track?.takeIf { it.id < 0 }
+            val cueTrack = track?.takeIf { it.cue }
             if (mime.isNotEmpty()) {
                 add(
                     Spec(

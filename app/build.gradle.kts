@@ -109,6 +109,7 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer.midi)
     implementation(libs.androidx.media3.decoder.ffmpeg)
+    implementation(libs.androidx.media3.inspector)
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

@@ -27,6 +27,7 @@ object CueLibrary {
             val durationMs = endMs - cue.startMs
             track.copy(
                 id = -(track.id * VIRTUAL_ID_STRIDE + cue.number),
+                cue = true,
                 title = cue.title ?: "${track.title} #${cue.number}",
                 artist = cue.performer ?: sheet.performer ?: track.artist,
                 albumArtist = sheet.performer ?: track.albumArtist,

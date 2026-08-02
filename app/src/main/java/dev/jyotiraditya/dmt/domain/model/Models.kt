@@ -26,6 +26,7 @@ data class Track(
     val remoteId: String? = null,
     val clipStartMs: Long? = null,
     val clipEndMs: Long? = null,
+    val cue: Boolean = false,
 )
 
 @Immutable
