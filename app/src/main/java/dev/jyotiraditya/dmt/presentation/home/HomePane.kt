@@ -45,7 +45,6 @@ import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import dev.jyotiraditya.dmt.ui.theme.TuiLine
 
-private const val SHELF_SIZE = 12
 
 @Composable
 fun HomePane(
@@ -67,48 +66,22 @@ fun HomePane(
         return
     }
 
-    val counts = state.stats.counts
-    val topTracks = remember(state.tracks, counts) {
-        state.tracks
-            .sortedWith(
-                compareByDescending<Track> { counts[it.id] ?: 0 }
-                    .thenByDescending { it.dateAdded },
-            )
-            .take(SHELF_SIZE)
-    }
-    val topAlbums = remember(state.albums, counts) {
-        state.albums
-            .sortedByDescending { album -> album.tracks.sumOf { counts[it.id] ?: 0 } }
-            .take(SHELF_SIZE)
-    }
-    val topArtists = remember(state.artists, counts) {
-        state.artists
-            .sortedByDescending { artist -> artist.tracks.sumOf { counts[it.id] ?: 0 } }
-            .take(SHELF_SIZE)
-    }
-    val freshTracks = remember(state.tracks, counts) {
-        val topIds = topTracks.mapTo(HashSet()) { it.id }
-        state.tracks
-            .filterNot { it.id in topIds }
-            .sortedWith(
-                compareBy<Track> { counts[it.id] ?: 0 }
-                    .thenByDescending { it.dateAdded },
-            )
-            .take(SHELF_SIZE)
-    }
+    val home = state.home
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        Text(
-            text = stringResource(R.string.home_favourites),
-            style = MaterialTheme.typography.titleLarge,
-            color = TuiBright,
-            modifier = Modifier.padding(top = 14.dp, bottom = 6.dp),
-        )
+        if (home.hasFavourites) {
+            Text(
+                text = stringResource(R.string.home_favourites),
+                style = MaterialTheme.typography.titleLarge,
+                color = TuiBright,
+                modifier = Modifier.padding(top = 14.dp, bottom = 6.dp),
+            )
+        }
 
-        if (topAlbums.isNotEmpty()) {
+        if (home.albums.isNotEmpty()) {
             ShelfHeader(label = stringResource(R.string.home_albums), onMore = onOpenAlbums)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(topAlbums, key = { it.name }) { album ->
+                items(home.albums, key = { it.name }) { album ->
                     AlbumCard(album = album, art = art, artKey = state.settings.rawArt) {
                         onOpenAlbum(album.name)
                     }
@@ -116,33 +89,10 @@ fun HomePane(
             }
         }
 
-        ShelfHeader(label = stringResource(R.string.home_tracks), onMore = onOpenTracks)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            itemsIndexed(topTracks, key = { _, track -> track.id }) { index, track ->
-                TrackCard(track = track, art = art, artKey = state.settings.rawArt) {
-                    dispatch(DmtAction.PlayAt(topTracks, index))
-                }
-            }
-        }
-
-        if (freshTracks.isNotEmpty() || topArtists.isNotEmpty()) {
-            HorizontalDivider(
-                color = TuiLine,
-                modifier = Modifier.padding(top = 18.dp),
-            )
-            Text(
-                text = stringResource(R.string.home_try_new),
-                style = MaterialTheme.typography.titleLarge,
-                color = TuiBright,
-                modifier = Modifier.padding(top = 14.dp),
-            )
-            Caption(stringResource(R.string.home_try_new_hint))
-        }
-
-        if (topArtists.isNotEmpty()) {
+        if (home.artists.isNotEmpty()) {
             ShelfHeader(label = stringResource(R.string.home_artists), onMore = onOpenArtists)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(topArtists, key = { it.name }) { artist ->
+                items(home.artists, key = { it.name }) { artist ->
                     ArtistCard(artist = artist, art = art, artKey = state.settings.rawArt) {
                         onOpenArtist(artist.name)
                     }
@@ -150,12 +100,36 @@ fun HomePane(
             }
         }
 
-        if (freshTracks.isNotEmpty()) {
+        if (home.tracks.isNotEmpty()) {
             ShelfHeader(label = stringResource(R.string.home_tracks), onMore = onOpenTracks)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                itemsIndexed(freshTracks, key = { _, track -> track.id }) { index, track ->
+                itemsIndexed(home.tracks, key = { _, track -> track.id }) { index, track ->
                     TrackCard(track = track, art = art, artKey = state.settings.rawArt) {
-                        dispatch(DmtAction.PlayAt(freshTracks, index))
+                        dispatch(DmtAction.PlayAt(home.tracks, index))
+                    }
+                }
+            }
+        }
+
+        if (home.fresh.isNotEmpty()) {
+            if (home.hasFavourites) {
+                HorizontalDivider(
+                    color = TuiLine,
+                    modifier = Modifier.padding(top = 18.dp),
+                )
+            }
+            Text(
+                text = stringResource(R.string.home_try_new),
+                style = MaterialTheme.typography.titleLarge,
+                color = TuiBright,
+                modifier = Modifier.padding(top = 14.dp),
+            )
+            Caption(stringResource(R.string.home_try_new_hint))
+            ShelfHeader(label = stringResource(R.string.home_tracks), onMore = onOpenTracks)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                itemsIndexed(home.fresh, key = { _, track -> track.id }) { index, track ->
+                    TrackCard(track = track, art = art, artKey = state.settings.rawArt) {
+                        dispatch(DmtAction.PlayAt(home.fresh, index))
                     }
                 }
             }

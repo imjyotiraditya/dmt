@@ -34,6 +34,7 @@ import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.homeShelves
 import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
@@ -114,7 +115,7 @@ class PlayerViewModel @Inject constructor(
         }
         viewModelScope.launch {
             preferencesRepository.stats.collect { stats ->
-                reduce { if (it.stats == stats) it else it.copy(stats = stats) }
+                reduce { if (it.stats == stats) it else it.copy(stats = stats).withHome() }
             }
         }
         viewModelScope.launch {
@@ -531,11 +532,14 @@ class PlayerViewModel @Inject constructor(
                     filteredArtists = filteredArtists,
                     filteredFolders = filteredFolders,
                     error = null,
-                )
+                ).withHome()
             }
             mutatePlaylists()
             restoreSession()
         }
+
+    private fun DmtState.withHome(): DmtState =
+        copy(home = homeShelves(tracks, albums, artists, stats.counts))
 
     private fun restoreSession() {
         if (sessionRestored) return

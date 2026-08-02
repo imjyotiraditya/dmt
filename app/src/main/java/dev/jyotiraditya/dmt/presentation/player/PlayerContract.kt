@@ -8,6 +8,7 @@ import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.Folder
+import dev.jyotiraditya.dmt.domain.model.HomeShelves
 import dev.jyotiraditya.lyrics.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
@@ -62,6 +63,7 @@ data class DmtState(
     val settings: DmtSettings = DmtSettings(),
     val settingsLoaded: Boolean = false,
     val stats: DmtStats = DmtStats(),
+    val home: HomeShelves = HomeShelves(),
     val tech: List<Spec> = emptyList(),
     val route: List<Spec> = emptyList(),
     val fault: String? = null,
