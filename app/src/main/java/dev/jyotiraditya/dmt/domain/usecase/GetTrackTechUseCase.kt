@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.domain.usecase
 
 import android.net.Uri
+import androidx.media3.common.Format
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.data.repository.TrackMediaRepository
@@ -11,8 +12,8 @@ import javax.inject.Inject
 class GetTrackTechUseCase @Inject constructor(
     private val trackMediaRepository: TrackMediaRepository,
 ) {
-    suspend operator fun invoke(uri: Uri, track: Track?): List<Spec> =
+    suspend operator fun invoke(uri: Uri, track: Track?, played: Format?): List<Spec> =
         withContext(Dispatchers.IO) {
-            trackMediaRepository.techSpecs(uri, track)
+            trackMediaRepository.techSpecs(uri, track, played)
         }
 }

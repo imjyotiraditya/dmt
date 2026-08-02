@@ -44,6 +44,7 @@ import dev.jyotiraditya.dmt.playback.PlaybackService
 import dev.jyotiraditya.dmt.util.audioPermission
 import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.mediaController
+import dev.jyotiraditya.dmt.util.playedAudioFormat
 import dev.jyotiraditya.dmt.util.queueWithPosition
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
@@ -448,7 +449,9 @@ class PlayerViewModel @Inject constructor(
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            if (tracks.groups.isEmpty() || tracks.isTypeSupported(C.TRACK_TYPE_AUDIO)) return
+            if (tracks.groups.isEmpty()) return
+            loadTech(controller?.currentMediaItem)
+            if (tracks.isTypeSupported(C.TRACK_TYPE_AUDIO)) return
             controller?.pause()
             reduce {
                 val format = currentState.tech
@@ -680,7 +683,8 @@ class PlayerViewModel @Inject constructor(
         techJob?.cancel()
         techJob = viewModelScope.launch {
             val track = currentState.tracks.find { t -> t.id.toString() == id }
-            val tech = uri?.let { getTrackTech(it, track) }.orEmpty()
+            val played = controller?.currentTracks?.playedAudioFormat()
+            val tech = uri?.let { getTrackTech(it, track, played) }.orEmpty()
             reduce {
                 if (it.nowPlayingId != id) it else it.copy(tech = tech)
             }

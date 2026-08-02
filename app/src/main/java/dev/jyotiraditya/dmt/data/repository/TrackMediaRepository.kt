@@ -13,6 +13,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
+import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.MediaFormatUtil
 import androidx.media3.common.util.UnstableApi
@@ -42,7 +43,7 @@ class TrackMediaRepository @Inject constructor(
 ) {
 
     @OptIn(UnstableApi::class)
-    fun techSpecs(uri: Uri, track: Track?): List<Spec> {
+    fun techSpecs(uri: Uri, track: Track?, played: Format?): List<Spec> {
         if (track?.source == TrackSource.JELLYFIN) {
             return buildList {
                 if (track.mime.isNotEmpty()) {
@@ -115,6 +116,15 @@ class TrackMediaRepository @Inject constructor(
                 }
             }
         }
+        played?.sampleMimeType?.let {
+            if (it != mime && it != MimeTypes.AUDIO_RAW) {
+                mime = it
+                codec = null
+                vbr = false
+            }
+        }
+        played?.averageBitrate?.takeIf { it > 0 && bitrate <= 0 }?.let { bitrate = it }
+
         return buildList {
             val cueTrack = track?.takeIf { it.id < 0 }
             if (mime.isNotEmpty()) {

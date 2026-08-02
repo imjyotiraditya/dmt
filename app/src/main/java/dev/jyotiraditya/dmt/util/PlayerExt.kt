@@ -5,10 +5,12 @@ import android.content.Context
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import dev.jyotiraditya.dmt.domain.model.LastSession
@@ -129,6 +131,11 @@ fun String.codecLabel(): String =
         contains("raw", true) -> "PCM"
         contains("aiff", true) -> "AIFF"
         contains("dsd", true) -> "DSD"
+        contains("dts", true) -> "DTS"
+        contains("ac4", true) -> "AC-4"
+        contains("eac3", true) -> "E-AC-3"
+        contains("ac3", true) -> "AC-3"
+        contains("true-hd", true) -> "TRUEHD"
         else -> substringAfterLast('/').uppercase().take(8)
     }
 
@@ -179,3 +186,8 @@ fun Long.asMB(): String {
     val tenths = Math.round(this / 1048576.0 * 10)
     return "${tenths / 10}.${tenths % 10}MB"
 }
+
+fun Tracks.playedAudioFormat(): Format? =
+    groups
+        .firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
+        ?.getTrackFormat(0)
