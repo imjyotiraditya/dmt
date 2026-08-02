@@ -228,17 +228,19 @@ fun PlayerSheet(
                     }
                 },
             ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .height(with(LocalDensity.current) { miniHeightPx.toDp() })
-                        .zIndex(if (miniOnTop) 1f else 0f)
-                        .graphicsLayer {
-                            alpha = (1f - fraction.value * 2f).coerceIn(0f, 1f)
-                        },
-                ) {
-                    MiniPlayer(state = state, dispatch = dispatch)
+                if (miniOnTop) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(with(LocalDensity.current) { miniHeightPx.toDp() })
+                            .zIndex(1f)
+                            .graphicsLayer {
+                                alpha = (1f - fraction.value * 2f).coerceIn(0f, 1f)
+                            },
+                    ) {
+                        MiniPlayer(state = state, dispatch = dispatch)
+                    }
                 }
                 if (renderFull) {
                     Box(
