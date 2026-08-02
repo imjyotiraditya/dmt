@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -11,6 +12,8 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.Tracks
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.util.Util
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import dev.jyotiraditya.dmt.domain.model.LastSession
@@ -112,12 +115,9 @@ fun MediaController.queueWithPosition(): Pair<List<QueueEntry>, Int> {
     return entries to entries.indexOfFirst { it.index == currentMediaItemIndex }
 }
 
-fun Long.asTime(): String {
-    val totalSeconds = (this / 1000).coerceAtLeast(0)
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return if (seconds < 10) "$minutes:0$seconds" else "$minutes:$seconds"
-}
+@OptIn(UnstableApi::class)
+fun Long.asTime(): String =
+    Util.getStringForTime(coerceAtLeast(0))
 
 fun String.codecLabel(): String =
     when {
