@@ -23,6 +23,7 @@ import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.util.asKHz
 import dev.jyotiraditya.dmt.util.asMB
+import dev.jyotiraditya.dmt.util.asTime
 import dev.jyotiraditya.dmt.util.codecLabel
 import dev.jyotiraditya.dmt.util.heAacLabel
 import dev.jyotiraditya.dmt.util.probeFrames
@@ -115,6 +116,7 @@ class TrackMediaRepository @Inject constructor(
             }
         }
         return buildList {
+            val cueTrack = track?.takeIf { it.id < 0 }
             if (mime.isNotEmpty()) {
                 add(
                     Spec(
@@ -173,6 +175,28 @@ class TrackMediaRepository @Inject constructor(
                     Spec(
                         label = "SIZE",
                         value = it.asMB(),
+                    ),
+                )
+            }
+            cueTrack?.let {
+                add(
+                    Spec(
+                        label = "SRC",
+                        value = "CUE",
+                    ),
+                )
+                add(
+                    Spec(
+                        label = "IMAGE",
+                        value = it.path.substringAfterLast('/'),
+                    ),
+                )
+                val start = it.clipStartMs ?: 0L
+                val end = it.clipEndMs ?: (start + it.durationMs)
+                add(
+                    Spec(
+                        label = "CLIP",
+                        value = "${start.asTime()} - ${end.asTime()}",
                     ),
                 )
             }

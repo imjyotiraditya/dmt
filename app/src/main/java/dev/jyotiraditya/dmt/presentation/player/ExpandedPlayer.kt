@@ -76,7 +76,7 @@ import dev.jyotiraditya.dmt.ui.theme.TuiRed
 import dev.jyotiraditya.dmt.util.asTime
 import kotlin.math.abs
 
-private val PLAYER_CHIP_LABELS = setOf("FMT", "BIT", "RATE", "KBPS", "VBR")
+private val PLAYER_CHIP_LABELS = setOf("FMT", "BIT", "RATE", "KBPS", "VBR", "SRC")
 
 @Composable
 fun ExpandedPlayer(

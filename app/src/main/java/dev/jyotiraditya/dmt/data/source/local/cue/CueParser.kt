@@ -82,10 +82,12 @@ object CueParser {
 
                 "TRACK" -> {
                     closeTrack()
-                    trackNumber = TRACK_HEADER.matchEntire(rest)
-                        ?.groupValues
+                    val header = TRACK_HEADER.matchEntire(rest)?.groupValues
+                    val mode = header?.get(2).orEmpty().uppercase()
+                    trackNumber = header
                         ?.get(1)
                         ?.toIntOrNull()
+                        ?.takeIf { mode.isEmpty() || mode == "AUDIO" }
                 }
 
                 "TITLE" ->
