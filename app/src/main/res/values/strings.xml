@@ -147,6 +147,9 @@
     <string name="queued">queued: %1$s</string>
     <string name="playback_error">playback error: %1$s</string>
     <string name="playback_unsupported">no decoder for %1$s on this device</string>
+    <string name="notif_resume_channel">playback</string>
+    <string name="notif_resume_title">dmt could not start</string>
+    <string name="notif_resume_text">android blocked playback from starting in the background. tap to open dmt and press play.</string>
     <string name="set_rescan">rescan library</string>
     <string name="action_play">play</string>
     <string name="action_queue">queue</string>

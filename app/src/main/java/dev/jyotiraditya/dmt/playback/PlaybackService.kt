@@ -32,6 +32,10 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
+import android.content.pm.PackageManager
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -47,6 +51,8 @@ import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
+import androidx.core.content.ContextCompat
+import dev.jyotiraditya.dmt.util.notificationPermission
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.metadata.AudioTags
@@ -72,6 +78,8 @@ private const val ARTISTS_ID = "artists"
 private const val ARTIST_PREFIX = "artist/"
 private const val FOLDERS_ID = "folders"
 private const val FOLDER_PREFIX = "folder/"
+private const val RESUME_CHANNEL_ID = "resume"
+private const val RESUME_NOTIFICATION_ID = 2
 
 @AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
@@ -133,6 +141,7 @@ class PlaybackService : MediaLibraryService() {
                 handleAudioFocus,
             )
             .setHandleAudioBecomingNoisy(true)
+            .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
         val keepPlaybackHistory = false
         player.addAnalyticsListener(
@@ -149,6 +158,13 @@ class PlaybackService : MediaLibraryService() {
                         .toLongOrNull()
                 }.getOrNull()
                 recordStats(playedMs, mediaId)
+            },
+        )
+        setListener(
+            object : Listener {
+                override fun onForegroundServiceStartNotAllowedException() {
+                    notifyResumeBlocked()
+                }
             },
         )
         player.addListener(
@@ -188,14 +204,7 @@ class PlaybackService : MediaLibraryService() {
         val artworkLoader = DataSourceBitmapLoader.Builder(this).build()
         mediaSession = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .setBitmapLoader(FreshCopyBitmapLoader(CacheBitmapLoader(artworkLoader)))
-            .setSessionActivity(
-                PendingIntent.getActivity(
-                    this,
-                    0,
-                    Intent(this, MainActivity::class.java),
-                    PendingIntent.FLAG_IMMUTABLE,
-                ),
-            )
+            .setSessionActivity(sessionActivity())
             .setMediaButtonPreferences(sessionButtons(player))
             .build()
         scope.launch {
@@ -739,6 +748,7 @@ class PlaybackService : MediaLibraryService() {
 
     @OptIn(UnstableApi::class)
     override fun onDestroy() {
+        clearListener()
         (mediaSession?.player as? ExoPlayer)?.let {
             broadcastEffectSession(
                 AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION,
@@ -752,6 +762,43 @@ class PlaybackService : MediaLibraryService() {
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    private fun sessionActivity(): PendingIntent =
+        PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    private fun notifyResumeBlocked() {
+        val permission = notificationPermission
+        if (permission != null &&
+            ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        val manager = NotificationManagerCompat.from(this)
+        if (!manager.areNotificationsEnabled()) return
+
+        manager.createNotificationChannel(
+            NotificationChannelCompat.Builder(
+                RESUME_CHANNEL_ID,
+                NotificationManagerCompat.IMPORTANCE_DEFAULT,
+            ).setName(getString(R.string.notif_resume_channel)).build(),
+        )
+        manager.notify(
+            RESUME_NOTIFICATION_ID,
+            NotificationCompat.Builder(this, RESUME_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_dmt)
+                .setContentTitle(getString(R.string.notif_resume_title))
+                .setContentText(getString(R.string.notif_resume_text))
+                .setContentIntent(sessionActivity())
+                .setAutoCancel(true)
+                .build(),
+        )
     }
 
     private fun broadcastEffectSession(action: String, sessionId: Int) {
