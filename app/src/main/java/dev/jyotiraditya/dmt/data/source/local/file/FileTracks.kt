@@ -4,8 +4,11 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.source.TrackGroupArray
 import androidx.media3.inspector.MetadataRetriever
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
@@ -42,42 +45,53 @@ object FileTracks {
             .filter { it.isFile && it.extension.lowercase() in MIME_TYPES }
             .filterNot { it.parentFile?.absolutePath in blocked }
             .toList()
-            .map { it.toTrack(durationMs(context, it.toUri())) }
+            .map { it.toTrack(context.probe(it.toUri())) }
     }
 
     private fun File.isScannable(skipped: List<File>): Boolean =
         this !in skipped && !name.startsWith('.') && !File(this, NO_MEDIA).exists()
 
-    private fun File.toTrack(durationMs: Long): Track {
+    private fun File.toTrack(probed: Probed): Track {
         val size = length()
+        val tags = probed.tags
 
         return Track(
             id = ID_BASE - absolutePath.hashCode().toLong().absoluteValue,
             uri = toUri(),
-            title = nameWithoutExtension,
-            artist = "unknown artist",
-            album = parentFile?.name ?: "unknown album",
+            title = tags?.title?.toString() ?: nameWithoutExtension,
+            artist = tags?.artist?.toString() ?: "unknown artist",
+            album = tags?.albumTitle?.toString() ?: parentFile?.name ?: "unknown album",
             path = absolutePath,
-            durationMs = durationMs,
+            durationMs = probed.durationMs,
             mime = MIME_TYPES.getValue(extension.lowercase()),
-            bitrate = bitrate(size, durationMs),
+            bitrate = bitrate(size, probed.durationMs),
             size = size,
-            trackNumber = 0,
+            trackNumber = tags?.trackNumber ?: 0,
             dateAdded = lastModified() / MILLIS_PER_SECOND,
             dateModified = lastModified() / MILLIS_PER_SECOND,
             source = TrackSource.LOCAL,
         )
     }
 
-    private suspend fun durationMs(context: Context, uri: Uri): Long =
-        runCatching {
-            MetadataRetriever.Builder(context, MediaItem.fromUri(uri))
-                .build()
-                .use { it.retrieveDurationUs().await() }
-        }.getOrNull()
-            ?.takeIf { it != C.TIME_UNSET }
-            ?.div(MICROS_PER_MILLI)
-            ?: 0L
+    private suspend fun Context.probe(uri: Uri): Probed = runCatching {
+        MetadataRetriever.Builder(this, MediaItem.fromUri(uri)).build().use { retriever ->
+            val durationUs = retriever.retrieveDurationUs().await()
+            val metadata = retriever.retrieveTrackGroups().await().formats().mapNotNull { it.metadata }
+
+            Probed(
+                durationMs = durationUs.takeIf { it != C.TIME_UNSET }?.div(MICROS_PER_MILLI) ?: 0L,
+                tags = metadata.takeIf { it.isNotEmpty() }
+                    ?.let { MediaMetadata.Builder().populateFromMetadata(it).build() },
+            )
+        }
+    }.getOrDefault(Probed())
+
+    private fun TrackGroupArray.formats(): List<Format> =
+        (0 until length).flatMap { group ->
+            get(group).let { tracks -> (0 until tracks.length).map(tracks::getFormat) }
+        }
+
+    private data class Probed(val durationMs: Long = 0L, val tags: MediaMetadata? = null)
 
     private fun bitrate(size: Long, durationMs: Long): Int =
         if (durationMs > 0) (size * BITS_PER_BYTE * MILLIS_PER_SECOND / durationMs).toInt() else 0
