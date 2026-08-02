@@ -3,12 +3,12 @@ package dev.jyotiraditya.dmt.util
 import android.content.ComponentName
 import android.content.Context
 import android.media.MediaExtractor
-import android.media.MediaFormat
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.Tracks
@@ -20,7 +20,6 @@ import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.playback.PlaybackService
-import java.nio.ByteBuffer
 import kotlinx.coroutines.guava.await
 
 fun LastSession.resolveQueue(tracks: List<Track>): Triple<List<Track>, Int, Long>? {
@@ -143,30 +142,13 @@ fun String.codecLabel(): String =
         else -> substringAfterLast('/').uppercase().take(8)
     }
 
-fun MediaFormat.heAacLabel(): String? =
-    getByteBuffer("csd-0")?.heAacLabel()
-
-private fun ByteBuffer.heAacLabel(): String? {
-    val base = position()
-    if (remaining() < 1) return null
-
-    return when ((get(base).toInt() and 0xFF) ushr 3) {
-        5 -> "HE-AAC"
-
-        29 -> "HE-AACv2"
-
-        2 -> {
-            if (remaining() < 5) return null
-            val sync = ((get(base + 2).toInt() and 0xFF) shl 3) or
-                    ((get(base + 3).toInt() and 0xFF) ushr 5)
-            val extType = get(base + 3).toInt() and 0x1F
-            val sbr = get(base + 4).toInt() and 0x80 != 0
-            if (sync == 0x2B7 && extType == 5 && sbr) "HE-AAC" else null
-        }
-
+@OptIn(UnstableApi::class)
+fun Format.heAacLabel(): String? =
+    when (MimeTypes.getEncoding(sampleMimeType.orEmpty(), codecs)) {
+        C.ENCODING_AAC_HE_V2 -> "HE-AACv2"
+        C.ENCODING_AAC_HE_V1 -> "HE-AAC"
         else -> null
     }
-}
 
 fun MediaExtractor.probeFrames(limit: Int): List<Int> = runCatching {
     selectTrack(0)

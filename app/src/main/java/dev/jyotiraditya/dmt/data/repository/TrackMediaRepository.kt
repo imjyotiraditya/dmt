@@ -72,9 +72,6 @@ class TrackMediaRepository @Inject constructor(
             format.getString(MediaFormat.KEY_MIME)?.let {
                 if (mime.isEmpty() || it != MimeTypes.AUDIO_RAW) mime = it
             }
-            if (mime == MimeTypes.AUDIO_AAC) {
-                codec = format.heAacLabel()
-            }
             if (mime == MimeTypes.AUDIO_AAC || mime == MimeTypes.AUDIO_MPEG) {
                 val frames = extractor.probeFrames(VBR_PROBE_FRAMES)
                 val steady = frames.drop(VBR_PROBE_SKIP)
@@ -122,6 +119,9 @@ class TrackMediaRepository @Inject constructor(
                 codec = null
                 vbr = false
             }
+        }
+        if (mime == MimeTypes.AUDIO_AAC) {
+            codec = played?.heAacLabel()
         }
         played?.averageBitrate?.takeIf { it > 0 && bitrate <= 0 }?.let { bitrate = it }
         played?.sampleRate?.takeIf { it > 0 && sampleRate == null }?.let { sampleRate = it }
