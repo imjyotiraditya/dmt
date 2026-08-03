@@ -33,6 +33,5 @@ dependencyResolutionManagement {
 rootProject.name = "DMT"
 include(":app")
 include(":library")
-include(":metadata")
 include(":lyrics")
 include(":baselineprofile")

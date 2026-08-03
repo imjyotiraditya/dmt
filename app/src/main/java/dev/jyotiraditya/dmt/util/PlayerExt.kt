@@ -2,7 +2,6 @@ package dev.jyotiraditya.dmt.util
 
 import android.content.ComponentName
 import android.content.Context
-import android.media.MediaExtractor
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -149,18 +148,6 @@ fun Format.heAacLabel(): String? =
         C.ENCODING_AAC_HE_V1 -> "HE-AAC"
         else -> null
     }
-
-fun MediaExtractor.probeFrames(limit: Int): List<Int> = runCatching {
-    selectTrack(0)
-    buildList {
-        while (size < limit) {
-            val bytes = sampleSize.toInt()
-            if (bytes <= 0) break
-            add(bytes)
-            if (!advance()) break
-        }
-    }
-}.getOrDefault(emptyList())
 
 fun Int.asKHz(): String {
     if (this % 1000 == 0) return "${this / 1000}K"

@@ -7,16 +7,11 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.MediaCodecList
-import android.media.MediaExtractor
-import android.media.MediaFormat
-import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.util.MediaFormatUtil
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.decoder.ffmpeg.FfmpegLibrary
@@ -24,20 +19,17 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
+import dev.jyotiraditya.dmt.library.MetadataReader
 import dev.jyotiraditya.dmt.util.asKHz
 import dev.jyotiraditya.dmt.util.asMB
 import dev.jyotiraditya.dmt.util.asTime
 import dev.jyotiraditya.dmt.util.codecLabel
 import dev.jyotiraditya.dmt.util.heAacLabel
-import dev.jyotiraditya.dmt.util.probeFrames
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 import javax.inject.Singleton
-
-private const val VBR_PROBE_SKIP = 4
-private const val VBR_PROBE_FRAMES = 400
 
 @Singleton
 class TrackMediaRepository @Inject constructor(
@@ -45,7 +37,7 @@ class TrackMediaRepository @Inject constructor(
 ) {
 
     @OptIn(UnstableApi::class)
-    fun techSpecs(uri: Uri, track: Track?, played: Format?): List<Spec> {
+    suspend fun techSpecs(uri: Uri, track: Track?, played: Format?): List<Spec> {
         if (track?.source == TrackSource.JELLYFIN) {
             return buildList {
                 if (track.mime.isNotEmpty()) {
@@ -58,79 +50,19 @@ class TrackMediaRepository @Inject constructor(
                 addAll(decoderSpecs(track.mime))
             }
         }
-        var mime = track?.mime.orEmpty()
-        var codec: String? = null
-        var vbr = false
-        var bitrate = track?.bitrate ?: 0
-        var maxBitrate = 0
-        var sampleRate: Int? = null
-        var channels: Int? = null
-        var bits: Int? = null
-        var gapless = false
-        runCatching {
-            val extractor = MediaExtractor()
-            extractor.setDataSource(context, uri, null)
-            val format = extractor.getTrackFormat(0)
-            format.getString(MediaFormat.KEY_MIME)?.let {
-                if (mime.isEmpty() || it != MimeTypes.AUDIO_RAW) mime = it
-            }
-            if (mime == MimeTypes.AUDIO_AAC || mime == MimeTypes.AUDIO_MPEG) {
-                val frames = extractor.probeFrames(VBR_PROBE_FRAMES)
-                val steady = frames.drop(VBR_PROBE_SKIP)
-                vbr = steady.size > 1 && steady.max() > steady.min() * 2
-                if (vbr && (mime == MimeTypes.AUDIO_MPEG || bitrate <= 0) && extractor.sampleTime > 0) {
-                    bitrate = (frames.sum() * 8_000_000L / extractor.sampleTime).toInt()
-                }
-            }
-            if (format.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
-                sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-            }
-            if (format.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) {
-                channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-            }
-            if (bitrate <= 0 && format.containsKey(MediaFormat.KEY_BIT_RATE)) {
-                bitrate = format.getInteger(MediaFormat.KEY_BIT_RATE)
-            }
-            if (format.containsKey(MediaFormatUtil.KEY_MAX_BIT_RATE)) {
-                maxBitrate = format.getInteger(MediaFormatUtil.KEY_MAX_BIT_RATE)
-            }
-            gapless = format.containsKey(MediaFormat.KEY_ENCODER_DELAY) ||
-                    format.containsKey(MediaFormat.KEY_ENCODER_PADDING)
-            extractor.release()
-        }
-        runCatching {
-            MediaMetadataRetriever().use { retriever ->
-                retriever.setDataSource(context, uri)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITS_PER_SAMPLE)
-                        ?.toIntOrNull()?.takeIf { it > 0 }?.let { bits = it }
-                    if (sampleRate == null) {
-                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
-                            ?.toIntOrNull()?.let { sampleRate = it }
-                    }
-                }
-                if (bitrate <= 0) {
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
-                        ?.toIntOrNull()?.let { bitrate = it }
-                }
-            }
-        }
-        played?.sampleMimeType?.let {
-            if (it != mime && it != MimeTypes.AUDIO_RAW) {
-                mime = it
-                codec = null
-                vbr = false
-            }
-        }
-        if (mime == MimeTypes.AUDIO_AAC) {
-            codec = played?.heAacLabel()
-        }
-        played?.averageBitrate?.takeIf { it > 0 && bitrate <= 0 }?.let { bitrate = it }
-        played?.sampleRate?.takeIf { it > 0 && sampleRate == null }?.let { sampleRate = it }
-        played?.channelCount?.takeIf { it > 0 && channels == null }?.let { channels = it }
-        played?.pcmEncoding
-            ?.takeIf { bits == null && it != Format.NO_VALUE && it != C.ENCODING_INVALID }
-            ?.let { bits = Util.getByteDepth(it) * C.BITS_PER_BYTE }
+        val format = played ?: MetadataReader.readFormat(context, uri)
+        val mime = format?.sampleMimeType?.takeIf { it != MimeTypes.AUDIO_RAW }
+            ?: track?.mime.orEmpty()
+        val codec = if (mime == MimeTypes.AUDIO_AAC) format?.heAacLabel() else null
+        val bitrate = format?.averageBitrate?.takeIf { it > 0 } ?: track?.bitrate ?: 0
+        val maxBitrate = format?.peakBitrate?.takeIf { it > 0 } ?: 0
+        val vbr = maxBitrate > bitrate && bitrate > 0
+        val sampleRate = format?.sampleRate?.takeIf { it > 0 }
+        val channels = format?.channelCount?.takeIf { it > 0 }
+        val bits = format?.pcmEncoding
+            ?.takeIf { it != Format.NO_VALUE && it != C.ENCODING_INVALID }
+            ?.let { Util.getByteDepth(it) * C.BITS_PER_BYTE }
+        val gapless = (format?.encoderDelay ?: 0) > 0 || (format?.encoderPadding ?: 0) > 0
 
         return buildList {
             val cueTrack = track?.takeIf { it.cue }

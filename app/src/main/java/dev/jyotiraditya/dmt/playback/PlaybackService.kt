@@ -50,12 +50,11 @@ import dev.jyotiraditya.dmt.domain.model.toAlbums
 import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.model.toFolders
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
+import dev.jyotiraditya.dmt.library.MetadataReader
 import androidx.core.content.ContextCompat
 import dev.jyotiraditya.dmt.util.notificationPermission
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
-import dev.jyotiraditya.metadata.AudioTags
-import dev.jyotiraditya.metadata.TagKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,10 +64,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.milliseconds
 
+private const val REPLAYGAIN_TRACK_GAIN = "REPLAYGAIN_TRACK_GAIN"
 private const val ROOT_ID = "root"
 private const val TRACKS_ID = "tracks"
 private const val ALBUMS_ID = "albums"
@@ -211,6 +212,15 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /** Returns the gain in decibels that the track at [path] asks to be played at, or null. */
+    @OptIn(UnstableApi::class)
+    private suspend fun trackGainDb(path: String): Float? =
+        MetadataReader.readTags(this, Uri.fromFile(File(path)))[REPLAYGAIN_TRACK_GAIN]
+            ?.firstOrNull()
+            ?.replace("dB", "", ignoreCase = true)
+            ?.trim()
+            ?.toFloatOrNull()
+
     private fun applyReplayGain(mediaItem: MediaItem?) {
         val player = mediaSession?.player ?: return
         val id = mediaItem?.mediaId?.toLongOrNull()
@@ -222,13 +232,7 @@ class PlaybackService : MediaLibraryService() {
             val volume = gainCache.getOrPut(id) {
                 val path = library().find { it.id == id }?.path
                 val gainDb = path?.takeIf { it.isNotEmpty() }?.let { file ->
-                    withContext(Dispatchers.IO) {
-                        AudioTags.read(file)[TagKey.REPLAYGAIN_TRACK_GAIN]
-                            ?.firstOrNull()
-                            ?.replace("dB", "", ignoreCase = true)
-                            ?.trim()
-                            ?.toFloatOrNull()
-                    }
+                    withContext(Dispatchers.IO) { trackGainDb(file) }
                 }
                 gainDb?.let { 10.0.pow(it / 20.0).toFloat().coerceIn(0f, 1f) } ?: 1f
             }
