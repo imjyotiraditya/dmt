@@ -32,16 +32,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.jyotiraditya.dmt.core.common.TuiPanel
 import dev.jyotiraditya.dmt.core.common.tuiClickable
+import dev.jyotiraditya.dmt.ui.theme.TuiAccent
+import dev.jyotiraditya.dmt.ui.theme.TuiDim
+import dev.jyotiraditya.dmt.ui.theme.TuiFaint
+import dev.jyotiraditya.dmt.ui.theme.TuiFg
+import dev.jyotiraditya.dmt.util.clusterEnd
+import dev.jyotiraditya.dmt.util.clusters
 import dev.jyotiraditya.lyrics.LyricLine
 import dev.jyotiraditya.lyrics.LyricWord
 import dev.jyotiraditya.lyrics.Lyrics
 import dev.jyotiraditya.lyrics.TimedText
 import dev.jyotiraditya.lyrics.Voice
-import dev.jyotiraditya.dmt.ui.theme.TuiAccent
-import dev.jyotiraditya.dmt.ui.theme.TuiDim
 import java.util.Locale
-import dev.jyotiraditya.dmt.ui.theme.TuiFaint
-import dev.jyotiraditya.dmt.ui.theme.TuiFg
 import kotlin.math.ceil
 
 private enum class LineState { ACTIVE, PASSED, UPCOMING }
@@ -301,7 +303,9 @@ private fun InterludeRow(
     val annotated = if (state == LineState.ACTIVE) {
         val span = (line.endMs - line.startMs).coerceAtLeast(1)
         val fraction = ((positionMs - line.startMs).toFloat() / span).coerceIn(0f, 1f)
-        val filled = ceil(fraction * line.text.length).toInt().coerceIn(0, line.text.length)
+        val filled = line.text.clusterEnd(
+            ceil(fraction * line.text.length).toInt().coerceIn(0, line.text.length),
+        )
         buildAnnotatedString {
             append(line.text)
             addStyle(SpanStyle(color = TuiAccent), 0, filled)
@@ -374,16 +378,19 @@ private fun LyricRunText(
                         val span = (word.endMs - word.startMs).coerceAtLeast(1)
                         val fraction =
                             ((positionMs - word.startMs).toFloat() / span).coerceIn(0f, 1f)
-                        val length = word.end - word.start
-                        val exact = fraction * length
-                        val sungEnd = word.start + exact.toInt().coerceIn(0, length - 1)
+                        val clusters = run.text.clusters(word.start, word.end)
+                        val steps = clusters.size - 1
+                        val exact = fraction * steps
+                        val step = exact.toInt().coerceIn(0, steps - 1)
+                        val sungEnd = clusters[step]
+                        val edgeEnd = clusters[step + 1]
                         if (sungEnd > word.start) {
                             addStyle(SpanStyle(color = sweepColors.sung), word.start, sungEnd)
                         }
-                        val edge = lerp(sweepColors.unsung, sweepColors.sung, exact - exact.toInt())
-                        addStyle(SpanStyle(color = edge), sungEnd, sungEnd + 1)
-                        if (sungEnd + 1 < word.end) {
-                            addStyle(SpanStyle(color = sweepColors.unsung), sungEnd + 1, word.end)
+                        val edge = lerp(sweepColors.unsung, sweepColors.sung, exact - step)
+                        addStyle(SpanStyle(color = edge), sungEnd, edgeEnd)
+                        if (edgeEnd < word.end) {
+                            addStyle(SpanStyle(color = sweepColors.unsung), edgeEnd, word.end)
                         }
                     }
 
