@@ -28,11 +28,9 @@ android {
 }
 
 dependencies {
+    implementation(libraryLibs.bundles.media3)
+    implementation(libraryLibs.bundles.room)
     implementation(libraryLibs.androidx.core.ktx)
-    implementation(libraryLibs.androidx.media3.exoplayer)
-    implementation(libraryLibs.androidx.media3.inspector)
-    implementation(libraryLibs.androidx.room.ktx)
-    implementation(libraryLibs.androidx.room.runtime)
     implementation(libraryLibs.kotlinx.coroutines.guava)
     ksp(libraryLibs.androidx.room.compiler)
     testImplementation(libraryLibs.junit)
