@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.core.common.tuiClickable
 import dev.jyotiraditya.dmt.domain.model.Spec
 import dev.jyotiraditya.dmt.domain.model.Track
@@ -334,4 +335,123 @@ private fun InfoRow(label: String, value: String) {
         }
         HorizontalDivider(color = TuiLine)
     }
+}
+
+/**
+ * Lets the listener pick where the lyrics of a track come from.
+ *
+ * Each source says what it holds for the track at hand, and one that holds nothing cannot be picked,
+ * other than the one that has to be fetched, which only says once it has been asked.
+ */
+@Composable
+fun LyricsSourceSheet(
+    selected: LyricsSource,
+    showingFrom: LyricsSource?,
+    available: Set<LyricsSource>,
+    tried: Set<LyricsSource>,
+    fetching: Boolean,
+    onPick: (LyricsSource) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    TuiSheet(onDismiss = onDismiss) {
+        SheetHeader(title = stringResource(R.string.lyrics_sources_title))
+        LyricsSource.entries.forEach { source ->
+            // Lrclib can always be picked, as having nothing may have been the network rather
+            // than the track, and asking again is the only way to tell.
+            val pickable = source in available || source == LyricsSource.LRCLIB
+
+            LyricsSourceRow(
+                source = source,
+                selected = source == selected,
+                pickable = pickable,
+                status = source.status(showingFrom, available, tried, fetching),
+                onPick = { onPick(source) }.takeIf { pickable },
+            )
+        }
+    }
+}
+
+@Composable
+private fun LyricsSourceRow(
+    source: LyricsSource,
+    selected: Boolean,
+    pickable: Boolean,
+    status: LyricsSourceStatus,
+    onPick: (() -> Unit)?,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { if (onPick != null) it.tuiClickable(onPick) else it }
+            .padding(vertical = 10.dp),
+    ) {
+        Text(
+            text = if (selected) "[x] " else "[ ] ",
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (selected) TuiAccent else TuiFaint,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(source.label()),
+                style = MaterialTheme.typography.bodyLarge,
+                color = when {
+                    !pickable -> TuiFaint
+                    selected -> TuiFg
+                    else -> TuiBright
+                },
+            )
+            Text(
+                text = stringResource(source.hint()),
+                style = MaterialTheme.typography.labelMedium,
+                color = TuiFaint,
+            )
+        }
+        Text(
+            text = stringResource(status.label),
+            style = MaterialTheme.typography.labelMedium,
+            color = status.color,
+        )
+    }
+}
+
+/** What a source holds for the track being played. */
+private data class LyricsSourceStatus(val label: Int, val color: Color)
+
+private fun LyricsSource.status(
+    showingFrom: LyricsSource?,
+    available: Set<LyricsSource>,
+    tried: Set<LyricsSource>,
+    fetching: Boolean,
+): LyricsSourceStatus = when {
+    this == showingFrom -> LyricsSourceStatus(R.string.lyrics_source_showing, TuiAccent)
+
+    this == LyricsSource.LRCLIB && fetching ->
+        LyricsSourceStatus(R.string.lyrics_key_busy, TuiDim)
+
+    this in available -> LyricsSourceStatus(R.string.lyrics_source_found, TuiDim)
+
+    // Lrclib is the one source that has to be asked before it can say.
+    this == LyricsSource.LRCLIB -> LyricsSourceStatus(
+        label = if (this in tried) {
+            R.string.lyrics_source_none_online
+        } else {
+            R.string.lyrics_source_tap
+        },
+        color = TuiFaint,
+    )
+
+    else -> LyricsSourceStatus(R.string.lyrics_source_missing, TuiFaint)
+}
+
+private fun LyricsSource.label(): Int = when (this) {
+    LyricsSource.EMBEDDED -> R.string.lyrics_source_embedded
+    LyricsSource.LOCAL -> R.string.lyrics_source_local
+    LyricsSource.LRCLIB -> R.string.lyrics_source_lrclib
+}
+
+private fun LyricsSource.hint(): Int = when (this) {
+    LyricsSource.EMBEDDED -> R.string.lyrics_source_embedded_hint
+    LyricsSource.LOCAL -> R.string.lyrics_source_local_hint
+    LyricsSource.LRCLIB -> R.string.lyrics_source_lrclib_hint
 }

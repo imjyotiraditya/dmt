@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -292,6 +293,7 @@ fun TuiStatus(
     value: String,
     on: Boolean,
     busy: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val press = rememberTuiPress()
@@ -302,12 +304,12 @@ fun TuiStatus(
         modifier = Modifier
             .border(1.dp, lerp(TuiLine, TuiFg, press.fraction))
             .background(lerp(TuiRaised, TuiFg, press.fraction))
-            .clickable(
+            .combinedClickable(
                 interactionSource = press.interactionSource,
                 indication = null,
-            ) {
-                press.click(onClick)
-            }
+                onLongClick = onLongClick?.let { { press.click(it) } },
+                onClick = { press.click(onClick) },
+            )
             .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {
         Box(

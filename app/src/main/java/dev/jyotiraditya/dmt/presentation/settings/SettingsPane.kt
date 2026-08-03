@@ -93,22 +93,6 @@ fun SettingsPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
         Caption(stringResource(R.string.section_lyrics))
 
         SettingRow(
-            label = stringResource(R.string.set_lyrics_source),
-            value = stringResource(
-                if (settings.lyricsFromFile) {
-                    R.string.lyrics_source_file
-                } else {
-                    R.string.lyrics_source_tag
-                },
-            ),
-        ) {
-            if (!settings.lyricsFromFile && !allFilesAccess) {
-                askFilesAccess = true
-            } else {
-                dispatch(DmtAction.Config(settings.copy(lyricsFromFile = !settings.lyricsFromFile)))
-            }
-        }
-        SettingRow(
             label = stringResource(R.string.set_lyrics_script),
             value = stringResource(
                 if (settings.romanizedLyrics) {

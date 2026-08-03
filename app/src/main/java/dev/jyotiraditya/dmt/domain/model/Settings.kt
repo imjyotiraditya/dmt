@@ -38,7 +38,7 @@ data class DmtSettings(
     val listSpecs: Boolean = true,
     val romanizedLyrics: Boolean = false,
     val rawArt: Boolean = false,
-    val lyricsFromFile: Boolean = false,
+    val lyricsSource: LyricsSource = LyricsSource.DEFAULT,
     val stopOnDismiss: Boolean = false,
     val setupDone: Boolean = false,
     val blockedFolders: Set<String> = emptySet(),

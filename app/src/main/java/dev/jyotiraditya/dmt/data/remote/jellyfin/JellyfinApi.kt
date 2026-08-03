@@ -1,5 +1,8 @@
 package dev.jyotiraditya.dmt.data.remote.jellyfin
 
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ARTIST
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_TITLE
 import dev.jyotiraditya.lyrics.LyricsParser
 import dev.jyotiraditya.lyrics.fillLineEnds
 import dev.jyotiraditya.lyrics.withInterludes
@@ -170,10 +173,10 @@ class JellyfinApi @Inject constructor(
 
         return JellyfinItem(
             id = getString("Id"),
-            title = optString("Name", "unknown title"),
-            artist = artist.ifBlank { "unknown artist" },
+            title = optString("Name", UNKNOWN_TITLE),
+            artist = artist.ifBlank { UNKNOWN_ARTIST },
             albumArtist = albumArtist,
-            album = optString("Album", "unknown album"),
+            album = optString("Album", UNKNOWN_ALBUM),
             albumId = if (has("AlbumId")) optString("AlbumId") else null,
             trackNumber = optInt("IndexNumber", 0),
             durationMs = optLong("RunTimeTicks", 0L) / TICKS_PER_MS,

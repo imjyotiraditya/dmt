@@ -9,6 +9,7 @@ import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.HomeShelves
+import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.lyrics.Lyrics
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
@@ -55,6 +56,12 @@ data class DmtState(
     val cover: Bitmap? = null,
     val artRaw: Bitmap? = null,
     val lyrics: Lyrics? = null,
+    val lyricsSource: LyricsSource = LyricsSource.DEFAULT,
+    val lyricsSourcesAvailable: Set<LyricsSource> = emptySet(),
+    val lyricsShowingFrom: LyricsSource? = null,
+    /** The sources that were asked for the track being played and had nothing. */
+    val lyricsSourcesTried: Set<LyricsSource> = emptySet(),
+    val lyricsSourcesOpen: Boolean = false,
     val lyricsFetching: Boolean = false,
     val expanded: Boolean = false,
     val sleepMinutes: Int = 0,
@@ -95,8 +102,9 @@ sealed interface DmtAction {
     data class Seek(val fraction: Float) : DmtAction
     data class Expand(val value: Boolean) : DmtAction
     data class RemoveAt(val index: Int) : DmtAction
-    data object FetchLyrics : DmtAction
-    data class EmbedLyrics(val granted: Boolean) : DmtAction
+    data object OpenLyricsSources : DmtAction
+    data object CloseLyricsSources : DmtAction
+    data class SetLyricsSource(val source: LyricsSource) : DmtAction
     data object CycleSleep : DmtAction
     data object CycleSpeed : DmtAction
     data object OpenEqualizer : DmtAction
@@ -113,5 +121,4 @@ sealed interface DmtAction {
 
 sealed interface PlayerEffect {
     data class OpenEqualizer(val audioSessionId: Int) : PlayerEffect
-    data class RequestWrite(val intentSender: IntentSender) : PlayerEffect
 }

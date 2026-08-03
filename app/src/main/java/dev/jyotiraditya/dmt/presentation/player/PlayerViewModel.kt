@@ -33,9 +33,9 @@ import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.homeShelves
-import dev.jyotiraditya.dmt.domain.usecase.EmbedLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase
 import dev.jyotiraditya.dmt.domain.usecase.GetTrackTechUseCase
 import dev.jyotiraditya.dmt.domain.usecase.JellyfinLoginUseCase
@@ -83,7 +83,6 @@ class PlayerViewModel @Inject constructor(
     private val scanLibrary: ScanLibraryUseCase,
     private val jellyfinLogin: JellyfinLoginUseCase,
     private val getLyrics: GetLyricsUseCase,
-    private val embedLyrics: EmbedLyricsUseCase,
     private val getTrackTech: GetTrackTechUseCase,
     private val trackMediaRepository: TrackMediaRepository,
     private val coverArtRepository: CoverArtRepository,
@@ -101,7 +100,6 @@ class PlayerViewModel @Inject constructor(
     private val homeArtCache = object : LruCache<String, Bitmap>(HOME_ART_CACHE_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
-    private var pendingEmbed: Pair<Track, String>? = null
     private var noticeJob: Job? = null
     private var coverJob: Job? = null
     private var techJob: Job? = null
@@ -168,7 +166,7 @@ class PlayerViewModel @Inject constructor(
                 if (intent.granted) scan()
             }
 
-            DmtAction.Rescan -> scan()
+            DmtAction.Rescan -> scan(refresh = true)
             is DmtAction.Query -> {
                 reduce { it.copy(query = intent.value) }
                 val query = intent.value
@@ -270,8 +268,9 @@ class PlayerViewModel @Inject constructor(
                 if (intent.index in 0 until mediaItemCount) removeMediaItem(intent.index)
             }
 
-            DmtAction.FetchLyrics -> fetchOnlineLyrics()
-            is DmtAction.EmbedLyrics -> embedPendingLyrics(intent.granted)
+            DmtAction.OpenLyricsSources -> openLyricsSources()
+            DmtAction.CloseLyricsSources -> reduce { it.copy(lyricsSourcesOpen = false) }
+            is DmtAction.SetLyricsSource -> setLyricsSource(intent.source)
             DmtAction.CycleSleep -> cycleSleep()
             DmtAction.CycleSpeed -> cycleSpeed()
             DmtAction.OpenEqualizer -> openEqualizer()
@@ -302,7 +301,7 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
                 if (old.cols != intent.settings.cols) loadCover(c?.currentMediaItem)
-                if (old.lyricsFromFile != intent.settings.lyricsFromFile) {
+                if (old.lyricsSource != intent.settings.lyricsSource) {
                     loadLyrics(c?.currentMediaItem)
                 }
             }
@@ -489,11 +488,11 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    private fun scan() =
+    private fun scan(refresh: Boolean = false) =
         viewModelScope.launch {
             reduce { it.copy(scanning = true) }
             val query = currentState.query
-            val library = runCatching { scanLibrary() }.getOrElse {
+            val library = runCatching { scanLibrary(refresh) }.getOrElse {
                 reduce { state ->
                     state.copy(
                         scanning = false,
@@ -566,9 +565,10 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    /** Fetches the lyrics of the track being played, replacing whatever is on screen. */
     private fun fetchOnlineLyrics() {
         val id = currentState.nowPlayingId ?: return
-        if (currentState.lyricsFetching || currentState.lyrics != null) return
+        if (currentState.lyricsFetching) return
         val track = currentState.tracks.find { it.id.toString() == id } ?: return
 
         reduce { it.copy(lyricsFetching = true) }
@@ -580,52 +580,92 @@ class PlayerViewModel @Inject constructor(
                 if (it.nowPlayingId != id) {
                     it.copy(lyricsFetching = false)
                 } else {
-                    it.copy(lyricsFetching = false, lyrics = lyrics)
+                    it.copy(
+                        lyricsFetching = false,
+                        lyrics = lyrics ?: it.lyrics,
+                        lyricsShowingFrom = if (lyrics != null) {
+                            LyricsSource.LRCLIB
+                        } else {
+                            it.lyricsShowingFrom
+                        },
+                        lyricsSourcesAvailable = if (lyrics != null) {
+                            it.lyricsSourcesAvailable + LyricsSource.LRCLIB
+                        } else {
+                            it.lyricsSourcesAvailable
+                        },
+                        lyricsSourcesTried = it.lyricsSourcesTried + LyricsSource.LRCLIB,
+                    )
                 }
             }
-            if (lyrics == null) {
-                notify(context.getString(R.string.no_lyrics_found))
-                return@launch
-            }
-
-            val intentSender = embedLyrics.writeRequest(track)
-            if (intentSender == null) {
-                notify(context.getString(R.string.lyrics_embed_unsupported))
-                return@launch
-            }
-            pendingEmbed = track to text
-            sendEffect(PlayerEffect.RequestWrite(intentSender))
         }
     }
 
-    private fun embedPendingLyrics(granted: Boolean) {
-        val (track, text) = pendingEmbed ?: return
-        pendingEmbed = null
-        if (!granted) return
-
-        viewModelScope.launch {
-            val done = embedLyrics(track, text)
-            notify(
-                context.getString(
-                    if (done) R.string.lyrics_embedded else R.string.lyrics_embed_failed,
-                ),
-            )
-        }
-    }
-
+    /**
+     * Reads the lyrics of [mediaItem] from the source that was picked last, fetching them when that
+     * source is the one that is not on the device.
+     *
+     * The lyrics already on screen are left alone until the new ones are read, so that changing
+     * track or source does not show the cover art for the moment in between.
+     */
     private fun loadLyrics(mediaItem: MediaItem?) {
         val forId = mediaItem?.mediaId
         reduce { it.copy(lyricsFetching = true) }
         lyricsJob?.cancel()
         lyricsJob = viewModelScope.launch {
             val track = currentState.tracks.find { it.id.toString() == forId }
-            val lyrics = track?.let { getLyrics(it) }
+            val preferred = preferencesRepository.settings.first().lyricsSource
+            val lyrics = if (preferred == LyricsSource.LRCLIB) {
+                track?.let { getLyrics.onlineText(it) }?.let { getLyrics.parse(it) }
+            } else {
+                track?.let { getLyrics(it) }
+            }
+            val available = track?.let { getLyrics.availableSources(it) }.orEmpty()
             reduce {
                 if (it.nowPlayingId != forId) {
                     it
                 } else {
-                    it.copy(lyrics = lyrics, lyricsFetching = false)
+                    it.copy(
+                        lyrics = lyrics,
+                        lyricsFetching = false,
+                        lyricsSource = preferred,
+                        lyricsSourcesAvailable = if (lyrics != null && preferred == LyricsSource.LRCLIB) {
+                            available + LyricsSource.LRCLIB
+                        } else {
+                            available
+                        },
+                        lyricsSourcesTried = if (preferred == LyricsSource.LRCLIB) {
+                            setOf(LyricsSource.LRCLIB)
+                        } else {
+                            emptySet()
+                        },
+                        lyricsShowingFrom = preferred.takeIf { lyrics != null },
+                    )
                 }
+            }
+        }
+    }
+
+    private fun openLyricsSources() {
+        viewModelScope.launch {
+            val source = preferencesRepository.settings.first().lyricsSource
+            reduce { it.copy(lyricsSource = source, lyricsSourcesOpen = true) }
+        }
+    }
+
+    /**
+     * Reads the lyrics of the track being played from [source], and remembers it so that every
+     * track that follows is read the same way.
+     */
+    private fun setLyricsSource(source: LyricsSource) {
+        reduce { it.copy(lyricsSource = source) }
+        viewModelScope.launch {
+            val settings = preferencesRepository.settings.first()
+            preferencesRepository.save(settings.copy(lyricsSource = source))
+
+            if (source == LyricsSource.LRCLIB) {
+                fetchOnlineLyrics()
+            } else {
+                loadLyrics(controller?.currentMediaItem)
             }
         }
     }

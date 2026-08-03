@@ -1,6 +1,9 @@
 package dev.jyotiraditya.dmt.data.remote.lrclib
 
 import dev.jyotiraditya.dmt.BuildConfig
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ARTIST
+import dev.jyotiraditya.dmt.domain.model.UNKNOWN_TITLE
 import dev.jyotiraditya.dmt.domain.model.Track
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -24,9 +27,9 @@ class LrclibApi @Inject constructor(
 ) {
 
     suspend fun fetchLyrics(track: Track): String? {
-        val title = known(track.title, "unknown title") ?: return null
-        val artist = known(track.artist, "unknown artist") ?: return null
-        val album = known(track.album, "unknown album")
+        val title = known(track.title, UNKNOWN_TITLE) ?: return null
+        val artist = known(track.artist, UNKNOWN_ARTIST) ?: return null
+        val album = known(track.album, UNKNOWN_ALBUM)
 
         val response = client.get(BASE_URL) {
             url {

@@ -264,6 +264,18 @@ fun PlayerSheet(
             }
         }
     }
+
+    if (state.lyricsSourcesOpen) {
+        LyricsSourceSheet(
+            selected = state.lyricsSource,
+            showingFrom = state.lyricsShowingFrom,
+            available = state.lyricsSourcesAvailable,
+            tried = state.lyricsSourcesTried,
+            fetching = state.lyricsFetching,
+            onPick = { dispatch(DmtAction.SetLyricsSource(it)) },
+            onDismiss = { dispatch(DmtAction.CloseLyricsSources) },
+        )
+    }
 }
 
 private fun Modifier.sheetDrag(

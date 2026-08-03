@@ -13,7 +13,8 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_SORT
 import dev.jyotiraditya.dmt.data.source.local.KEY_NORMALIZE
-import dev.jyotiraditya.dmt.data.source.local.KEY_LYRICS_FROM_FILE
+import dev.jyotiraditya.dmt.data.source.local.KEY_LYRICS_SOURCE
+import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.data.source.local.KEY_RAW
 import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SETUP_DONE
@@ -21,6 +22,7 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCE_MODE
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPECS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPEED
 import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_COUNTS
+import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_GENERATION
 import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_TOTAL
 import dev.jyotiraditya.dmt.data.source.local.KEY_STOP_ON_DISMISS
 import dev.jyotiraditya.dmt.data.source.local.KEY_WAVE
@@ -53,7 +55,7 @@ class PreferencesRepository @Inject constructor(
             listSpecs = prefs[KEY_SPECS] ?: true,
             romanizedLyrics = prefs[KEY_ROMANIZED_LYRICS] ?: false,
             rawArt = prefs[KEY_RAW] ?: false,
-            lyricsFromFile = prefs[KEY_LYRICS_FROM_FILE] ?: false,
+            lyricsSource = prefs[KEY_LYRICS_SOURCE]?.toLyricsSource() ?: LyricsSource.DEFAULT,
             stopOnDismiss = prefs[KEY_STOP_ON_DISMISS] ?: false,
             setupDone = prefs[KEY_SETUP_DONE] ?: false,
             blockedFolders = prefs[KEY_BLOCKED_FOLDERS] ?: emptySet(),
@@ -75,7 +77,7 @@ class PreferencesRepository @Inject constructor(
             it[KEY_SPECS] = settings.listSpecs
             it[KEY_ROMANIZED_LYRICS] = settings.romanizedLyrics
             it[KEY_RAW] = settings.rawArt
-            it[KEY_LYRICS_FROM_FILE] = settings.lyricsFromFile
+            it[KEY_LYRICS_SOURCE] = settings.lyricsSource.name
             it[KEY_STOP_ON_DISMISS] = settings.stopOnDismiss
             it[KEY_SETUP_DONE] = settings.setupDone
             it[KEY_BLOCKED_FOLDERS] = settings.blockedFolders
@@ -120,6 +122,13 @@ class PreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun libraryGeneration(): Long =
+        context.dmtStore.data.first()[KEY_LIBRARY_GENERATION] ?: -1L
+
+    suspend fun setLibraryGeneration(generation: Long) {
+        context.dmtStore.edit { prefs -> prefs[KEY_LIBRARY_GENERATION] = generation }
+    }
+
     suspend fun recordPlayback(playedMs: Long, trackId: Long?) {
         context.dmtStore.edit { prefs ->
             prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
@@ -138,3 +147,6 @@ class PreferencesRepository @Inject constructor(
         )
     }
 }
+
+private fun String.toLyricsSource(): LyricsSource? =
+    LyricsSource.entries.firstOrNull { it.name == this }

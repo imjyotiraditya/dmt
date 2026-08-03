@@ -45,23 +45,11 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val state by playerViewModel.state.collectAsState()
-                    val writeLauncher = rememberLauncherForActivityResult(
-                        ActivityResultContracts.StartIntentSenderForResult(),
-                    ) { result ->
-                        playerViewModel.onIntent(
-                            DmtAction.EmbedLyrics(result.resultCode == RESULT_OK),
-                        )
-                    }
-
                     LaunchedEffect(Unit) {
                         playerViewModel.effects.collect { effect ->
                             when (effect) {
                                 is PlayerEffect.OpenEqualizer -> openEqualizer(
                                     effect.audioSessionId,
-                                )
-
-                                is PlayerEffect.RequestWrite -> writeLauncher.launch(
-                                    IntentSenderRequest.Builder(effect.intentSender).build(),
                                 )
                             }
                         }

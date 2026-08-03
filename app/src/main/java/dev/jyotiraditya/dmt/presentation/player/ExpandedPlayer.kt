@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.core.common.AsciiCover
 import dev.jyotiraditya.dmt.core.common.CursorTitle
 import dev.jyotiraditya.dmt.core.common.FitScaled
@@ -88,6 +89,13 @@ fun ExpandedPlayer(
     val windowSize = windowDpSize()
     val landscape = isLandscapeWindow()
     var showLyrics by rememberSaveable { mutableStateOf(false) }
+
+    // A fetch is asked for in order to read them, so they are shown as soon as they arrive.
+    LaunchedEffect(state.lyrics, state.lyricsFetching) {
+        if (state.lyrics != null && state.lyricsShowingFrom == LyricsSource.LRCLIB) {
+            showLyrics = true
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -629,18 +637,19 @@ private fun StatusRow(
             value = stringResource(
                 when {
                     state.lyricsFetching -> R.string.lyrics_key_busy
-                    state.lyrics == null -> R.string.lyrics_key_fetch
-                    showLyrics -> R.string.on
+                    showLyrics && state.lyrics != null -> R.string.on
                     else -> R.string.off
                 },
             ),
             on = showLyrics && state.lyrics != null,
             busy = state.lyricsFetching,
+            onLongClick = { dispatch(DmtAction.OpenLyricsSources) },
         ) {
             when {
                 state.lyricsFetching -> Unit
-                state.lyrics == null -> dispatch(DmtAction.FetchLyrics)
-                else -> onToggleLyrics()
+                state.lyrics != null -> onToggleLyrics()
+                // Nothing to read from the source that was picked, so another one can be.
+                else -> dispatch(DmtAction.OpenLyricsSources)
             }
         }
     }
