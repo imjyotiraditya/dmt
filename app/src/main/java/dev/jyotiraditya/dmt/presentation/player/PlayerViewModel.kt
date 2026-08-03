@@ -3,7 +3,6 @@ package dev.jyotiraditya.dmt.presentation.player
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Bundle
 import android.util.LruCache
 import androidx.core.content.ContextCompat
@@ -684,7 +683,7 @@ class PlayerViewModel @Inject constructor(
         val key = "${track.id}:$rawMode"
         homeArtCache.get(key)?.let { return it }
         return withContext(Dispatchers.IO) {
-            val raw = track.coverUri?.let { coverArtRepository.loadArt(it) }
+            val raw = coverArtRepository.loadArt(track, embedded = false)
             val art = when {
                 raw != null && rawMode -> raw
                 raw != null ->
@@ -699,13 +698,12 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun loadCover(mediaItem: MediaItem?) {
-        val uri: Uri? = mediaItem?.mediaMetadata?.artworkUri
-        val fileUri: Uri? = mediaItem?.localConfiguration?.uri
         val forId = mediaItem?.mediaId
+        val track = currentState.tracks.find { it.id.toString() == forId }
         coverJob?.cancel()
         coverJob = viewModelScope.launch {
             val raw = withContext(Dispatchers.IO) {
-                uri?.let { coverArtRepository.loadArt(it, fileUri) }
+                track?.let { coverArtRepository.loadArt(it) }
             }
             val cover = withContext(Dispatchers.IO) {
                 raw?.let { art ->
