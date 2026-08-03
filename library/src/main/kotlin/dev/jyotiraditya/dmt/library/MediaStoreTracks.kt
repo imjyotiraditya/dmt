@@ -42,7 +42,10 @@ object MediaStoreTracks {
         context.contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             columns(),
-            "${MediaStore.Audio.Media.IS_MUSIC} != 0",
+            // A file the platform indexed but could not read says nothing about itself, and a
+            // track it cannot read is still a track.
+            "${MediaStore.Audio.Media.IS_MUSIC} != 0" +
+                " OR ${MediaStore.Audio.Media.IS_MUSIC} IS NULL",
             null,
             "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC",
         )?.use { cursor ->
