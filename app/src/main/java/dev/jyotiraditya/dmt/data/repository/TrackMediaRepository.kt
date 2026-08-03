@@ -13,10 +13,12 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.MediaFormatUtil
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.util.Util
 import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jyotiraditya.dmt.domain.model.Spec
@@ -126,6 +128,9 @@ class TrackMediaRepository @Inject constructor(
         played?.averageBitrate?.takeIf { it > 0 && bitrate <= 0 }?.let { bitrate = it }
         played?.sampleRate?.takeIf { it > 0 && sampleRate == null }?.let { sampleRate = it }
         played?.channelCount?.takeIf { it > 0 && channels == null }?.let { channels = it }
+        played?.pcmEncoding
+            ?.takeIf { bits == null && it != Format.NO_VALUE && it != C.ENCODING_INVALID }
+            ?.let { bits = Util.getByteDepth(it) * C.BITS_PER_BYTE }
 
         return buildList {
             val cueTrack = track?.takeIf { it.cue }
