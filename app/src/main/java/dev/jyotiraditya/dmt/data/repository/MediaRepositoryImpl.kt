@@ -13,6 +13,8 @@ import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.library.LibraryTrack
 import dev.jyotiraditya.dmt.library.MusicLibrary
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -35,9 +37,12 @@ class MediaRepositoryImpl @Inject constructor(
     @Volatile
     private var refresh = false
 
+    private val changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     private val mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
             cache = null
+            changes.tryEmit(Unit)
         }
     }
 
@@ -48,6 +53,8 @@ class MediaRepositoryImpl @Inject constructor(
             mediaObserver,
         )
     }
+
+    override fun changes(): Flow<Unit> = changes
 
     override fun invalidate() {
         cache = null

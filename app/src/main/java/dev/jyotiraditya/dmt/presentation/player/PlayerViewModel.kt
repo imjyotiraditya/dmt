@@ -50,8 +50,10 @@ import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import dev.jyotiraditya.dmt.util.togglePlayPause
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -66,6 +68,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val SPEED_STEPS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 private val SLEEP_STEPS = listOf(0, 15, 30, 60)
+private val LIBRARY_SETTLE = 500.milliseconds
 private const val HOME_ART_COLS = 48
 private const val HOME_ART_CACHE_BYTES = 32 * 1024 * 1024
 
@@ -76,6 +79,7 @@ private data class FilteredLibrary(
     val folders: List<Folder>,
 )
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -124,6 +128,11 @@ class PlayerViewModel @Inject constructor(
                 .collect { route ->
                     reduce { if (it.route == route) it else it.copy(route = route) }
                 }
+        }
+        viewModelScope.launch {
+            scanLibrary.changes()
+                .debounce(LIBRARY_SETTLE)
+                .collect { if (currentState.hasPermission) scan() }
         }
         if (currentState.hasPermission) scan()
         connect()
