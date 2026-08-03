@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":baselineprofile"))
     ksp(libs.hilt.compiler)
+    implementation(project(":library"))
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
 }

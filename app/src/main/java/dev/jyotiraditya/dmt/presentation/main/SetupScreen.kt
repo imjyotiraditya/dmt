@@ -471,8 +471,8 @@ private fun LookPreview(
     sample: Bitmap,
     preview: Bitmap,
     settings: DmtSettings,
-    fitHeight: Boolean = false,
     modifier: Modifier = Modifier,
+    fitHeight: Boolean = false,
 ) {
     Box(
         contentAlignment = Alignment.Center,

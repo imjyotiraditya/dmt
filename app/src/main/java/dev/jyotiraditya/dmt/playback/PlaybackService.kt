@@ -49,7 +49,6 @@ import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toAlbums
 import dev.jyotiraditya.dmt.domain.model.toArtists
 import dev.jyotiraditya.dmt.domain.model.toFolders
-import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 import dev.jyotiraditya.dmt.domain.usecase.MediaSourceProvider
 import androidx.core.content.ContextCompat
 import dev.jyotiraditya.dmt.util.notificationPermission
@@ -113,12 +112,6 @@ class PlaybackService : MediaLibraryService() {
     private var normalizeVolume = false
     private var stopOnDismiss = false
     private val gainCache = mutableMapOf<Long, Float>()
-
-    @Volatile
-    private var libraryCache: List<Track>? = null
-
-    @Volatile
-    private var libraryCacheSource: MediaRepository? = null
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -275,15 +268,8 @@ class PlaybackService : MediaLibraryService() {
         session.setMediaButtonPreferences(sessionButtons(session.player))
     }
 
-    private suspend fun library(): List<Track> {
-        val source = mediaSourceProvider.current()
-        if (libraryCacheSource !== source) {
-            libraryCache = null
-            libraryCacheSource = source
-        }
-        return libraryCache ?: withContext(Dispatchers.IO) {
-            source.scan()
-        }.also { libraryCache = it }
+    private suspend fun library(): List<Track> = withContext(Dispatchers.IO) {
+        mediaSourceProvider.current().scan()
     }
 
     private fun searchLibrary(tracks: List<Track>, query: String): List<Track> =
@@ -447,7 +433,7 @@ class PlaybackService : MediaLibraryService() {
                 .add(CMD_TOGGLE_SHUFFLE)
                 .add(CMD_CYCLE_REPEAT)
                 .build()
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                 .setAvailableSessionCommands(commands)
                 .build()
         }

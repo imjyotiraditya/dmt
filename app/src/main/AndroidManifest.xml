@@ -27,6 +27,7 @@
         android:name=".DmtApp"
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

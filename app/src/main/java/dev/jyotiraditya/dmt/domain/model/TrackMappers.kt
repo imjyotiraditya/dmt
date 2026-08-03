@@ -30,7 +30,7 @@ fun List<Track>.toArtists(): List<Artist> =
                     .key,
                 albums = tracks.map { it.album }.distinct().size,
                 tracks = tracks.sortedWith(
-                    compareBy({ it.album.lowercase() }, { it.trackNumber }),
+                    compareBy({ it.album.lowercase() }, { it.discNumber }, { it.trackNumber }),
                 ),
             )
         }
@@ -43,7 +43,7 @@ fun List<Track>.toAlbums(): List<Album> =
             Album(
                 name = name,
                 artist = artists.singleOrNull() ?: "various artists",
-                tracks = tracks.sortedBy { it.trackNumber },
+                tracks = tracks.sortedWith(compareBy({ it.discNumber }, { it.trackNumber })),
             )
         }
         .sortedBy { it.name.lowercase() }

@@ -11,9 +11,11 @@ import javax.inject.Inject
 class ScanLibraryUseCase @Inject constructor(
     private val mediaSourceProvider: MediaSourceProvider,
 ) {
-    suspend operator fun invoke(): LibrarySnapshot =
+    suspend operator fun invoke(refresh: Boolean = false): LibrarySnapshot =
         withContext(Dispatchers.IO) {
-            val tracks = mediaSourceProvider.current().scan()
+            val source = mediaSourceProvider.current()
+            if (refresh) source.invalidate()
+            val tracks = source.scan()
             LibrarySnapshot(
                 tracks = tracks,
                 albums = tracks.toAlbums(),

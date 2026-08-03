@@ -1,27 +1,15 @@
-package dev.jyotiraditya.dmt.data.source.local.cue
+package dev.jyotiraditya.dmt.library.cue
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
 
-data class CueTrack(
-    val number: Int,
-    val title: String?,
-    val performer: String?,
-    val startMs: Long,
-)
-
-data class CueFile(
-    val name: String,
-    val tracks: List<CueTrack>,
-)
-
-data class CueSheet(
-    val title: String?,
-    val performer: String?,
-    val files: List<CueFile>,
-)
-
+/**
+ * Reads cue sheets, which are the text files that sit beside a rip of a disc and say what it holds.
+ *
+ * Sheets are written by many tools and in many encodings, so a sheet that holds a line this parser
+ * does not know keeps the rest of its lines rather than failing as a whole.
+ */
 object CueParser {
 
     private val INDEX_TIME = Regex("""^(\d+)\s+(\d+):(\d{1,2}):(\d{1,2})$""")

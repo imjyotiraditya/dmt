@@ -3,6 +3,10 @@ package dev.jyotiraditya.dmt.domain.model
 import android.net.Uri
 import androidx.compose.runtime.Immutable
 
+const val UNKNOWN_TITLE = "unknown title"
+const val UNKNOWN_ARTIST = "unknown artist"
+const val UNKNOWN_ALBUM = "unknown album"
+
 enum class TrackSource { LOCAL, JELLYFIN }
 
 @Immutable
@@ -19,6 +23,7 @@ data class Track(
     val bitrate: Int,
     val size: Long,
     val trackNumber: Int,
+    val discNumber: Int = 0,
     val dateAdded: Long = 0L,
     val dateModified: Long = 0L,
     val coverUri: Uri? = null,

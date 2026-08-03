@@ -6,14 +6,15 @@ lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 kotlin = "2.4.10"
 composeBom = "2026.06.01"
-media3 = "1.10.1-dmt"
+media3 = "1.11.0-rc01-dmt"
 datastore = "1.2.1"
-navigationCompose = "2.9.5"
+navigationCompose = "2.9.8"
 coroutinesGuava = "1.11.0"
 robolectric = "4.16.1"
 hilt = "2.60.1"
+room = "2.8.4"
 ksp = "2.3.10"
-ktor = "3.5.1"
+ktor = "3.5.2"
 xmlutil = "1.0.1"
 coil = "3.5.0"
 baselineProfile = "1.5.0-alpha07"
@@ -24,6 +25,9 @@ androidxTestRunner = "1.7.0"
 uiautomator = "2.4.0"
 
 [libraries]
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 kotlinx-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version.ref = "coroutinesGuava" }
@@ -56,6 +60,7 @@ androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiaut
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

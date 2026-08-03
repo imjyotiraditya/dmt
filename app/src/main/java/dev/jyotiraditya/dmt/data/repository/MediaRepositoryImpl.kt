@@ -1,107 +1,91 @@
 package dev.jyotiraditya.dmt.data.repository
 
-import android.content.ContentUris
 import android.content.Context
-import android.database.Cursor
-import android.net.Uri
-import android.os.Environment
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
-import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.jyotiraditya.dmt.data.source.local.file.FileTracks
-import dev.jyotiraditya.dmt.data.source.local.cue.CueLibrary
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.repository.MediaRepository
-import kotlinx.coroutines.Dispatchers
+import dev.jyotiraditya.dmt.library.LibraryTrack
+import dev.jyotiraditya.dmt.library.MusicLibrary
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(UnstableApi::class)
 @Singleton
 class MediaRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val settingsRepository: PreferencesRepository,
+    private val musicLibrary: MusicLibrary,
 ) : MediaRepository {
 
-    private val projection = arrayOf(
-        MediaStore.Audio.Media._ID,
-        MediaStore.Audio.Media.TITLE,
-        MediaStore.Audio.Media.ARTIST,
-        MediaStore.Audio.Media.ALBUM_ARTIST,
-        MediaStore.Audio.Media.ALBUM,
-        MediaStore.Audio.Media.ALBUM_ID,
-        MediaStore.Audio.Media.DATA,
-        MediaStore.Audio.Media.DURATION,
-        MediaStore.Audio.Media.MIME_TYPE,
-        MediaStore.Audio.Media.BITRATE,
-        MediaStore.Audio.Media.SIZE,
-        MediaStore.Audio.Media.TRACK,
-        MediaStore.Audio.Media.DATE_ADDED,
-        MediaStore.Audio.Media.DATE_MODIFIED,
-    )
+    private val scanLock = Mutex()
 
-    @OptIn(UnstableApi::class)
-    override suspend fun scan(): List<Track> {
+    @Volatile
+    private var cache: List<Track>? = null
+
+    @Volatile
+    private var refresh = false
+
+    private val mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            cache = null
+        }
+    }
+
+    init {
+        context.contentResolver.registerContentObserver(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            true,
+            mediaObserver,
+        )
+    }
+
+    override fun invalidate() {
+        cache = null
+        refresh = true
+    }
+
+    override suspend fun scan(): List<Track> = scanLock.withLock {
+        cache ?: load().also { cache = it }
+    }
+
+    private suspend fun load(): List<Track> {
         val blocked = settingsRepository.settings.first().blockedFolders
-        val base = buildList {
-            runCatching {
-                context.contentResolver.query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    "${MediaStore.Audio.Media.IS_MUSIC} != 0",
-                    null,
-                    "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC",
-                )?.use { cursor ->
-                    while (cursor.moveToNext()) {
-                        val track = cursor.toTrack()
-                        if (track.path.substringBeforeLast('/') !in blocked) add(track)
-                    }
-                }
-            }
-        }
-        val files = withContext(Dispatchers.IO) {
-            FileTracks.scan(context, Environment.getExternalStorageDirectory(), blocked)
-        }
+        val tracks = musicLibrary.tracks(blocked, refresh).map { it.toTrack() }
+        refresh = false
 
-        return CueLibrary.expand(base + files).sortedBy { it.title.lowercase() }
+        return tracks.sortedBy { it.title.lowercase() }
     }
 }
 
-private fun Cursor.text(column: String, fallback: String): String =
-    getString(getColumnIndexOrThrow(column)).orUnknown(fallback)
-
-private fun Cursor.long(column: String): Long = getLong(getColumnIndexOrThrow(column))
-
-private fun Cursor.int(column: String): Int = getInt(getColumnIndexOrThrow(column))
-
-private val albumArtBase: Uri = "content://media/external/audio/albumart".toUri()
-
-private fun Cursor.toTrack(): Track {
-    val id = long(MediaStore.Audio.Media._ID)
-    val albumId = long(MediaStore.Audio.Media.ALBUM_ID)
-    return Track(
-        id = id,
-        uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id),
-        title = text(MediaStore.Audio.Media.TITLE, "unknown title"),
-        artist = text(MediaStore.Audio.Media.ARTIST, "unknown artist"),
-        albumArtist = text(MediaStore.Audio.Media.ALBUM_ARTIST, ""),
-        album = text(MediaStore.Audio.Media.ALBUM, "unknown album"),
-        path = getString(getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)).orEmpty(),
-        durationMs = long(MediaStore.Audio.Media.DURATION),
-        mime = text(MediaStore.Audio.Media.MIME_TYPE, "audio/?"),
-        bitrate = int(MediaStore.Audio.Media.BITRATE),
-        size = long(MediaStore.Audio.Media.SIZE),
-        trackNumber = int(MediaStore.Audio.Media.TRACK),
-        dateAdded = long(MediaStore.Audio.Media.DATE_ADDED),
-        dateModified = long(MediaStore.Audio.Media.DATE_MODIFIED),
-        coverUri = ContentUris.withAppendedId(albumArtBase, albumId),
-        source = TrackSource.LOCAL,
-    )
-}
-
-fun String?.orUnknown(fallback: String): String =
-    if (isNullOrBlank() || this == "<unknown>") fallback else this
+private fun LibraryTrack.toTrack(): Track = Track(
+    id = id,
+    uri = uri,
+    title = title,
+    artist = artist,
+    albumArtist = albumArtist,
+    album = album,
+    path = path,
+    durationMs = durationMs,
+    mime = mime,
+    bitrate = bitrate,
+    size = size,
+    trackNumber = trackNumber,
+    discNumber = discNumber,
+    dateAdded = dateAdded,
+    dateModified = dateModified,
+    coverUri = coverUri,
+    cue = cue,
+    clipStartMs = clipStartMs,
+    clipEndMs = clipEndMs,
+    source = TrackSource.LOCAL,
+)

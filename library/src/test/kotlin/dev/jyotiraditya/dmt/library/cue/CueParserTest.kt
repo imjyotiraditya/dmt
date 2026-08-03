@@ -1,4 +1,4 @@
-package dev.jyotiraditya.dmt.data.source.local.cue
+package dev.jyotiraditya.dmt.library.cue
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

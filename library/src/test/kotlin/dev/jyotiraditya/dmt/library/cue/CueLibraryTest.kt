@@ -1,7 +1,7 @@
-package dev.jyotiraditya.dmt.data.source.local.cue
+package dev.jyotiraditya.dmt.library.cue
 
 import android.net.Uri
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.library.LibraryTrack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34])
 class CueLibraryTest {
 
-    private val base = Track(
+    private val base = LibraryTrack(
         id = 42L,
         uri = Uri.EMPTY,
         title = "Brothers In Arms (Full Length Version)",
@@ -26,6 +26,10 @@ class CueLibraryTest {
         bitrate = 2_304_000,
         size = 313_242_237L,
         trackNumber = 0,
+        albumArtist = "",
+        discNumber = 0,
+        dateAdded = 0L,
+        dateModified = 0L,
     )
 
     private val sheet = CueSheet(
