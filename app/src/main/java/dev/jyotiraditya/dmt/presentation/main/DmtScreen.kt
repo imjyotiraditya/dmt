@@ -426,7 +426,9 @@ private fun SectionPane(
                 view == DmtView.SETTINGS -> SettingsPane(state, dispatch)
                 view == DmtView.SOURCES -> SourcesPane(state, dispatch)
                 view == DmtView.SOURCE_LOGIN -> SourceLoginPane(state.loginSource, dispatch)
-                state.scanning -> Caption(stringResource(R.string.scanning))
+                state.scanning && state.tracks.isEmpty() ->
+                    Caption(stringResource(R.string.scanning))
+
                 view == DmtView.ALBUMS -> AlbumsPane(state, dispatch)
                 view == DmtView.ARTISTS -> ArtistsPane(state, dispatch)
                 view == DmtView.FOLDERS -> FoldersPane(state, dispatch)

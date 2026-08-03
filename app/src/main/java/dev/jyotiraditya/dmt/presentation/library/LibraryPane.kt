@@ -74,6 +74,7 @@ fun LibraryPane(state: DmtState, dispatch: (DmtAction) -> Unit) {
                     current = track.id.toString() == state.nowPlayingId,
                     onClick = { dispatch(DmtAction.PlayAt(state.filtered, index)) },
                     onLongClick = { dispatch(DmtAction.Enqueue(listOf(track), track.title)) },
+                    modifier = Modifier.animateItem(),
                 )
             }
         }

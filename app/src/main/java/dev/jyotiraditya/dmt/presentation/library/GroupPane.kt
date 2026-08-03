@@ -187,6 +187,7 @@ private fun <T> GroupList(
                             modifier = Modifier.padding(horizontal = 8.dp),
                         )
                     },
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -219,6 +220,7 @@ private fun <T> GroupDetail(
                 line2 = spec.trackMeta(track),
                 current = track.id.toString() == state.nowPlayingId,
                 onClick = { dispatch(DmtAction.PlayAt(tracks, index)) },
+                modifier = Modifier.animateItem(),
             )
         }
     }

@@ -58,6 +58,7 @@ fun SearchPane(
                         line2 = "${album.artist} · ${album.tracks.size} trk".lowercase(),
                         current = false,
                         onClick = { onOpenAlbum(album.name) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -70,6 +71,7 @@ fun SearchPane(
                         line2 = artistLine2(artist),
                         current = false,
                         onClick = { onOpenArtist(artist.name) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -83,6 +85,7 @@ fun SearchPane(
                         current = track.id.toString() == state.nowPlayingId,
                         onClick = { dispatch(DmtAction.PlayAt(state.filtered, index)) },
                         onLongClick = { dispatch(DmtAction.Enqueue(listOf(track), track.title)) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
