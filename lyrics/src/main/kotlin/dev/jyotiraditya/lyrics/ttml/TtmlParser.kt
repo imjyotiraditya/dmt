@@ -1,5 +1,15 @@
-package dev.jyotiraditya.lyrics
+package dev.jyotiraditya.lyrics.ttml
 
+import dev.jyotiraditya.lyrics.LyricLine
+import dev.jyotiraditya.lyrics.LyricWord
+import dev.jyotiraditya.lyrics.Lyrics
+import dev.jyotiraditya.lyrics.TimedText
+import dev.jyotiraditya.lyrics.Voice
+import dev.jyotiraditya.lyrics.alternateVoices
+import dev.jyotiraditya.lyrics.fillLineEnds
+import dev.jyotiraditya.lyrics.markInstrumentalLines
+import dev.jyotiraditya.lyrics.mergeSimultaneousDuplicates
+import dev.jyotiraditya.lyrics.withInterludes
 import nl.adaptivity.xmlutil.EventType
 import nl.adaptivity.xmlutil.XmlReader
 import nl.adaptivity.xmlutil.newGenericReader
@@ -27,13 +37,14 @@ import nl.adaptivity.xmlutil.xmlStreaming
  *   [LyricLine.translation] or [LyricLine.transliteration], never mixed into the
  *   line's sung [LyricLine.text].
  */
-object TtmlLyricsParser {
+object TtmlParser {
 
-    private const val ROLE_BACKGROUND = "x-bg"
-    private const val ROLE_TRANSLATION = "x-translation"
-    private const val ROLE_ROMANIZATION = "x-roman"
-    private const val AGENT_TYPE_GROUP = "group"
-
+    /**
+     * Returns the lyrics [raw] holds.
+     *
+     * @param raw The document to read.
+     * @return The lyrics, or null if the document cannot be read.
+     */
     fun parse(raw: String): Lyrics? =
         runCatching {
             val parser = xmlStreaming.newGenericReader(raw)
@@ -271,228 +282,4 @@ object TtmlLyricsParser {
                 synced = true,
             )
         }.getOrNull()
-
-    private fun XmlReader.attr(localName: String): String? {
-        for (i in 0 until attributeCount) {
-            if (getAttributeLocalName(i) == localName) return getAttributeValue(i)
-        }
-        return null
-    }
-
-    private fun parseTime(value: String?): Long {
-        if (value.isNullOrBlank()) return -1L
-
-        val trimmed = value.trim()
-
-        return runCatching {
-            when {
-                trimmed.endsWith("ms") -> trimmed.dropLast(2).toDouble().toLong()
-
-                trimmed.endsWith("s") && !trimmed.contains(':') ->
-                    (trimmed.dropLast(1).toDouble() * 1000).toLong()
-
-                else -> {
-                    val parts = trimmed.split(':')
-                    val seconds = parts.last().toDouble()
-                    val minutes = parts.getOrNull(parts.size - 2)?.toLongOrNull() ?: 0L
-                    val hours = parts.getOrNull(parts.size - 3)?.toLongOrNull() ?: 0L
-
-                    (hours * 3600_000) + (minutes * 60_000) + (seconds * 1000).toLong()
-                }
-            }
-        }.getOrDefault(-1L)
-    }
-
-    private class SpanFrame(
-        val beginMs: Long,
-        val endMs: Long,
-        val textStart: Int,
-        val background: Boolean,
-    ) {
-        var hadChild = false
-    }
-
-    private fun isFormattingOnly(chunk: String): Boolean =
-        chunk.isNotEmpty() &&
-                chunk.all { it.isWhitespace() } &&
-                chunk.any { it == '\n' || it == '\r' }
-
-    private fun readTimedText(parser: XmlReader): Pair<String, List<LyricWord>> {
-        val text = StringBuilder()
-        val words = mutableListOf<LyricWord>()
-        val spanStack = ArrayDeque<SpanFrame>()
-        var pendingSpace = false
-
-        fun flushSpace() {
-            if (pendingSpace && text.isNotEmpty() && text.last() != '\n') text.append(' ')
-            pendingSpace = false
-        }
-
-        var depth = 1
-        var event = parser.next()
-
-        while (depth > 0) {
-            when (event) {
-                EventType.START_ELEMENT -> {
-                    depth++
-
-                    if (parser.localName == "span") {
-                        flushSpace()
-
-                        spanStack.addLast(
-                            SpanFrame(
-                                beginMs = parseTime(parser.attr("begin")),
-                                endMs = parseTime(parser.attr("end")),
-                                textStart = text.length,
-                                background = false,
-                            ),
-                        )
-                    }
-                }
-
-                EventType.TEXT, EventType.IGNORABLE_WHITESPACE -> if (!isFormattingOnly(parser.text)) {
-                    parser.text.forEach { c ->
-                        if (c.isWhitespace()) {
-                            pendingSpace = true
-                        } else {
-                            flushSpace()
-                            text.append(c)
-                        }
-                    }
-                }
-
-                EventType.END_ELEMENT -> {
-                    depth--
-
-                    if (parser.localName == "span" && spanStack.isNotEmpty()) {
-                        val frame = spanStack.removeLast()
-
-                        if (frame.beginMs >= 0 && text.length > frame.textStart) {
-                            words += LyricWord(
-                                startMs = frame.beginMs,
-                                endMs = frame.endMs,
-                                start = frame.textStart,
-                                end = text.length,
-                                background = false,
-                            )
-                        }
-                    }
-                }
-
-                else -> Unit
-            }
-
-            if (depth > 0) event = parser.next()
-        }
-
-        return text.toString().trim() to words
-    }
-
-    private fun readTranslationSegments(parser: XmlReader): List<String> {
-        val segments = mutableListOf<String>()
-        val current = StringBuilder()
-        val bgStack = ArrayDeque<Boolean>()
-        var currentBg = false
-        var pendingSpace = false
-
-        fun flushSpace() {
-            if (pendingSpace && current.isNotEmpty() && current.last() != '\n') current.append(' ')
-            pendingSpace = false
-        }
-
-        fun cutSegment() {
-            val text = current.toString().trim()
-            if (text.isNotEmpty()) segments += text
-
-            current.clear()
-            pendingSpace = false
-        }
-
-        var depth = 1
-        var event = parser.next()
-
-        while (depth > 0) {
-            when (event) {
-                EventType.START_ELEMENT -> {
-                    depth++
-
-                    if (parser.localName == "span") {
-                        val isBg = currentBg || parser.attr("role") == ROLE_BACKGROUND
-
-                        if (isBg != currentBg) {
-                            cutSegment()
-                            currentBg = isBg
-                        }
-
-                        bgStack.addLast(currentBg)
-                        flushSpace()
-                    }
-                }
-
-                EventType.TEXT, EventType.IGNORABLE_WHITESPACE -> if (!isFormattingOnly(parser.text)) {
-                    parser.text.forEach { c ->
-                        if (c.isWhitespace()) {
-                            pendingSpace = true
-                        } else {
-                            flushSpace()
-                            current.append(c)
-                        }
-                    }
-                }
-
-                EventType.END_ELEMENT -> {
-                    depth--
-
-                    if (parser.localName == "span" && bgStack.isNotEmpty()) {
-                        bgStack.removeLast()
-
-                        val outerBg = bgStack.lastOrNull() ?: false
-                        if (outerBg != currentBg) {
-                            cutSegment()
-                            currentBg = outerBg
-                        }
-                    }
-                }
-
-                else -> Unit
-            }
-
-            if (depth > 0) event = parser.next()
-        }
-
-        cutSegment()
-
-        return segments
-    }
-
-    /**
-     * Tracks the order and type of `ttm:agent` declarations so each agent, solo
-     * or a named group, gets a stable [LyricLine.singer] index in the order it's
-     * first actually used on a line, independent of how many the document
-     * declares. `-1` is reserved for lines with no declared agent at all.
-     */
-    private class Agents {
-
-        private val types = mutableMapOf<String, String>()
-        private val order = mutableListOf<String>()
-
-        fun register(id: String?, type: String?) {
-            if (id == null) return
-            if (type != null) types[id] = type
-            if (types[id] != AGENT_TYPE_GROUP && id !in order) order += id
-        }
-
-        fun voiceFor(agentId: String?): Voice {
-            if (agentId == null) return Voice.PRIMARY
-            return if (types[agentId] == AGENT_TYPE_GROUP) Voice.GROUP else Voice.PRIMARY
-        }
-
-        fun singerFor(agentId: String?): Int {
-            if (agentId == null) return 0
-
-            if (agentId !in order) order += agentId
-
-            return order.indexOf(agentId)
-        }
-    }
 }
