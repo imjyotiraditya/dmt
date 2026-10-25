@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols Sharp, library_music, Apache 2.0 licence. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <!-- The symbols are drawn in a 0,-960 viewBox. -->
+    <group android:translateY="960">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M486-333q41 0 70-28.42T585-431v-252h116v-60H545v237q-11-9-26.32-14T486-525q-39.06 0-66.03 27.37-26.97 27.36-26.97 67Q393-391 419.97-362q26.97 29 66.03 29ZM200-200v-680h680v680H200Zm60-60h560v-560H260v560ZM80-80v-680h60v620h620v60H80Zm180-740v560-560Z" />
+    </group>
+</vector>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols Sharp, skip_previous (filled), Apache 2.0 licence. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <!-- The symbols are drawn in a 0,-960 viewBox. -->
+    <group android:translateY="960">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M220-240v-480h60v480h-60Zm520 0L394-480l346-240v480Z" />
+    </group>
+</vector>

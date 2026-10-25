@@ -1,0 +1,409 @@
+<resources>
+    <string name="app_name" translatable="false">dmt</string>
+
+    <!-- Navigation -->
+    <string name="nav_listen">Listen</string>
+    <string name="nav_library">Library</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_back">Back</string>
+
+    <!-- Library tabs -->
+    <string name="library_tab_tracks">Tracks</string>
+    <string name="library_tab_albums">Albums</string>
+    <string name="library_tab_artists">Artists</string>
+    <string name="library_tab_genres">Genres</string>
+    <string name="library_tab_folders">Folders</string>
+    <string name="library_tab_playlists">Playlists</string>
+
+    <!-- Android Auto -->
+    <string name="auto_tracks">Tracks</string>
+    <string name="auto_albums">Albums</string>
+    <string name="auto_artists">Artists</string>
+    <string name="auto_folders">Folders</string>
+    <string name="auto_shuffle">Shuffle</string>
+    <string name="auto_repeat">Repeat</string>
+
+    <!-- Collections -->
+    <string name="collection_genre">Genre</string>
+    <string name="collection_playlist">Playlist</string>
+
+    <!-- Counts -->
+    <string name="count_tracks_none">No tracks</string>
+    <plurals name="count_tracks">
+        <item quantity="one">%1$d track</item>
+        <item quantity="other">%1$d tracks</item>
+    </plurals>
+    <plurals name="count_albums">
+        <item quantity="one">%1$d album</item>
+        <item quantity="other">%1$d albums</item>
+    </plurals>
+    <plurals name="count_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+
+    <!-- Home -->
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_night">Late night</string>
+    <string name="home_greeting_together">%1$s together, %2$s so far.</string>
+    <plurals name="home_greeting_waiting">
+        <item quantity="one">%1$d track is waiting to be heard.</item>
+        <item quantity="other">%1$d tracks are waiting to be heard.</item>
+    </plurals>
+    <string name="home_shuffle_all">Shuffle all</string>
+    <string name="home_see_library">The whole library</string>
+    <string name="home_on_repeat">On repeat</string>
+    <string name="home_recent">Recently added</string>
+    <string name="home_artists">Your artists</string>
+    <string name="home_most_played">Most played</string>
+    <string name="home_not_heard">Not heard yet</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_empty_action">Choose a source</string>
+
+    <!-- Search -->
+    <string name="search_hint">Songs, albums, artists</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_no_match_title">No match</string>
+    <string name="search_no_match_body">Nothing in your library matches “%1$s”.</string>
+
+    <!-- Library -->
+    <string name="library_scanning">Reading your library</string>
+    <string name="library_empty_local">No tracks found on this device. Rescan from Settings, or switch source.</string>
+    <string name="library_empty_jellyfin">No tracks found on your Jellyfin server. Rescan from Settings, or switch source.</string>
+    <string name="library_empty_subsonic">No tracks found on your Navidrome or Subsonic server. Rescan from Settings, or switch source.</string>
+    <string name="library_scan_failed_local">Couldn’t read the music on this device. Check permissions and rescan.</string>
+    <string name="library_scan_failed_jellyfin">Couldn’t reach your Jellyfin server. Check the connection and rescan.</string>
+    <string name="library_scan_failed_subsonic">Couldn’t reach your Navidrome or Subsonic server. Check the connection and rescan.</string>
+    <string name="library_cue_tag">Cue</string>
+    <string name="library_cue_from">From a cue sheet</string>
+
+    <!-- Sort -->
+    <string name="sort_by">Sort by %1$s</string>
+    <string name="sort_sheet_title">Sort tracks by</string>
+    <string name="sort_title">Title</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_date_added">Date added</string>
+    <string name="sort_date_modified">Date modified</string>
+    <string name="sort_recent">Recent</string>
+
+    <!-- Playlists -->
+    <string name="playlist_empty">No playlists yet. Make one for a mood, a drive, a person.</string>
+    <string name="playlist_new_title">New playlist</string>
+    <string name="playlist_name_hint">Give it a name</string>
+    <string name="playlist_create">Create</string>
+    <string name="playlist_add">Add</string>
+    <string name="playlist_remove">Remove from playlist</string>
+    <string name="playlist_add_tracks_title">Add tracks</string>
+    <string name="playlist_pick_title">Add to playlist</string>
+    <string name="playlist_pick_empty">No playlists yet. Make one in Library.</string>
+
+    <!-- Track actions -->
+    <string name="action_play">Play</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_play_next">Play next</string>
+    <string name="action_add_to_queue">Add to queue</string>
+    <string name="action_add_to_playlist">Add to playlist</string>
+    <string name="action_go_to_album">Go to album</string>
+    <string name="action_go_to_artist">Go to artist</string>
+    <string name="action_queue">Queue</string>
+    <string name="notice_queued">Added to queue: %1$s</string>
+    <string name="notice_playing_next">Playing next: %1$s</string>
+
+    <!-- Player -->
+    <string name="player_tab_playing">Playing</string>
+    <string name="player_tab_details">Details</string>
+    <string name="player_close">Close player</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_next">Next</string>
+    <string name="player_previous">Previous</string>
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_repeat">Repeat</string>
+    <string name="player_lyrics">Lyrics</string>
+    <string name="player_track_info">About this track</string>
+    <string name="quality_lossless">Lossless</string>
+    <string name="quality_hi_res">Hi-Res Lossless</string>
+    <string name="quality_dolby">Dolby</string>
+    <string name="quality_dolby_atmos">Dolby Atmos</string>
+
+    <!-- Sleep timer -->
+    <string name="sleep_title">Sleep timer</string>
+    <string name="sleep_off">Off</string>
+    <string name="sleep_hour">1 hour</string>
+    <string name="sleep_song_end">End of song</string>
+    <string name="sleep_minutes">%1$d min</string>
+    <string name="sleep_on_left">On · %1$d min left</string>
+    <string name="sleep_on_song_end">On · until the song ends</string>
+    <string name="sleep_stops_at">Stops at %1$s</string>
+    <string name="sleep_stops_after_song">Stops after the song playing at %1$s</string>
+    <string name="sleep_stops_at_song_end">Stops when this song ends</string>
+    <string name="sleep_start">Start timer · %1$s</string>
+    <string name="sleep_update">Update timer · %1$s</string>
+    <string name="sleep_turn_off">Turn off</string>
+    <string name="sleep_finish_song">Finish the song</string>
+    <string name="sleep_finish_song_hint">Waits for the song to end, then fades out</string>
+    <string name="sleep_fades_hint">Fades out over the last 10 seconds</string>
+    <string name="sleep_shorter">Shorter</string>
+    <string name="sleep_longer">Longer</string>
+
+    <!-- Playback speed -->
+    <string name="speed_title">Playback speed</string>
+    <string name="speed_value" translatable="false">%1$s×</string>
+    <string name="speed_slower">Slower</string>
+    <string name="speed_faster">Faster</string>
+    <string name="speed_reset">Back to normal speed</string>
+    <string name="speed_normal">Normal</string>
+    <string name="speed_song_length">This song: %1$s → %2$s</string>
+    <string name="speed_keep_pitch">Keep pitch</string>
+    <string name="speed_keep_pitch_hint">Off makes faster speeds sound higher</string>
+
+    <!-- Queue -->
+    <string name="queue_title">Up next</string>
+    <plurals name="queue_up_next">
+        <item quantity="one">Up next · %1$d track</item>
+        <item quantity="other">Up next · %1$d tracks</item>
+    </plurals>
+    <string name="queue_remove">Remove from queue</string>
+    <string name="queue_clear">Clear</string>
+    <string name="queue_empty_title">Nothing up next</string>
+    <string name="queue_empty_body">Choose Play next or Add to queue on any track, album or playlist to line it up here.</string>
+    <string name="queue_reorder">Drag to reorder</string>
+    <string name="queue_shuffled_hint">Turn off shuffle to reorder.</string>
+
+    <!-- Lyrics -->
+    <string name="lyrics_none_title">No lyrics yet</string>
+    <string name="lyrics_none_body">This track has none from the source in use. Pick another source, or fetch them online from LRCLIB or lrc.red.</string>
+    <string name="lyrics_source_title">Lyrics source</string>
+    <string name="lyrics_fetching">Fetching</string>
+    <string name="lyrics_from">Source: %1$s</string>
+    <string name="lyrics_romanized">Romanized</string>
+    <string name="lyrics_source_embedded">Embedded</string>
+    <string name="lyrics_source_embedded_hint">Saved inside the track’s tags</string>
+    <string name="lyrics_source_local">Local file</string>
+    <string name="lyrics_source_local_hint">A .ttml, .lrc or .txt file next to the track</string>
+    <string name="lyrics_source_lrclib">LRCLIB</string>
+    <string name="lyrics_source_lrclib_hint">Fetched from lrclib.net</string>
+    <string name="lyrics_source_lrc_red">lrc.red</string>
+    <string name="lyrics_source_lrc_red_hint">Fetched from lrc.red, word-synced where it can be</string>
+    <string name="lyrics_source_missing">None</string>
+    <string name="lyrics_source_tap">Tap to fetch</string>
+    <string name="lyrics_source_none_online">Nothing found</string>
+    <string name="lyrics_source_unreachable">Couldn’t reach</string>
+    <string name="lyrics_timing_word">Word-synced</string>
+    <string name="lyrics_timing_line">Line-synced</string>
+    <string name="lyrics_timing_plain">Plain text</string>
+
+    <!-- Track fields -->
+    <string name="track_field_title">Title</string>
+    <string name="track_field_artist">Artist</string>
+    <string name="track_field_album">Album</string>
+    <string name="track_field_genre">Genre</string>
+    <string name="track_field_length">Length</string>
+    <string name="track_field_location">Location</string>
+
+    <!-- Track details -->
+    <string name="chain_file">File</string>
+    <string name="chain_decoder">Decoder</string>
+    <string name="chain_speed">Speed</string>
+    <string name="chain_output">Output</string>
+    <string name="chain_device">Device</string>
+    <string name="spec_format">Format</string>
+    <string name="spec_bit_depth">Bit depth</string>
+    <string name="spec_sample_rate">Sample rate</string>
+    <string name="spec_channels">Channels</string>
+    <string name="spec_bitrate">Bitrate</string>
+    <string name="spec_vbr">Variable bitrate</string>
+    <string name="spec_gapless">Gapless</string>
+    <string name="spec_size">Size</string>
+    <string name="spec_codec">Codec</string>
+    <string name="spec_hardware">Hardware</string>
+    <string name="spec_provider">Provider</string>
+    <string name="spec_instance">Instance</string>
+    <string name="spec_output_path">Path</string>
+    <string name="spec_buffer">Buffer</string>
+    <string name="spec_mode">Mode</string>
+    <string name="spec_route">Route</string>
+    <string name="spec_device">Device</string>
+    <string name="spec_rates">Supported rates</string>
+    <string name="spec_encodings">Encodings</string>
+    <string name="spec_speed">Playing at</string>
+
+    <!-- Playback errors and notifications -->
+    <string name="playback_error">Playback stopped: %1$s</string>
+    <string name="playback_unsupported">This device has no decoder for %1$s</string>
+    <string name="notification_channel_playback">Playback</string>
+    <string name="notification_resume_title">Playback couldn’t start</string>
+    <string name="notification_resume_text">Android blocked playback from starting in the background. Tap to open dmt and press play.</string>
+
+    <!-- Settings -->
+    <string name="settings_section_playback">Playback</string>
+    <string name="settings_section_look">Look and feel</string>
+    <string name="settings_section_library">Library</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_volume_levelling">Volume levelling</string>
+    <string name="settings_volume_levelling_hint">Even out loudness between tracks</string>
+    <string name="settings_stop_on_dismiss">Stop when closed</string>
+    <string name="settings_stop_on_dismiss_hint">End playback when dmt is swiped away</string>
+    <string name="settings_equalizer">Equalizer</string>
+    <string name="settings_accent">Accent</string>
+    <string name="settings_animated_art">Animated covers</string>
+    <string name="settings_animated_art_hint">Play motion artwork where an album has it</string>
+    <string name="settings_animated_art_info">Motion covers come from an online artwork service. Each one streams whenever it plays and is never saved on your device, so it uses data every time. Turn this off to keep covers still and offline.</string>
+    <string name="settings_romanized_lyrics">Romanized lyrics</string>
+    <string name="settings_romanized_lyrics_hint">Show lyrics in Latin script when available</string>
+    <string name="settings_singer_colors">Singer colours</string>
+    <string name="settings_singer_colors_hint">Give each singer in a duet their own colour, or keep all lyrics white</string>
+    <string name="settings_rescan">Rescan library</string>
+    <string name="settings_rescan_scanning">Scanning…</string>
+    <string name="settings_rescan_up_to_date">Up to date</string>
+    <string name="settings_rescan_just_now">just now</string>
+    <plurals name="settings_rescan_added">
+        <item quantity="one">%1$d new</item>
+        <item quantity="other">%1$d new</item>
+    </plurals>
+    <plurals name="settings_rescan_removed">
+        <item quantity="one">%1$d removed</item>
+        <item quantity="other">%1$d removed</item>
+    </plurals>
+    <string name="info_button_description">About %1$s</string>
+
+    <!-- Accent -->
+    <string name="accent_green">Green</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_red">Red</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_purple">Purple</string>
+    <string name="accent_mono">Black and white</string>
+    <string name="accent_wallpaper">Wallpaper</string>
+    <string name="accent_wallpaper_hint">Matches your device’s colours</string>
+    <string name="accent_cover">Album cover</string>
+    <string name="accent_cover_hint">Changes with the song playing</string>
+
+    <!-- Library folders -->
+    <string name="folders_title">Library folders</string>
+    <string name="folders_hint">Turn a folder off to hide its tracks from your library. Nothing is deleted.</string>
+    <string name="folders_all_shown">All shown</string>
+    <string name="folders_hidden">Hidden</string>
+    <string name="folders_storage_root">Internal storage</string>
+    <plurals name="folders_hidden_count">
+        <item quantity="one">%1$d hidden</item>
+        <item quantity="other">%1$d hidden</item>
+    </plurals>
+
+    <!-- About -->
+    <string name="brand_dear_music">Dear music,</string>
+    <string name="brand_thanks">thanks.</string>
+    <string name="about_version">Version</string>
+    <string name="about_developer">Made by</string>
+    <string name="about_credit_name">Jyotiraditya Panda</string>
+    <string name="about_credit_url" translatable="false">https://github.com/imjyotiraditya</string>
+    <string name="licenses_title">Open-source licenses</string>
+    <string name="licenses_hint">dmt is free software under the GNU GPL v3, built with the work below. Tap one to read its license.</string>
+    <string name="licenses_bundled">Bundled with dmt</string>
+    <string name="licenses_libraries">Libraries</string>
+    <string name="licenses_material_symbols" translatable="false">Material Symbols</string>
+    <string name="licenses_material_symbols_detail">Icons · Apache License 2.0</string>
+    <string name="licenses_ffmpeg" translatable="false">FFmpeg</string>
+    <string name="licenses_ffmpeg_detail">Audio decoders, with Paul B Mahol’s AC-4 decoder from librempeg · GNU GPL v3</string>
+    <string name="licenses_gpl3" translatable="false">GNU General Public License v3</string>
+    <string name="licenses_plus_jakarta_sans" translatable="false">Plus Jakarta Sans</string>
+    <string name="licenses_plus_jakarta_sans_detail">Typeface · SIL Open Font License 1.1</string>
+    <string name="licenses_ofl" translatable="false">SIL Open Font License 1.1</string>
+    <string name="licenses_jellyfin_icon" translatable="false">Jellyfin icon</string>
+    <string name="licenses_jellyfin_icon_detail">Source icon, by the Jellyfin contributors · CC BY-SA 4.0</string>
+    <string name="licenses_cc_by_sa_4" translatable="false">Creative Commons Attribution-ShareAlike 4.0</string>
+    <string name="licenses_navidrome_logo" translatable="false">Navidrome logo</string>
+    <string name="licenses_navidrome_logo_detail">Source icon, by the Navidrome contributors · GNU GPL v3</string>
+
+    <!-- Source kinds -->
+    <string name="source_kind_local">This device</string>
+    <string name="source_kind_jellyfin">Jellyfin</string>
+    <string name="source_kind_subsonic">Navidrome</string>
+    <string name="source_kind_jellyfin_summary">Your Jellyfin media server</string>
+    <string name="source_kind_subsonic_summary">Navidrome or any Subsonic server</string>
+
+    <!-- Sources -->
+    <string name="sources_title">Sources</string>
+    <string name="sources_hint">Where your music comes from. Switch any time.</string>
+    <string name="sources_add">Add a source</string>
+    <string name="sources_add_hint">Add as many as you like, even two of one kind.</string>
+    <string name="sources_signed_out">Signed out</string>
+    <string name="sources_edit">Edit</string>
+    <string name="sources_disconnect">Disconnect</string>
+    <string name="sources_session_ended">You were signed out of %1$s. Sign in again in Sources.</string>
+
+    <!-- Source form -->
+    <string name="source_form_title_connect">Connect %1$s</string>
+    <string name="source_form_title_edit">Edit %1$s</string>
+    <string name="source_form_title_sign_in">Sign in to %1$s</string>
+    <string name="source_form_name_label">Name</string>
+    <string name="source_form_name_hint">Name it, like Home</string>
+    <string name="source_form_address_label">Server address</string>
+    <string name="source_form_address_hint_jellyfin" translatable="false">jellyfin.example.com</string>
+    <string name="source_form_address_hint_subsonic" translatable="false">music.example.com</string>
+    <string name="source_form_username_label">Username</string>
+    <string name="source_form_username_hint">Your username</string>
+    <string name="source_form_password_label">Password</string>
+    <string name="source_form_password_hint">Your password</string>
+    <string name="source_form_password_keep">Leave empty to stay signed in</string>
+    <string name="source_form_connect">Connect</string>
+    <string name="source_form_connecting">Connecting…</string>
+    <string name="source_form_save">Save</string>
+    <string name="source_form_cancel">Cancel</string>
+    <string name="source_form_remove">Remove</string>
+    <string name="source_form_error_missing">Fill in the server address, username and password first.</string>
+    <string name="source_form_error_unreachable">Couldn’t reach the server. Check the address and your connection.</string>
+    <string name="source_form_error_rejected">The server didn’t accept that username or password.</string>
+    <string name="source_form_error_not_jellyfin">That address doesn’t look like a Jellyfin server.</string>
+    <string name="source_form_error_not_subsonic">That address doesn’t look like a Navidrome or Subsonic server.</string>
+    <string name="source_form_error_token_unsupported">This server doesn’t accept token sign-in, which dmt needs so it never stores your password.</string>
+
+    <!-- Fields -->
+    <string name="field_password_show">Show password</string>
+    <string name="field_password_hide">Hide password</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Permissions</string>
+    <string name="permissions_hint">Granted permissions can only be taken back from system settings.</string>
+    <string name="permissions_allow">Allow</string>
+    <string name="permissions_allow_music">Allow access to music</string>
+    <string name="permissions_open_settings">Open settings</string>
+    <string name="permissions_manage">Manage</string>
+    <string name="permission_audio_title">Music and audio</string>
+    <string name="permission_audio_reason">Read the audio files stored on this device.</string>
+    <string name="permission_audio_denied">Without it, music on this device stays out of your library.</string>
+    <string name="permission_notifications_title">Notifications</string>
+    <string name="permission_notifications_reason">Show playback controls outside the app.</string>
+    <string name="permission_notifications_denied">Without it, music still plays, with no controls in the shade.</string>
+    <string name="permission_files_title">All files</string>
+    <string name="permission_files_reason">Read cue sheets and lyrics files kept next to your songs.</string>
+    <string name="permission_files_denied">Without it, cue albums play as one long track and lyrics files next to your songs are skipped.</string>
+    <string name="permission_network_title">Local network</string>
+    <string name="permission_network_reason">Reach a media server on your home network.</string>
+    <string name="permission_network_denied">Without it, a server on your home network can’t connect.</string>
+
+    <!-- Setup -->
+    <string name="setup_stage_hello">Hello</string>
+    <string name="setup_stage_access">Access</string>
+    <string name="setup_stage_source">Source</string>
+    <string name="setup_stage_ready">Ready</string>
+    <string name="setup_begin">Begin</string>
+    <string name="setup_back">Back</string>
+    <string name="setup_next">Next</string>
+    <string name="setup_hello_body">A player for the music you already own. No account, no ads, no analytics. Four short steps and you’re in.</string>
+    <string name="setup_access_title">Let dmt hear it</string>
+    <string name="setup_access_body">One permission to read the music on this device. The rest are optional.</string>
+    <string name="setup_access_required">Without music and audio access, music on this device stays out of your library. You can allow it later in Settings.</string>
+    <string name="setup_source_title">Where it lives</string>
+    <string name="setup_source_body">Pick a home for your library. You can switch any time.</string>
+    <string name="setup_source_local_detail">Files stored on this device</string>
+    <string name="setup_source_jellyfin_detail">Your own server. You sign in next.</string>
+    <string name="setup_source_subsonic_detail">Navidrome or any Subsonic server. You sign in next.</string>
+    <string name="setup_signed_in">Signed in to %1$s. Add more servers any time in Settings.</string>
+    <string name="setup_ready_title">All set.</string>
+    <string name="setup_ready_body">Everything here can be changed later in Settings.</string>
+    <string name="setup_ready_source">Music from: %1$s.</string>
+    <string name="setup_start">Start listening</string>
+</resources>

@@ -1,0 +1,62 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+
+      - name: set up jdk
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: set up gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: lint
+        run: ./gradlew :app:lintRelease
+
+      - name: run unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: decode keystore
+        if: github.event_name != 'pull_request'
+        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
+
+      - name: resolve version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "name=$(gh release view --json tagName --jq .tagName | sed 's/^v//')-ci-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: build
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
+
+      - name: upload release apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: dmt-release
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 1
+
+      - name: upload apks to telegram
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: ./scripts/upload-telegram.sh app/build/outputs/apk/release/*.apk

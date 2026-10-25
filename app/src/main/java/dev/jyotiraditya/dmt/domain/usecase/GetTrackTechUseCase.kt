@@ -1,0 +1,21 @@
+package dev.jyotiraditya.dmt.domain.usecase
+
+import android.net.Uri
+import androidx.media3.common.Format
+import dev.jyotiraditya.dmt.data.repository.TrackMediaRepository
+import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.domain.model.TrackTech
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+
+class GetTrackTechUseCase
+@Inject
+constructor(
+    private val trackMediaRepository: TrackMediaRepository,
+) {
+    suspend operator fun invoke(uri: Uri, track: Track?, played: Format?): TrackTech =
+        withContext(Dispatchers.IO) {
+            trackMediaRepository.techSpecs(uri, track, played)
+        }
+}

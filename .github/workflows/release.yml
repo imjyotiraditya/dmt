@@ -1,0 +1,61 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+
+      - name: set up jdk
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: set up gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: resolve version
+        id: version
+        run: echo "name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: decode keystore
+        run: echo "${{ secrets.SIGNING_KEYSTORE }}" | base64 -d > dmt.keystore
+
+      - name: build signed release apk
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease -PversionOverride=${{ steps.version.outputs.name }}
+
+      - name: build signed release aab
+        env:
+          SIGNING_KEYSTORE_PATH: dmt.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease -PversionOverride=${{ steps.version.outputs.name }} -PabiSplits=false
+
+      - name: write release notes
+        run: |
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          git tag --list --format='%(contents)' "${GITHUB_REF_NAME}" > release-notes.md
+
+      - name: publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: release-notes.md
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
