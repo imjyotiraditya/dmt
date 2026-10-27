@@ -73,7 +73,7 @@ fun SeekBar(
         state = slider,
         modifier = modifier.fillMaxWidth().height(SeekTarget),
         thumb = {
-            Canvas(modifier = Modifier.size(ThumbRest)) {
+            Canvas(modifier = Modifier.size(width = ThumbRest, height = ThumbHeld)) {
                 val side = thumb.toPx()
                 drawRect(
                     ink,
