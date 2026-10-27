@@ -24,7 +24,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -122,7 +121,6 @@ fun DmtScreen(
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val showing = player != null && state.nowPlayingId != null
     val peek = if (showing) MiniPlayerHeight + navBottom else 0.dp
-    LaunchedEffect(showing) { if (!showing) sheet.partialExpand() }
 
     CompositionLocalProvider(LocalArtwork provides artwork, LocalPlayer provides player) {
         BottomSheetScaffold(
