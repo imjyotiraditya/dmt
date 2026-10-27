@@ -2,11 +2,6 @@ package dev.jyotiraditya.dmt.data.remote.artwork
 
 import dev.jyotiraditya.dmt.data.remote.DMT_USER_AGENT
 import dev.jyotiraditya.dmt.data.remote.found
-import dev.jyotiraditya.dmt.data.remote.knownOrNull
-import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
-import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ARTIST
-import dev.jyotiraditya.dmt.domain.model.primaryArtist
 import dev.jyotiraditya.dmt.util.suspendRunCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -33,13 +28,11 @@ constructor(
 ) {
 
     /**
-     * The animated cover of [track]'s album, null if it has none, or a failure if the service could
-     * not be reached.
+     * The animated cover of [album] by [artist], null if it has none, or a failure if the service
+     * could not be reached.
      */
-    suspend fun fetchStreamUrl(track: Track): Result<String?> {
-        val artist = track.primaryArtist.knownOrNull(UNKNOWN_ARTIST) ?: return Result.success(null)
-        val album = track.album.knownOrNull(UNKNOWN_ALBUM) ?: return Result.success(null)
-        return suspendRunCatching {
+    suspend fun fetchStreamUrl(artist: String, album: String): Result<String?> =
+        suspendRunCatching {
             val response =
                 client.get(BASE_URL) {
                     parameter("artist", artist)
@@ -49,5 +42,4 @@ constructor(
             if (!response.found()) return@suspendRunCatching null
             json.decodeFromString<ArtworkResult>(response.bodyAsText()).url?.ifBlank { null }
         }
-    }
 }
