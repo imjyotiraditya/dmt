@@ -1,21 +1,18 @@
 package dev.jyotiraditya.dmt.data.remote.lrcred
 
-import dev.jyotiraditya.dmt.data.remote.DMT_USER_AGENT
-import dev.jyotiraditya.dmt.data.remote.found
 import dev.jyotiraditya.dmt.data.remote.knownOrNull
+import dev.jyotiraditya.dmt.data.remote.missingAsNull
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
 import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ARTIST
 import dev.jyotiraditya.dmt.domain.model.UNKNOWN_TITLE
 import dev.jyotiraditya.dmt.domain.model.primaryArtist
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.text.Normalizer
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,7 +43,7 @@ internal data class LrcRedHit(
 
 /** Client for the lrc.red lyrics catalogue, which serves word-synced TTML by ISRC. */
 @Singleton
-class LrcRedApi @Inject constructor(private val client: HttpClient, private val json: Json) {
+class LrcRedApi @Inject constructor(private val client: HttpClient) {
 
     /** The TTML lyrics of [track], or null when lrc.red has no matching recording. */
     suspend fun fetchLyrics(track: Track): String? {
@@ -54,21 +51,16 @@ class LrcRedApi @Inject constructor(private val client: HttpClient, private val 
         val artist = track.primaryArtist.knownOrNull(UNKNOWN_ARTIST) ?: return null
 
         val search =
-            client.get("$BASE_URL/search.json") {
-                parameter("q", "$artist $title")
-                header(HttpHeaders.UserAgent, DMT_USER_AGENT)
-            }
-        if (!search.found()) return null
-        val hits = json.decodeFromString<LrcRedSearch>(search.bodyAsText()).hits
+            missingAsNull {
+                client
+                    .get("$BASE_URL/search.json") { parameter("q", "$artist $title") }
+                    .body<LrcRedSearch>()
+            } ?: return null
         val album = track.album.knownOrNull(UNKNOWN_ALBUM)
-        val hit = bestMatch(hits, title, artist, track.durationMs, album) ?: return null
+        val hit = bestMatch(search.hits, title, artist, track.durationMs, album) ?: return null
 
-        val lyrics =
-            client.get("$BASE_URL/s/${hit.isrc}.ttml") {
-                header(HttpHeaders.UserAgent, DMT_USER_AGENT)
-            }
-        if (!lyrics.found()) return null
-        return lyrics.bodyAsText().ifBlank { null }
+        val lyrics = missingAsNull { client.get("$BASE_URL/s/${hit.isrc}.ttml").bodyAsText() }
+        return lyrics?.ifBlank { null }
     }
 }
 

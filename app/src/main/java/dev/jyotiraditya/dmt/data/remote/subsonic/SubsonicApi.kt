@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.data.remote.subsonic
 
+import dev.jyotiraditya.dmt.data.remote.missingAsNull
 import dev.jyotiraditya.dmt.domain.model.ServerSource
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
@@ -8,13 +9,9 @@ import dev.jyotiraditya.dmt.domain.model.UNKNOWN_TITLE
 import dev.jyotiraditya.lyrics.Lyrics
 import dev.jyotiraditya.lyrics.LyricsParser
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
-import io.ktor.http.isSuccess
-import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Locale
@@ -84,7 +81,7 @@ data class SubsonicSong(
 
 /** Client for Subsonic and OpenSubsonic servers such as Navidrome. */
 @Singleton
-class SubsonicApi @Inject constructor(private val client: HttpClient, private val json: Json) {
+class SubsonicApi @Inject constructor(private val client: HttpClient) {
 
     /** Checks that the server answers and accepts [account]; throws when it doesn't. */
     suspend fun ping(account: SubsonicAccount) {
@@ -146,11 +143,9 @@ class SubsonicApi @Inject constructor(private val client: HttpClient, private va
 
     /** The result of [block], or null when the server refuses the call or doesn't know it. */
     private inline fun <T> refusedAsNull(block: () -> T?): T? = try {
-        block()
+        missingAsNull(block)
     } catch (_: SubsonicException) {
         null
-    } catch (missing: SubsonicHttpException) {
-        if (missing.status == HttpStatusCode.NotFound) null else throw missing
     }
 
     /** Calls [method] and returns its response; a failure the server reports throws. */
@@ -159,7 +154,7 @@ class SubsonicApi @Inject constructor(private val client: HttpClient, private va
         method: String,
         params: URLBuilder.() -> Unit = {},
     ): SubsonicResponse {
-        val response = client.get(url(account, method, params)).decode()
+        val response = client.get(url(account, method, params)).body<SubsonicEnvelope>().response
         if (response.status != "ok") {
             val error = response.error
             throw SubsonicException(error?.code ?: 0, error?.message.orEmpty())
@@ -182,11 +177,6 @@ class SubsonicApi @Inject constructor(private val client: HttpClient, private va
             params()
         }
         .buildString()
-
-    private suspend fun HttpResponse.decode(): SubsonicResponse {
-        if (!status.isSuccess()) throw SubsonicHttpException(status)
-        return json.decodeFromString<SubsonicEnvelope>(bodyAsText()).response
-    }
 }
 
 data class SubsonicSongRef(val id: String, val artist: String, val title: String)

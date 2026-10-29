@@ -35,7 +35,11 @@ object ImageModule {
         client: Provider<HttpClient>,
     ): ImageLoader = ImageLoader.Builder(context)
         .components {
-            add(KtorNetworkFetcherFactory(httpClient = { client.get() }))
+            add(
+                KtorNetworkFetcherFactory(
+                    httpClient = { client.get().config { expectSuccess = false } },
+                ),
+            )
             add(TrackCoverMapper())
             add(TrackCoverKeyer())
             add(TrackCoverFetcher.Factory(context, coverArt))

@@ -1,8 +1,9 @@
 package dev.jyotiraditya.dmt.data.remote.subsonic
 
 import dev.jyotiraditya.dmt.data.remote.jellyfin.normalizeServerUrl
-import io.ktor.http.HttpStatusCode
-import kotlinx.serialization.SerializationException
+import io.ktor.client.call.NoTransformationFoundException
+import io.ktor.client.plugins.ResponseException
+import io.ktor.serialization.ContentConvertException
 
 private const val WRONG_CREDENTIALS = 40
 private const val TOKEN_AUTH_UNSUPPORTED = 41
@@ -21,8 +22,6 @@ enum class SubsonicError {
 
 class SubsonicException(val code: Int, message: String) : Exception(message)
 
-class SubsonicHttpException(val status: HttpStatusCode) : Exception("HTTP ${status.value}")
-
 fun Throwable.toSubsonicError(): SubsonicError = when (this) {
     is SubsonicException ->
         when (code) {
@@ -31,8 +30,9 @@ fun Throwable.toSubsonicError(): SubsonicError = when (this) {
             else -> SubsonicError.NOT_SUBSONIC
         }
 
-    is SubsonicHttpException,
-    is SerializationException,
+    is ResponseException,
+    is ContentConvertException,
+    is NoTransformationFoundException,
     is IllegalArgumentException,
     -> SubsonicError.NOT_SUBSONIC
 

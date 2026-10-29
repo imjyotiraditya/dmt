@@ -1,7 +1,9 @@
 package dev.jyotiraditya.dmt.data.remote.jellyfin
 
+import io.ktor.client.call.NoTransformationFoundException
+import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
-import kotlinx.serialization.SerializationException
+import io.ktor.serialization.ContentConvertException
 
 /** A failed Jellyfin request, by what the user can do about it. */
 enum class JellyfinError {
@@ -13,12 +15,9 @@ enum class JellyfinError {
     NOT_JELLYFIN,
 }
 
-class JellyfinHttpException(val status: HttpStatusCode) :
-    Exception("Jellyfin request failed: $status")
-
 fun Throwable.toJellyfinError(): JellyfinError = when (this) {
-    is JellyfinHttpException ->
-        when (status) {
+    is ResponseException ->
+        when (response.status) {
             HttpStatusCode.Unauthorized,
             HttpStatusCode.Forbidden,
             -> JellyfinError.BAD_CREDENTIALS
@@ -26,7 +25,9 @@ fun Throwable.toJellyfinError(): JellyfinError = when (this) {
             else -> JellyfinError.NOT_JELLYFIN
         }
 
-    is SerializationException -> JellyfinError.NOT_JELLYFIN
+    is ContentConvertException,
+    is NoTransformationFoundException,
+    -> JellyfinError.NOT_JELLYFIN
 
     else -> JellyfinError.UNREACHABLE
 }

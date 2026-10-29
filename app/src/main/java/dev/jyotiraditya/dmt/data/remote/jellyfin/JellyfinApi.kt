@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.data.remote.jellyfin
 
+import dev.jyotiraditya.dmt.data.remote.missingAsNull
 import dev.jyotiraditya.dmt.domain.model.ServerSource
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
@@ -11,21 +12,17 @@ import dev.jyotiraditya.lyrics.LyricsParser
 import dev.jyotiraditya.lyrics.fillLineEnds
 import dev.jyotiraditya.lyrics.withInterludes
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
-import io.ktor.http.isSuccess
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Instant
@@ -80,7 +77,6 @@ class JellyfinApi
 @Inject
 constructor(
     private val client: HttpClient,
-    private val json: Json,
     private val deviceId: JellyfinDeviceId,
 ) {
 
@@ -90,9 +86,9 @@ constructor(
                 .post(endpoint(baseUrl, "/Users/AuthenticateByName")) {
                     authorize(device())
                     contentType(ContentType.Application.Json)
-                    setBody(json.encodeToString(AuthenticateRequest(username, password)))
+                    setBody(AuthenticateRequest(username, password))
                 }
-                .decode()
+                .body()
         return JellyfinAuth(userId = result.user.id, token = result.accessToken)
     }
 
@@ -107,7 +103,7 @@ constructor(
                 append("Recursive", "true")
                 append("Fields", "MediaSources,DateCreated")
             }
-        val result: ItemsResult = client.get(url) { authorize(device(), token) }.decode()
+        val result: ItemsResult = client.get(url) { authorize(device(), token) }.body()
         return result.items.map { it.toJellyfinItem() }
     }
 
@@ -123,15 +119,12 @@ constructor(
     /** The server's lyrics for [itemId], or null when it has none; throws if unreachable. */
     suspend fun fetchLyrics(baseUrl: String, itemId: String, token: String): Lyrics? {
         val lines =
-            try {
+            missingAsNull {
                 client
                     .get(endpoint(baseUrl, "/Audio/$itemId/Lyrics")) { authorize(device(), token) }
-                    .decode<LyricsResult>()
+                    .body<LyricsResult>()
                     .lines
-            } catch (missing: JellyfinHttpException) {
-                if (missing.status == HttpStatusCode.NotFound) return null
-                throw missing
-            }
+            } ?: return null
 
         if (lines.all { it.text.isBlank() }) return null
         if (lines.any { it.start == null }) {
@@ -167,12 +160,6 @@ constructor(
 
     private fun HttpRequestBuilder.authorize(device: String, token: String? = null) {
         header(HttpHeaders.Authorization, authHeader(device, token))
-    }
-
-    /** The body as [T]; a failed status throws [JellyfinHttpException]. */
-    private suspend inline fun <reified T> HttpResponse.decode(): T {
-        if (!status.isSuccess()) throw JellyfinHttpException(status)
-        return json.decodeFromString(bodyAsText())
     }
 
     private fun authHeader(device: String, token: String?): String = buildString {
