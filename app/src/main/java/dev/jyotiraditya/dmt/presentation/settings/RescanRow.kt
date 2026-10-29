@@ -23,6 +23,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.common.rememberMinuteClock
 import dev.jyotiraditya.dmt.domain.model.LibraryScan
 import dev.jyotiraditya.dmt.ui.components.pressable
 import dev.jyotiraditya.dmt.ui.theme.Ink
@@ -46,7 +47,7 @@ internal fun RescanRow(
     val hint =
         when {
             scanning -> AnnotatedString(stringResource(R.string.settings_rescan_scanning))
-            last != null -> scanSummary(last, now)
+            last != null -> scanSummary(last, now.toEpochMilliseconds())
             else -> null
         }
 
@@ -71,15 +72,6 @@ internal fun RescanRow(
         }
         Spacer(modifier = Modifier.width(16.dp))
         RescanGlyph(scanning = scanning, done = rememberJustFinished(last))
-    }
-}
-
-/** The current time, updated each minute. */
-@Composable
-private fun rememberMinuteClock() = produceState(System.currentTimeMillis()) {
-    while (true) {
-        delay(DateUtils.MINUTE_IN_MILLIS)
-        value = System.currentTimeMillis()
     }
 }
 

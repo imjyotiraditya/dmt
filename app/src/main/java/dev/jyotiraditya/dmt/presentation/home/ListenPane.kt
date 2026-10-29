@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -20,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.common.rememberMinuteClock
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
@@ -45,7 +47,6 @@ import dev.jyotiraditya.dmt.ui.theme.Muted
 import dev.jyotiraditya.dmt.util.asHoursMinutes
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
 
 private const val SHELF = 12
 private const val MOST_PLAYED = 5
@@ -184,14 +185,14 @@ fun ListenPane(
 /** The time of day's greeting, listening totals, and the shuffle action. */
 @Composable
 private fun Greeting(state: DmtState, dispatch: (DmtAction) -> Unit, onOpenLibrary: () -> Unit) {
-    val part = remember {
-        when (Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour) {
+    val now by rememberMinuteClock()
+    val part =
+        when (now.toLocalDateTime(TimeZone.currentSystemDefault()).hour) {
             in 5..11 -> R.string.home_greeting_morning
             in 12..16 -> R.string.home_greeting_afternoon
             in 17..21 -> R.string.home_greeting_evening
             else -> R.string.home_greeting_night
         }
-    }
     Column(modifier = Modifier.padding(horizontal = Margin).padding(top = 20.dp)) {
         Text(
             text = stringResource(part),
