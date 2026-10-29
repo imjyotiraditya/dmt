@@ -122,7 +122,9 @@ fun DmtScreen(
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val showing = player != null && state.nowPlayingId != null
     val peek = if (showing) MiniPlayerHeight + navBottom else 0.dp
-    LaunchedEffect(showing) { if (!showing) sheet.partialExpand() }
+    LaunchedEffect(showing) {
+        if (showing && sheet.currentValue == SheetValue.Hidden) sheet.partialExpand()
+    }
 
     CompositionLocalProvider(LocalArtwork provides artwork, LocalPlayer provides player) {
         BottomSheetScaffold(

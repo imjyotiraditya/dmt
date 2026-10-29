@@ -6,6 +6,7 @@ import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -14,6 +15,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
@@ -26,6 +28,12 @@ val EaseOut = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
 val PressSpring = spring<Float>(dampingRatio = 0.6f, stiffness = 700f)
 
 val SurfaceSpring = spring<Float>(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow)
+
+/** Material's standard motion without the bounce. */
+val SettledMotion: MotionScheme =
+    object : MotionScheme by MotionScheme.standard() {
+        override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> = spring(stiffness = 700f)
+    }
 
 const val PAGE_MS = 320
 

@@ -5,6 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import dev.jyotiraditya.dmt.ui.motion.SettledMotion
 
 /** The app's dark theme, with [accent] for buttons, toggles and the now-playing marks. */
 @Composable
@@ -33,6 +34,7 @@ fun DMTTheme(accent: Accent = GreenAccent, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalAccent provides accent) {
         MaterialTheme(
             colorScheme = colors,
+            motionScheme = SettledMotion,
             shapes = Shapes,
             typography = Typography,
             content = content,
