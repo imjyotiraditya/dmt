@@ -12,6 +12,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -39,11 +40,12 @@ fun FlatSlider(
     marks: List<Pair<Float, String>> = emptyList(),
 ) {
     val accent = LocalAccent.current
+    val state = rememberSliderState(value, trackRange = range)
+    state.value = value
     Column(modifier = modifier.fillMaxWidth()) {
         Slider(
-            value = value,
+            state = state,
             onValueChange = onValueChange,
-            valueRange = range,
             modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
             thumb = { Box(modifier = Modifier.size(Thumb).background(Ink)) },
             track = { slider ->

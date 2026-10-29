@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderState
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -60,17 +59,17 @@ fun SeekBar(
     val thumb by animateDpAsState(if (scrubbing) ThumbHeld else ThumbRest, label = "seekThumb")
     val scrub by rememberUpdatedState(onScrub)
     val seek by rememberUpdatedState(onSeek)
-    val slider = remember { SliderState() }
-    slider.onValueChange = { target ->
-        slider.value = target
-        scrub(target)
-    }
-    slider.onValueChangeFinished = { seek(slider.value) }
+    val slider = rememberSliderState()
     LaunchedEffect(slider) {
         snapshotFlow { fraction().coerceIn(0f, 1f) }.collect { slider.value = it }
     }
     Slider(
         state = slider,
+        onValueChange = { target ->
+            slider.value = target
+            scrub(target)
+        },
+        onValueChangeFinished = { seek(slider.value) },
         modifier = modifier.fillMaxWidth().height(SeekTarget),
         thumb = {
             Canvas(modifier = Modifier.size(width = ThumbRest, height = ThumbHeld)) {
