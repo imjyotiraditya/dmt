@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,10 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
+import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LyricsSource
-import dev.jyotiraditya.dmt.presentation.nowplaying.rememberIsPlaying
-import dev.jyotiraditya.dmt.presentation.nowplaying.rememberPlaybackPosition
 import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.EmptyState
@@ -42,6 +42,7 @@ internal fun LyricsPage(state: DmtState, player: Player, dispatch: (DmtAction) -
     val colors = remember(bySinger) { LyricColors.on(ink = NightInk, background = Night, bySinger) }
     val controls = rememberLyricsControlsState()
     val playPause = rememberPlayPauseButtonState(player)
+    val progress = rememberProgressStateWithTickInterval(player)
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = Margin)) {
         Box(modifier = Modifier.weight(1f).revealsControls(controls)) {
             if (lyrics != null) {
@@ -49,11 +50,9 @@ internal fun LyricsPage(state: DmtState, player: Player, dispatch: (DmtAction) -
                     lyrics = lyrics,
                     trackId = state.nowPlayingId,
                     position =
-                        rememberPlaybackPosition(
-                            player,
-                            moving = rememberIsPlaying(player) && lyrics.synced,
-                            leadMs = LEAD_MS,
-                        ),
+                        remember(progress) {
+                            derivedStateOf { progress.currentPositionMs + LEAD_MS }
+                        },
                     durationMs = state.durationMs,
                     romanized = state.settings.romanizedLyrics,
                     colors = colors,

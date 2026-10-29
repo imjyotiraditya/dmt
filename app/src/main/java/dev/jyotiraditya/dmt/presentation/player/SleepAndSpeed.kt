@@ -1,8 +1,11 @@
 package dev.jyotiraditya.dmt.presentation.player
 
 import android.os.Bundle
+import androidx.annotation.OptIn
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.listenTo
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import dev.jyotiraditya.dmt.core.base.StateStore
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
@@ -47,15 +50,14 @@ internal class SleepAndSpeed(
 ) {
 
     /** Reads back the service's sleep timer and applies the saved speed to [controller]. */
+    @OptIn(UnstableApi::class)
     suspend fun restore(controller: MediaController) {
-        controller.addListener(
-            object : Player.Listener {
-                // The service pauses playback when the timer ends.
-                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                    if (!playWhenReady && store.current.sleepOn) scope.launch { sync(controller) }
-                }
-            },
-        )
+        // The service pauses playback when the timer ends.
+        scope.launch {
+            controller.listenTo(Player.EVENT_PLAY_WHEN_READY_CHANGED) {
+                if (!playWhenReady && store.current.sleepOn) scope.launch { sync(controller) }
+            }
+        }
         sync(controller)
         val keepPitch = preferences.settings.first().keepPitch
         controller.playbackParameters = parameters(preferences.savedSpeed(), keepPitch)
