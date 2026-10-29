@@ -55,6 +55,7 @@ jobs:
       - name: publish release
         uses: softprops/action-gh-release@v3
         with:
+          name: dmt ${{ github.ref_name }}
           body_path: release-notes.md
           files: |
             app/build/outputs/apk/release/*.apk
