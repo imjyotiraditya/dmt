@@ -9,8 +9,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.listenTo
 import androidx.media3.common.util.UnstableApi
 import dev.jyotiraditya.dmt.core.common.rememberMinuteClock
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.sleepOn
+import dev.jyotiraditya.dmt.domain.model.SleepState
 import kotlin.time.Clock
 
 /** Whether [player]'s audio is advancing right now; false while buffering or paused. */
@@ -24,18 +23,18 @@ internal fun rememberIsPlaying(player: Player): Boolean {
     return playing
 }
 
-/** The time left on the sleep timer, 0 while it waits for the song to end, or null when off. */
+/** The time left on [sleep], 0 while it waits for the song to end, or null when it is off. */
 @Composable
-internal fun sleepLeft(state: DmtState): Long? {
+internal fun sleepLeft(sleep: SleepState): Long? {
     val tick by rememberMinuteClock()
-    val endAt = state.sleepEndAt
+    val endAt = sleep.endAt
     val left =
         remember(tick, endAt) {
             (endAt - Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0L)
         }
     return when {
-        !state.sleepOn -> null
-        left > 0L || state.sleepFinishSong -> left
+        !sleep.on -> null
+        left > 0L || sleep.finishSong -> left
         else -> null
     }
 }

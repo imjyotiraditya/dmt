@@ -1,4 +1,4 @@
-package dev.jyotiraditya.dmt.presentation.player
+package dev.jyotiraditya.dmt.presentation.nowplaying
 
 import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.domain.model.LyricsTiming

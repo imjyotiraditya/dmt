@@ -73,8 +73,6 @@ const val SHARED_STORAGE_ROOT = "/storage/emulated/0"
 
 @Immutable data class Playlist(val name: String, val tracks: List<Track>)
 
-@Immutable data class Spec(val label: String, val value: String, val hot: Boolean = false)
-
 /** The tracks of a library and their groupings, with lookups built on first use. */
 @Immutable
 data class LibrarySnapshot(

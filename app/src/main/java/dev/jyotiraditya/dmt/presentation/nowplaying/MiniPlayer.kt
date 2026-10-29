@@ -37,7 +37,6 @@ import androidx.media3.ui.compose.state.rememberProgressStateWithTickCount
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.asString
 import dev.jyotiraditya.dmt.domain.model.asCredit
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.FillBar
 import dev.jyotiraditya.dmt.ui.components.IconTap
@@ -70,7 +69,7 @@ internal object MiniPlayerCover {
 @OptIn(UnstableApi::class)
 @Composable
 internal fun MiniPlayer(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     field: Color,
     coverHidden: Boolean,

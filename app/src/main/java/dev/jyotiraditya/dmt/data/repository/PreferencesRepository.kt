@@ -37,6 +37,7 @@ import dev.jyotiraditya.dmt.data.source.local.encodeCounts
 import dev.jyotiraditya.dmt.data.source.local.encodeSources
 import dev.jyotiraditya.dmt.data.source.local.toCounts
 import dev.jyotiraditya.dmt.data.source.local.toSources
+import dev.jyotiraditya.dmt.di.ApplicationScope
 import dev.jyotiraditya.dmt.domain.model.AccentColor
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.DmtStats
@@ -44,10 +45,14 @@ import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.LibraryScan
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.LyricsSource
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.uuid.Uuid
@@ -59,10 +64,15 @@ class PreferencesRepository
 @Inject
 constructor(
     @param:ApplicationContext private val context: Context,
+    @ApplicationScope scope: CoroutineScope,
 ) {
 
     val settings: Flow<DmtSettings> =
         context.dmtStore.data.map { it.toSettings() }.distinctUntilChanged()
+
+    /** The settings as last read from storage, or null before the first read. */
+    val loadedSettings: StateFlow<DmtSettings?> =
+        settings.stateIn(scope, SharingStarted.Eagerly, null)
 
     suspend fun save(settings: DmtSettings) {
         context.dmtStore.edit { it.write(settings) }
@@ -145,7 +155,7 @@ constructor(
         }
     }
 
-    val stats: Flow<DmtStats> =
+    val stats: StateFlow<DmtStats> =
         context.dmtStore.data
             .map { prefs ->
                 DmtStats(
@@ -154,6 +164,7 @@ constructor(
                 )
             }
             .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.Eagerly, DmtStats())
 }
 
 private fun Preferences.toSettings(): DmtSettings = DmtSettings(

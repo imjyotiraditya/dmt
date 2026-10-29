@@ -2,7 +2,6 @@ package dev.jyotiraditya.dmt.presentation.nowplaying
 
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,45 +11,33 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.ProgressStateWithTickCount
 import androidx.media3.ui.compose.state.rememberProgressStateWithTickCount
+import dev.jyotiraditya.dmt.util.lingering
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlin.time.Duration.Companion.milliseconds
 
 /** How long the hold-to-seek readout stays after the last step. */
 private const val STEP_LINGER_MS = 700L
 
-/** The step of the hold-to-seek in progress, kept for [STEP_LINGER_MS] after the hold ends. */
+/** The steps of a hold-to-seek. */
 @Stable
 internal class SeekSteps {
-    var stepMs by mutableStateOf<Long?>(null)
-        private set
-
     private val steps =
-        MutableSharedFlow<Unit>(
+        MutableSharedFlow<Long>(
             extraBufferCapacity = 1,
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
 
+    /** The step in progress, kept for [STEP_LINGER_MS] after the hold ends. */
+    val stepMs: Flow<Long?> = steps.lingering(STEP_LINGER_MS.milliseconds)
+
     fun onStep(stepMs: Long) {
-        this.stepMs = stepMs
-        steps.tryEmit(Unit)
-    }
-
-    suspend fun clearAfterSteps() {
-        steps.collectLatest {
-            delay(STEP_LINGER_MS)
-            stepMs = null
-        }
+        steps.tryEmit(stepMs)
     }
 }
 
-@Composable
-internal fun rememberSeekSteps(): SeekSteps {
-    val steps = remember { SeekSteps() }
-    LaunchedEffect(steps) { steps.clearAfterSteps() }
-    return steps
-}
+@Composable internal fun rememberSeekSteps(): SeekSteps = remember { SeekSteps() }
 
 /** A seek bar's position: the dragged one while scrubbing, the player's otherwise. */
 @OptIn(UnstableApi::class)

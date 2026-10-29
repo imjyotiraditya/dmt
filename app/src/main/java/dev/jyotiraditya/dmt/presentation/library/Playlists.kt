@@ -12,8 +12,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,10 +30,10 @@ import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
+import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.CollectionRow
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
@@ -48,9 +49,13 @@ import dev.jyotiraditya.dmt.ui.theme.Muted
 import dev.jyotiraditya.dmt.ui.theme.Surface
 
 /** The playlist shelf: a button to make one, then every saved playlist. */
-internal fun LazyListScope.playlists(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    item(key = "new") { NewPlaylist(dispatch) }
-    if (state.playlists.isEmpty()) {
+internal fun LazyListScope.playlists(
+    playlists: List<Playlist>,
+    viewModel: LibraryViewModel,
+    onOpen: (Destination) -> Unit,
+) {
+    item(key = "new") { NewPlaylist(onCreate = viewModel::createPlaylist) }
+    if (playlists.isEmpty()) {
         item {
             Text(
                 text = stringResource(R.string.playlist_empty),
@@ -60,19 +65,21 @@ internal fun LazyListScope.playlists(state: DmtState, dispatch: (DmtAction) -> U
             )
         }
     }
-    items(state.playlists, key = { it.name }) { playlist ->
-        PlaylistLine(playlist, dispatch)
+    items(playlists, key = { it.name }) { playlist ->
+        PlaylistLine(
+            playlist = playlist,
+            actions = viewModel,
+            onOpen = { onOpen(Destination.Playlist(playlist.name)) },
+            onDelete = { viewModel.deletePlaylist(playlist.name) },
+        )
     }
 }
 
 @Composable
-private fun NewPlaylist(dispatch: (DmtAction) -> Unit) {
+private fun NewPlaylist(onCreate: (String) -> Unit) {
     var creating by remember { mutableStateOf(false) }
     if (creating) {
-        CreateSheet(
-            onCreate = { dispatch(DmtAction.CreatePlaylist(it)) },
-            onDismiss = { creating = false },
-        )
+        CreateSheet(onCreate = onCreate, onDismiss = { creating = false })
     }
     Block(
         label = stringResource(R.string.playlist_new_title),
@@ -85,30 +92,44 @@ private fun NewPlaylist(dispatch: (DmtAction) -> Unit) {
 }
 
 @Composable
-private fun PlaylistLine(playlist: Playlist, dispatch: (DmtAction) -> Unit) {
+private fun PlaylistLine(
+    playlist: Playlist,
+    actions: TrackListActions,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+) {
     var acting by remember { mutableStateOf(false) }
     if (acting) {
         ActionSheet(
             title = playlist.name,
             tracks = playlist.tracks,
-            dispatch = dispatch,
+            actions = actions,
             onDismiss = { acting = false },
-            onDelete = { dispatch(DmtAction.DeletePlaylist(playlist.name)) },
+            onDelete = onDelete,
         )
     }
     CollectionRow(
         title = playlist.name,
         detail = tracksSummary(playlist.tracks),
-        onClick = { dispatch(DmtAction.OpenPlaylist(playlist.name)) },
+        onClick = onOpen,
         onLongClick = { acting = true },
     )
 }
 
 @Composable
-internal fun PlaylistDetail(playlist: Playlist, state: DmtState, dispatch: (DmtAction) -> Unit) {
+internal fun PlaylistDetail(
+    playlist: Playlist,
+    state: CollectionUiState,
+    viewModel: CollectionViewModel,
+) {
     var picking by remember { mutableStateOf(false) }
     if (picking) {
-        PickerSheet(playlist, state, dispatch) { picking = false }
+        PickerSheet(
+            playlist = playlist,
+            library = state.tracks,
+            onAdd = { viewModel.addToPlaylist(playlist.name, it) },
+            onDismiss = { picking = false },
+        )
     }
     val playing = rememberWantsPlayback()
     LazyColumn(contentPadding = PaddingValues(bottom = LocalContentBottom.current)) {
@@ -117,7 +138,7 @@ internal fun PlaylistDetail(playlist: Playlist, state: DmtState, dispatch: (DmtA
                 title = playlist.name,
                 meta = stringResource(R.string.collection_playlist),
                 tracks = playlist.tracks,
-                dispatch = dispatch,
+                actions = viewModel,
                 action = { ink ->
                     TextLink(
                         label = stringResource(R.string.playlist_add),
@@ -134,20 +155,13 @@ internal fun PlaylistDetail(playlist: Playlist, state: DmtState, dispatch: (DmtA
                 meta = trackSummary(track, album = false),
                 current = track.id.toString() == state.nowPlayingId,
                 playing = playing,
-                onClick = { dispatch(DmtAction.PlayAt(playlist.tracks, index)) },
+                onClick = { viewModel.play(playlist.tracks, index) },
                 trailing = {
                     IconTap(
                         icon = DmtIcons.Close,
                         description = stringResource(R.string.playlist_remove),
                         iconSize = 18.dp,
-                        onClick = {
-                            dispatch(
-                                DmtAction.RemoveFromPlaylist(
-                                    playlist.name,
-                                    track.path,
-                                ),
-                            )
-                        },
+                        onClick = { viewModel.removeFromPlaylist(playlist.name, track) },
                     )
                 },
             )
@@ -160,43 +174,43 @@ internal fun PlaylistDetail(playlist: Playlist, state: DmtState, dispatch: (DmtA
 internal fun ActionSheet(
     title: String,
     tracks: List<Track>,
-    dispatch: (DmtAction) -> Unit,
+    actions: TrackListActions,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
     DmtSheet(onDismiss = onDismiss) {
-        val act = { action: DmtAction ->
-            dispatch(action)
-            dismiss()
-        }
         SheetHeader(title = title, meta = tracksSummary(tracks))
         if (tracks.isNotEmpty()) {
             SheetAction(
                 DmtIcons.Play,
                 stringResource(R.string.action_play),
                 onClick = {
-                    act(DmtAction.PlayAt(tracks, 0))
+                    actions.play(tracks, 0)
+                    dismiss()
                 },
             )
             SheetAction(
                 DmtIcons.Shuffle,
                 stringResource(R.string.player_shuffle),
                 onClick = {
-                    act(DmtAction.ShufflePlay(tracks))
+                    actions.shuffle(tracks)
+                    dismiss()
                 },
             )
             SheetAction(
                 DmtIcons.PlayNext,
                 stringResource(R.string.action_play_next),
                 onClick = {
-                    act(DmtAction.PlayNext(tracks, title))
+                    actions.playNext(tracks, title)
+                    dismiss()
                 },
             )
             SheetAction(
                 DmtIcons.AddToQueue,
                 stringResource(R.string.action_add_to_queue),
                 onClick = {
-                    act(DmtAction.Enqueue(tracks, title))
+                    actions.enqueue(tracks, title)
+                    dismiss()
                 },
             )
         }
@@ -215,30 +229,29 @@ internal fun ActionSheet(
 
 @Composable
 private fun CreateSheet(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf("") }
+    val name = rememberTextFieldState()
     DmtSheet(onDismiss = onDismiss) {
         val submit = {
-            if (name.isNotBlank()) {
-                onCreate(name.trim())
+            if (name.text.isNotBlank()) {
+                onCreate(name.text.trim().toString())
                 dismiss()
             }
         }
         SheetHeader(title = stringResource(R.string.playlist_new_title))
         BasicTextField(
-            value = name,
-            onValueChange = { name = it },
-            singleLine = true,
+            state = name,
+            lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.headlineMedium.copy(color = Ink),
             cursorBrush = SolidColor(Ink),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { submit() }),
+            onKeyboardAction = { submit() },
             modifier =
                 Modifier.fillMaxWidth()
                     .padding(horizontal = Margin)
                     .background(Surface)
                     .padding(horizontal = 16.dp, vertical = 18.dp),
-            decorationBox = { inner ->
-                if (name.isEmpty()) {
+            decorator = { inner ->
+                if (name.text.isEmpty()) {
                     Text(
                         text = stringResource(R.string.playlist_name_hint),
                         style = MaterialTheme.typography.headlineMedium,
@@ -251,23 +264,24 @@ private fun CreateSheet(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
         Block(
             label = stringResource(R.string.playlist_create),
             onClick = submit,
-            enabled = name.isNotBlank(),
+            enabled = name.text.isNotBlank(),
             modifier = Modifier.padding(horizontal = Margin, vertical = 16.dp),
         )
     }
 }
 
+/** Every library track the playlist lacks, each added with a tap. */
 @Composable
 private fun PickerSheet(
     playlist: Playlist,
-    state: DmtState,
-    dispatch: (DmtAction) -> Unit,
+    library: List<Track>,
+    onAdd: (Track) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val candidates =
-        remember(playlist, state.tracks) {
+        remember(playlist, library) {
             val inPlaylist = playlist.tracks.mapTo(HashSet()) { it.path }
-            state.tracks.filter { it.path.isNotEmpty() && it.path !in inPlaylist }
+            library.filter { it.path.isNotEmpty() && it.path !in inPlaylist }
         }
     DmtSheet(onDismiss = onDismiss) {
         SheetHeader(
@@ -281,12 +295,12 @@ private fun PickerSheet(
                     meta = trackSummary(track, album = false),
                     current = false,
                     playing = false,
-                    onClick = { dispatch(DmtAction.AddToPlaylist(playlist.name, track)) },
+                    onClick = { onAdd(track) },
                     trailing = {
                         IconTap(
                             icon = DmtIcons.Plus,
                             description = stringResource(R.string.playlist_add),
-                            onClick = { dispatch(DmtAction.AddToPlaylist(playlist.name, track)) },
+                            onClick = { onAdd(track) },
                         )
                     },
                 )

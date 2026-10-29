@@ -1,7 +1,5 @@
 package dev.jyotiraditya.dmt.presentation.main
 
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -36,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.presentation.library.BackLink
+import dev.jyotiraditya.dmt.presentation.navigation.Place
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.background
 import dev.jyotiraditya.dmt.ui.components.pressable
@@ -47,20 +45,13 @@ import dev.jyotiraditya.dmt.ui.theme.Margin
 import dev.jyotiraditya.dmt.ui.theme.Muted
 import dev.jyotiraditya.dmt.ui.theme.Surface
 
-/** The top-level destinations, with the label and icon they are shown with. */
-enum class Place(@param:StringRes val label: Int, @param:DrawableRes val icon: Int) {
-    LISTEN(R.string.nav_listen, DmtIcons.Home),
-    LIBRARY(R.string.nav_library, DmtIcons.Library),
-    SETTINGS(R.string.nav_settings, DmtIcons.Settings),
-}
-
 internal val BackRowHeight = 52.dp
 
 /** The wordmark at the top level or a back link inside a page, with the destinations at the end. */
 @Composable
 internal fun TopBar(
     place: Place,
-    back: BackLink?,
+    backLabel: String?,
     onBack: () -> Unit,
     onPlace: (Place) -> Unit,
     modifier: Modifier = Modifier,
@@ -76,7 +67,7 @@ internal fun TopBar(
                 .padding(horizontal = Margin),
     ) {
         AnimatedContent(
-            targetState = back?.label,
+            targetState = backLabel,
             transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
             label = "barLead",
             modifier = Modifier.weight(1f),

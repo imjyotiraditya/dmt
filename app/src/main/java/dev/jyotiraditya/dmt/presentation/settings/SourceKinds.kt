@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
+import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.PageHead
 import dev.jyotiraditya.dmt.ui.components.pressable
@@ -29,7 +29,7 @@ import dev.jyotiraditya.dmt.ui.theme.rowFill
 
 /** Lists the kinds of server that can be added as a source. */
 @Composable
-fun SourceKindsPage(dispatch: (DmtAction) -> Unit) {
+fun SourceKindsPage(onOpen: (Destination) -> Unit) {
     Column(
         modifier =
             Modifier.verticalScroll(rememberScrollState())
@@ -54,7 +54,7 @@ fun SourceKindsPage(dispatch: (DmtAction) -> Unit) {
                     Modifier.fillMaxWidth()
                         .background(index.rowFill)
                         .pressable(
-                            onClick = { dispatch(DmtAction.OpenSourceForm(kind)) },
+                            onClick = { onOpen(Destination.SourceForm(kind)) },
                             sink = 0.985f,
                             label = title,
                         )

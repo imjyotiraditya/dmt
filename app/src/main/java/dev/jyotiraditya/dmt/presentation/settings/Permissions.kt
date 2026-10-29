@@ -20,12 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.PermissionGrants
 import dev.jyotiraditya.dmt.core.common.rememberPermissionGrants
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.PageHead
 import dev.jyotiraditya.dmt.ui.components.TextLink
@@ -92,9 +92,10 @@ val FILES_ENTRY =
 
 /** Every permission with its purpose and a way to grant or revoke it. */
 @Composable
-fun PermissionsPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
+fun PermissionsPage(viewModel: PermissionsViewModel = hiltViewModel()) {
+    val hasPermission by viewModel.hasPermission.collectAsStateWithLifecycle()
     val grants = rememberPermissionGrants(PERMISSION_REGISTRY.mapNotNull { it.permission })
-    SyncPermissionState(grants, state, dispatch)
+    SyncPermissionState(grants, hasPermission, viewModel)
     Column(
         modifier =
             Modifier.verticalScroll(rememberScrollState())
@@ -116,16 +117,20 @@ fun PermissionsPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
     }
 }
 
-/** Tells the view model when audio access or all-files access changes. */
+/** Tells [listener] when music access or all-files access changes from what is recorded. */
 @Composable
-fun SyncPermissionState(grants: PermissionGrants, state: DmtState, dispatch: (DmtAction) -> Unit) {
+fun SyncPermissionState(
+    grants: PermissionGrants,
+    hasPermission: Boolean,
+    listener: PermissionListener,
+) {
     val audioGranted = grants.isGranted(audioPermission)
     LaunchedEffect(audioGranted) {
-        if (audioGranted != state.hasPermission) dispatch(DmtAction.Permission(audioGranted))
+        if (audioGranted != hasPermission) listener.onMusicAccess(audioGranted)
     }
     var hadFilesAccess by remember { mutableStateOf(grants.filesAccess) }
     LaunchedEffect(grants.filesAccess) {
-        if (grants.filesAccess && !hadFilesAccess) dispatch(DmtAction.Rescan)
+        if (grants.filesAccess && !hadFilesAccess) listener.onFilesAccess()
         hadFilesAccess = grants.filesAccess
     }
 }

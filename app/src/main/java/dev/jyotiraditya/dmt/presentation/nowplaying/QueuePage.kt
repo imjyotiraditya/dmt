@@ -39,9 +39,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberShuffleButtonState
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
+import dev.jyotiraditya.dmt.domain.model.QueueEntry
 import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
@@ -56,14 +55,13 @@ import dev.jyotiraditya.dmt.ui.theme.Ink
 import dev.jyotiraditya.dmt.ui.theme.Margin
 import dev.jyotiraditya.dmt.ui.theme.Muted
 import dev.jyotiraditya.dmt.ui.theme.Surface2
-import dev.jyotiraditya.dmt.util.QueueEntry
 
 private val RowArt = 44.dp
 
 /** What plays next: tap to play, drag the handle to reorder, long press to remove. */
 @OptIn(UnstableApi::class)
 @Composable
-internal fun QueuePage(state: DmtState, player: Player, dispatch: (DmtAction) -> Unit) {
+internal fun QueuePage(state: NowPlayingUiState, player: Player, actions: NowPlayingActions) {
     val shuffled = rememberShuffleButtonState(player).shuffleOn
     val position = state.queuePosition.coerceAtLeast(0)
     val current = state.queue.getOrNull(position)
@@ -93,9 +91,7 @@ internal fun QueuePage(state: DmtState, player: Player, dispatch: (DmtAction) ->
             )
             TextLink(
                 label = stringResource(R.string.queue_clear),
-                onClick = {
-                    dispatch(DmtAction.ClearUpcoming)
-                },
+                onClick = actions::clearUpcoming,
             )
         }
         if (shuffled && upcoming.size > 1) {
@@ -111,7 +107,7 @@ internal fun QueuePage(state: DmtState, player: Player, dispatch: (DmtAction) ->
             library = state.library,
             firstUpcomingIndex = (current?.index ?: -1) + 1,
             reorderable = !shuffled,
-            dispatch = dispatch,
+            actions = actions,
         )
     }
 }
@@ -123,14 +119,14 @@ private fun UpcomingList(
     library: LibrarySnapshot,
     firstUpcomingIndex: Int,
     reorderable: Boolean,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
 ) {
     val listState = rememberLazyListState()
     val order = remember(upcoming) { upcoming.toMutableStateList() }
     val drag = remember { DragState(listState) }
     var menuFor by remember { mutableStateOf<QueueEntry?>(null) }
     menuFor?.let { entry ->
-        QueueItemSheet(entry, dispatch, onDismiss = { menuFor = null })
+        QueueItemSheet(entry, actions, onDismiss = { menuFor = null })
     }
 
     LaunchedEffect(firstUpcomingIndex) { listState.animateScrollToItem(0) }
@@ -147,16 +143,14 @@ private fun UpcomingList(
                     entry = entry,
                     track = library.track(entry.mediaId),
                     raised = dragging,
-                    onClick = { dispatch(DmtAction.Jump(entry.index)) },
+                    onClick = { actions.jumpTo(entry.index) },
                     onLongClick = { menuFor = entry },
                     handle =
                         if (reorderable) {
                             {
                                 DragHandle(
                                     Modifier.reorderDrag(entry.index, drag, order) { from, to ->
-                                        dispatch(
-                                            DmtAction.MoveInQueue(from, firstUpcomingIndex + to),
-                                        )
+                                        actions.move(from, firstUpcomingIndex + to)
                                     },
                                 )
                             }
@@ -170,18 +164,14 @@ private fun UpcomingList(
 }
 
 @Composable
-private fun QueueItemSheet(
-    entry: QueueEntry,
-    dispatch: (DmtAction) -> Unit,
-    onDismiss: () -> Unit,
-) {
+private fun QueueItemSheet(entry: QueueEntry, actions: NowPlayingActions, onDismiss: () -> Unit) {
     DmtSheet(onDismiss = onDismiss) {
         SheetHeader(title = entry.title, meta = entry.artist.takeIf { it.isNotBlank() })
         SheetAction(
             DmtIcons.Play,
             stringResource(R.string.action_play),
             onClick = {
-                dispatch(DmtAction.Jump(entry.index))
+                actions.jumpTo(entry.index)
                 dismiss()
             },
         )
@@ -189,7 +179,7 @@ private fun QueueItemSheet(
             DmtIcons.Trash,
             stringResource(R.string.queue_remove),
             onClick = {
-                dispatch(DmtAction.RemoveAt(entry.index))
+                actions.remove(entry.index)
                 dismiss()
             },
         )

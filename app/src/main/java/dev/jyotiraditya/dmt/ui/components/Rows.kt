@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -230,9 +233,8 @@ private fun DrawScope.drawBar(color: Color, left: Float, width: Float, height: F
 
 @Composable
 fun SearchBox(
-    query: String,
+    state: TextFieldState,
     hint: String,
-    onQuery: (String) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
 ) {
@@ -248,26 +250,25 @@ fun SearchBox(
         DmtIcon(icon = DmtIcons.Search, tint = Ink, size = 22.dp)
         Spacer(modifier = Modifier.width(12.dp))
         BasicTextField(
-            value = query,
-            onValueChange = onQuery,
-            singleLine = true,
+            state = state,
+            lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink),
             cursorBrush = SolidColor(Ink),
             modifier =
                 Modifier.weight(1f)
                     .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
-            decorationBox = { inner ->
-                if (query.isEmpty()) {
+            decorator = { inner ->
+                if (state.text.isEmpty()) {
                     Text(text = hint, style = MaterialTheme.typography.bodyLarge, color = Muted)
                 }
                 inner()
             },
         )
-        if (query.isNotEmpty()) {
+        if (state.text.isNotEmpty()) {
             IconTap(
                 icon = DmtIcons.Close,
                 description = stringResource(R.string.search_clear),
-                onClick = { onQuery("") },
+                onClick = { state.clearText() },
                 iconSize = 20.dp,
             )
         }

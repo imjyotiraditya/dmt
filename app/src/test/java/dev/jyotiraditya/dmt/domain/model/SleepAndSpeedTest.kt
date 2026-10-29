@@ -1,4 +1,4 @@
-package dev.jyotiraditya.dmt.presentation.player
+package dev.jyotiraditya.dmt.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

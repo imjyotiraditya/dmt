@@ -18,7 +18,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.util.cycleRepeat
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import kotlinx.coroutines.CoroutineScope
@@ -46,9 +45,6 @@ internal class PlaybackLibraryCallback(
         val commands =
             MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
                 .add(PlaybackCommands.SLEEP_SET)
-                .add(PlaybackCommands.SLEEP_GET)
-                .add(PlaybackCommands.TOGGLE_SHUFFLE)
-                .add(PlaybackCommands.CYCLE_REPEAT)
                 .build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
             .setAvailableSessionCommands(commands)
@@ -61,36 +57,14 @@ internal class PlaybackLibraryCallback(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
-        val player = session.player
-        val extras =
-            when (customCommand.customAction) {
-                PlaybackCommands.SLEEP_SET.customAction -> {
-                    sleepTimer.set(
-                        endAt = args.getLong(PlaybackCommands.KEY_END_AT),
-                        finishSong = args.getBoolean(PlaybackCommands.KEY_FINISH_SONG),
-                    )
-                    Bundle.EMPTY
-                }
-
-                PlaybackCommands.SLEEP_GET.customAction ->
-                    Bundle().apply {
-                        putLong(PlaybackCommands.KEY_END_AT, sleepTimer.endAt ?: 0L)
-                        putBoolean(PlaybackCommands.KEY_FINISH_SONG, sleepTimer.finishSong)
-                    }
-
-                PlaybackCommands.TOGGLE_SHUFFLE.customAction -> {
-                    player.shuffleModeEnabled = !player.shuffleModeEnabled
-                    Bundle.EMPTY
-                }
-
-                PlaybackCommands.CYCLE_REPEAT.customAction -> {
-                    player.cycleRepeat()
-                    Bundle.EMPTY
-                }
-
-                else -> return super.onCustomCommand(session, controller, customCommand, args)
-            }
-        return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+        if (customCommand.customAction != PlaybackCommands.SLEEP_SET.customAction) {
+            return super.onCustomCommand(session, controller, customCommand, args)
+        }
+        sleepTimer.set(
+            endAt = args.getLong(PlaybackCommands.KEY_END_AT),
+            finishSong = args.getBoolean(PlaybackCommands.KEY_FINISH_SONG),
+        )
+        return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
 
     override fun onGetLibraryRoot(

@@ -28,7 +28,6 @@ import dev.jyotiraditya.dmt.data.remote.jellyfin.normalizeServerUrl
 import dev.jyotiraditya.dmt.domain.model.ServerSource
 import dev.jyotiraditya.dmt.domain.model.SourceDraft
 import dev.jyotiraditya.dmt.domain.model.SourceMode
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
 import dev.jyotiraditya.dmt.ui.components.FilledField
 import dev.jyotiraditya.dmt.ui.components.PasswordField
 import dev.jyotiraditya.dmt.ui.theme.Danger
@@ -92,10 +91,13 @@ fun rememberSourceFields(kind: SourceMode, saved: ServerSource?): SourceFields =
     SourceFields(kind, saved)
 }
 
-/** Returns an action that checks [fields], asks for local network access if needed, and saves. */
+/**
+ * Returns an action that checks [fields], asks for local network access if needed, and hands the
+ * draft to [onSubmit].
+ */
 @Composable
-fun rememberSourceConnect(fields: SourceFields, dispatch: (DmtAction) -> Unit): () -> Unit {
-    val submit = { dispatch(DmtAction.SaveSource(fields.draft())) }
+fun rememberSourceConnect(fields: SourceFields, onSubmit: (SourceDraft) -> Unit): () -> Unit {
+    val submit = { onSubmit(fields.draft()) }
     val networkPermission =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { submit() }
     return {

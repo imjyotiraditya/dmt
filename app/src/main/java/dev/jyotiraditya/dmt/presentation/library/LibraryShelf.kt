@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,10 +36,9 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
+import dev.jyotiraditya.dmt.presentation.navigation.Destination
+import dev.jyotiraditya.dmt.presentation.navigation.Shelf
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.DmtView
 import dev.jyotiraditya.dmt.presentation.settings.noTracksMessage
 import dev.jyotiraditya.dmt.ui.components.ChoiceRow
 import dev.jyotiraditya.dmt.ui.components.CollectionRow
@@ -61,34 +61,36 @@ private val SearchTileWidth = 140.dp
 /** The search field and shelf tabs pinned above the library. */
 @Composable
 internal fun LibraryHead(
-    state: DmtState,
-    view: DmtView,
-    dispatch: (DmtAction) -> Unit,
+    state: LibraryUiState,
+    search: TextFieldState,
+    shelf: Shelf,
+    onShelf: (Shelf) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shelves = SHELVES.filter {
-        when (it) {
-            DmtView.GENRES -> state.genres.isNotEmpty()
+    val library = state.library
+    val shelves =
+        Shelf.entries.filter {
+            when (it) {
+                Shelf.GENRES -> library.genres.isNotEmpty()
 
-            DmtView.FOLDERS,
-            DmtView.PLAYLISTS,
-            -> state.folders.isNotEmpty()
+                Shelf.FOLDERS,
+                Shelf.PLAYLISTS,
+                -> library.folders.isNotEmpty()
 
-            else -> true
+                else -> true
+            }
         }
-    }
     Column(modifier = modifier.fillMaxWidth().background(Ground).padding(top = 8.dp)) {
         SearchBox(
-            query = state.query,
+            state = search,
             hint = stringResource(R.string.search_hint),
-            onQuery = { dispatch(DmtAction.Query(it)) },
             modifier = Modifier.padding(horizontal = Margin),
         )
-        if (state.query.isBlank()) {
+        if (search.text.isBlank()) {
             WordTabs(
-                labels = shelves.map { stringResource(it.shelfLabel()) },
-                selected = shelves.indexOf(view).coerceAtLeast(0),
-                onSelect = { dispatch(DmtAction.Show(shelves[it])) },
+                labels = shelves.map { stringResource(it.label) },
+                selected = shelves.indexOf(shelf).coerceAtLeast(0),
+                onSelect = { onShelf(shelves[it]) },
                 modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
             )
         } else {
@@ -97,40 +99,35 @@ internal fun LibraryHead(
     }
 }
 
-@StringRes
-private fun DmtView.shelfLabel(): Int = when (this) {
-    DmtView.ALBUMS -> R.string.library_tab_albums
-    DmtView.ARTISTS -> R.string.library_tab_artists
-    DmtView.PLAYLISTS -> R.string.library_tab_playlists
-    DmtView.GENRES -> R.string.library_tab_genres
-    DmtView.FOLDERS -> R.string.library_tab_folders
-    else -> R.string.library_tab_tracks
-}
-
 @Composable
-internal fun Shelf(view: DmtView, state: DmtState, dispatch: (DmtAction) -> Unit) {
+internal fun Shelf(
+    shelf: Shelf,
+    state: LibraryUiState,
+    viewModel: LibraryViewModel,
+    onOpen: (Destination) -> Unit,
+) {
     val bottom = PaddingValues(bottom = LocalContentBottom.current)
-    val navigation = libraryNavigation(dispatch)
-    val openTrackMenu = rememberTrackMenu(state, dispatch, navigation)
+    val results = state.results
+    val openTrackMenu = rememberTrackMenu(trackMenuNavigation(onOpen))
     val playing = rememberWantsPlayback()
     var actions by remember { mutableStateOf<Pair<String, List<Track>>?>(null) }
     actions?.let { (title, tracks) ->
         ActionSheet(
             title = title,
             tracks = tracks,
-            dispatch = dispatch,
+            actions = viewModel,
             onDismiss = { actions = null },
         )
     }
 
-    if (state.query.isNotBlank()) {
+    if (results.searching) {
         LazyColumn(contentPadding = bottom) {
-            results(state, playing, dispatch, navigation, openTrackMenu)
+            results(state, playing, viewModel, onOpen, openTrackMenu)
         }
         return
     }
 
-    if (view == DmtView.ALBUMS && state.albums.isNotEmpty()) {
+    if (shelf == Shelf.ALBUMS && state.library.albums.isNotEmpty()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(150.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -143,13 +140,13 @@ internal fun Shelf(view: DmtView, state: DmtState, dispatch: (DmtAction) -> Unit
                     bottom = LocalContentBottom.current,
                 ),
         ) {
-            items(state.filteredAlbums, key = { it.id }) { album ->
+            items(results.albums, key = { it.id }) { album ->
                 CoverTile(
                     cover = album.tracks.firstOrNull(),
                     title = album.name,
                     subtitle = album.artist,
                     titleLines = 2,
-                    onClick = { dispatch(DmtAction.OpenAlbum(album.id)) },
+                    onClick = { onOpen(Destination.Album(album.id)) },
                     onLongClick = { actions = album.name to album.tracks },
                     coverModifier = Modifier.sharedElement(albumCoverKey(album.id)),
                 )
@@ -159,65 +156,68 @@ internal fun Shelf(view: DmtView, state: DmtState, dispatch: (DmtAction) -> Unit
     }
 
     LazyColumn(contentPadding = bottom) {
-        when (view) {
-            DmtView.ARTISTS ->
-                items(state.filteredArtists, key = { it.name }) { artist ->
+        when (shelf) {
+            Shelf.ARTISTS ->
+                items(results.artists, key = { it.name }) { artist ->
                     CollectionRow(
                         title = artist.name,
                         detail = artistSummary(artist),
-                        onClick = { dispatch(DmtAction.OpenArtist(artist.name)) },
+                        onClick = { onOpen(Destination.Artist(artist.name)) },
                         onLongClick = { actions = artist.name to artist.tracks },
                         modifier = Modifier.animateItem(),
                     )
                 }
 
-            DmtView.GENRES ->
-                items(state.filteredGenres, key = { it.name }) { genre ->
+            Shelf.GENRES ->
+                items(results.genres, key = { it.name }) { genre ->
                     CollectionRow(
                         title = genre.name,
                         detail = tracksSummary(genre.tracks),
-                        onClick = { dispatch(DmtAction.OpenGenre(genre.name)) },
+                        onClick = { onOpen(Destination.Genre(genre.name)) },
                         onLongClick = { actions = genre.name to genre.tracks },
                         modifier = Modifier.animateItem(),
                     )
                 }
 
-            DmtView.FOLDERS ->
-                items(state.filteredFolders, key = { it.path }) { folder ->
+            Shelf.FOLDERS ->
+                items(results.folders, key = { it.path }) { folder ->
                     val title = folderTitle(folder)
                     CollectionRow(
                         title = title,
                         detail = folderSummary(folder),
-                        onClick = { dispatch(DmtAction.OpenFolder(folder.path)) },
+                        onClick = { onOpen(Destination.Folder(folder.path)) },
                         onLongClick = { actions = title to folder.tracks },
                         modifier = Modifier.animateItem(),
                     )
                 }
 
-            DmtView.PLAYLISTS -> playlists(state, dispatch)
+            Shelf.PLAYLISTS -> playlists(state.playlists, viewModel, onOpen)
 
-            else -> tracks(state, playing, dispatch, openTrackMenu)
+            Shelf.TRACKS,
+            Shelf.ALBUMS,
+            -> tracks(state, playing, viewModel, openTrackMenu)
         }
     }
 }
 
 private fun LazyListScope.tracks(
-    state: DmtState,
+    state: LibraryUiState,
     playing: Boolean,
-    dispatch: (DmtAction) -> Unit,
+    viewModel: LibraryViewModel,
     openTrackMenu: (Track) -> Unit,
 ) {
-    if (state.scanning && state.tracks.isEmpty()) {
+    val tracks = state.library.tracks
+    if (state.scanning && tracks.isEmpty()) {
         item {
             RowPlaceholders(text = stringResource(R.string.library_scanning))
         }
         return
     }
-    if (state.tracks.isEmpty()) {
+    if (tracks.isEmpty()) {
         item {
             EmptyState(
                 title = stringResource(R.string.home_empty_title),
-                body = stringResource(state.settings.sourceMode.noTracksMessage),
+                body = stringResource(state.sourceMode.noTracksMessage),
                 modifier = Modifier.padding(horizontal = Margin),
             )
         }
@@ -229,37 +229,34 @@ private fun LazyListScope.tracks(
             modifier = Modifier.padding(horizontal = Margin),
         ) {
             Text(
-                text = tracksSummary(state.tracks),
+                text = tracksSummary(tracks),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 modifier = Modifier.weight(1f),
             )
             var sorting by remember { mutableStateOf(false) }
             TextLink(
-                label =
-                    stringResource(
-                        R.string.sort_by,
-                        stringResource(state.settings.librarySort.labelRes()),
-                    ),
+                label = stringResource(R.string.sort_by, stringResource(state.sort.labelRes())),
                 onClick = { sorting = true },
             )
             if (sorting) {
                 SortSheet(
-                    selected = state.settings.librarySort,
-                    options = LibrarySort.options(state.settings.sourceMode),
-                    onPick = { dispatch(DmtAction.Config(state.settings.copy(librarySort = it))) },
+                    selected = state.sort,
+                    options = LibrarySort.options(state.sourceMode),
+                    onPick = viewModel::sortBy,
                     onDismiss = { sorting = false },
                 )
             }
         }
     }
-    itemsIndexed(state.filtered, key = { _, track -> track.id }) { index, track ->
+    val shown = state.results.tracks
+    itemsIndexed(shown, key = { _, track -> track.id }) { index, track ->
         TrackRow(
             track = track,
             meta = trackSummary(track),
             current = track.id.toString() == state.nowPlayingId,
             playing = playing,
-            onClick = { dispatch(DmtAction.PlayAt(state.filtered, index)) },
+            onClick = { viewModel.play(shown, index) },
             onLongClick = { openTrackMenu(track) },
             modifier = Modifier.animateItem(),
         )
@@ -268,19 +265,20 @@ private fun LazyListScope.tracks(
 
 /** Search results: matching artists, albums, then tracks. */
 private fun LazyListScope.results(
-    state: DmtState,
+    state: LibraryUiState,
     playing: Boolean,
-    dispatch: (DmtAction) -> Unit,
-    navigation: TrackMenuNavigation,
+    viewModel: LibraryViewModel,
+    onOpen: (Destination) -> Unit,
     openTrackMenu: (Track) -> Unit,
 ) {
-    val artists = state.filteredArtists.take(4)
-    val albums = state.filteredAlbums.take(10)
-    if (artists.isEmpty() && albums.isEmpty() && state.filtered.isEmpty()) {
+    val results = state.results
+    val artists = results.artists.take(4)
+    val albums = results.albums.take(10)
+    if (artists.isEmpty() && albums.isEmpty() && results.tracks.isEmpty()) {
         item {
             EmptyState(
                 title = stringResource(R.string.search_no_match_title),
-                body = stringResource(R.string.search_no_match_body, state.query),
+                body = stringResource(R.string.search_no_match_body, results.query),
                 modifier = Modifier.padding(horizontal = Margin),
             )
         }
@@ -290,7 +288,7 @@ private fun LazyListScope.results(
         CollectionRow(
             title = artist.name,
             detail = artistSummary(artist),
-            onClick = { navigation.openArtist(artist.name) },
+            onClick = { onOpen(Destination.Artist(artist.name)) },
         )
     }
     if (albums.isNotEmpty()) {
@@ -303,7 +301,7 @@ private fun LazyListScope.results(
                     CoverTile(
                         cover = album.tracks.firstOrNull(),
                         title = album.name,
-                        onClick = { navigation.openAlbum(album.id) },
+                        onClick = { onOpen(Destination.Album(album.id)) },
                         modifier = Modifier.width(SearchTileWidth),
                         coverModifier = Modifier.sharedElement(albumCoverKey(album.id)),
                     )
@@ -311,13 +309,13 @@ private fun LazyListScope.results(
             }
         }
     }
-    itemsIndexed(state.filtered, key = { _, track -> track.id }) { index, track ->
+    itemsIndexed(results.tracks, key = { _, track -> track.id }) { index, track ->
         TrackRow(
             track = track,
             meta = trackSummary(track),
             current = track.id.toString() == state.nowPlayingId,
             playing = playing,
-            onClick = { dispatch(DmtAction.PlayAt(state.filtered, index)) },
+            onClick = { viewModel.play(results.tracks, index) },
             onLongClick = { openTrackMenu(track) },
         )
     }

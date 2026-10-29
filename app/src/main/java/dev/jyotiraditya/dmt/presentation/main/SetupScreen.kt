@@ -40,13 +40,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.PermissionGrants
 import dev.jyotiraditya.dmt.core.common.UiText
 import dev.jyotiraditya.dmt.core.common.rememberPermissionGrants
 import dev.jyotiraditya.dmt.domain.model.SourceMode
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.presentation.settings.FILES_ENTRY
 import dev.jyotiraditya.dmt.presentation.settings.PERMISSION_REGISTRY
 import dev.jyotiraditya.dmt.presentation.settings.PermissionRow
@@ -83,16 +83,17 @@ private enum class Step {
 
 /** First-run setup: a greeting, permissions, the music source and its sign-in, then a summary. */
 @Composable
-fun SetupScreen(state: DmtState, dispatch: (DmtAction) -> Unit) {
+fun SetupScreen(viewModel: SetupViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var index by rememberSaveable { mutableIntStateOf(0) }
     var kind by rememberSaveable { mutableStateOf(SourceMode.LOCAL) }
     val steps = Step.entries.filter { it != Step.SIGN_IN || kind != SourceMode.LOCAL }
     val step = steps[index]
     val grants = rememberPermissionGrants(PERMISSION_REGISTRY.mapNotNull { it.permission })
-    SyncPermissionState(grants, state, dispatch)
+    SyncPermissionState(grants, state.hasPermission, viewModel)
 
     val fields = rememberSourceFields(kind, saved = null)
-    val connect = rememberSourceConnect(fields, dispatch)
+    val connect = rememberSourceConnect(fields, viewModel::connect)
     val server = state.settings.server?.takeIf { it.kind == kind }
     LaunchedEffect(server != null) {
         if (server != null && step == Step.SIGN_IN) index++
@@ -124,7 +125,7 @@ fun SetupScreen(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 Step.HELLO -> Hello()
                 Step.ACCESS -> Access(grants)
                 Step.SOURCE -> Source(kind, onPick = { kind = it })
-                Step.SIGN_IN -> SignIn(fields, state.sourceError, server?.name, connect)
+                Step.SIGN_IN -> SignIn(fields, state.signIn.error, server?.name, connect)
                 Step.READY -> Ready(server?.name ?: stringResource(kind.title), grants)
             }
         }
@@ -141,24 +142,17 @@ fun SetupScreen(state: DmtState, dispatch: (DmtAction) -> Unit) {
                         when {
                             step == Step.HELLO -> R.string.setup_begin
                             last -> R.string.setup_start
-                            signingIn && state.connecting -> R.string.source_form_connecting
+                            signingIn && state.signIn.connecting -> R.string.source_form_connecting
                             signingIn -> R.string.source_form_connect
                             else -> R.string.setup_next
                         },
                     ),
                 icon = if (last) DmtIcons.Play else null,
-                enabled = !(signingIn && state.connecting),
+                enabled = !(signingIn && state.signIn.connecting),
                 onClick = {
                     when {
-                        last -> {
-                            val done = state.settings.copy(setupDone = true)
-                            val source =
-                                if (server == null) done.copy(activeSource = null) else done
-                            dispatch(DmtAction.Config(source))
-                        }
-
+                        last -> viewModel.finish(keepServer = server != null)
                         signingIn -> connect()
-
                         else -> index++
                     }
                 },

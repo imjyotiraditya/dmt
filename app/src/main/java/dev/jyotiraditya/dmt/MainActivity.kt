@@ -6,27 +6,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jyotiraditya.dmt.domain.model.bitmap
+import dev.jyotiraditya.dmt.domain.repository.ArtworkRepository
+import dev.jyotiraditya.dmt.presentation.main.AppViewModel
 import dev.jyotiraditya.dmt.presentation.main.DmtScreen
 import dev.jyotiraditya.dmt.presentation.main.SetupScreen
-import dev.jyotiraditya.dmt.presentation.player.PlayerViewModel
-import dev.jyotiraditya.dmt.presentation.player.nowPlayingSeed
+import dev.jyotiraditya.dmt.presentation.nowplaying.NowPlayingViewModel
+import dev.jyotiraditya.dmt.presentation.nowplaying.seed
 import dev.jyotiraditya.dmt.ui.components.rememberFieldColor
 import dev.jyotiraditya.dmt.ui.theme.DMTTheme
 import dev.jyotiraditya.dmt.ui.theme.accentFor
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val playerViewModel: PlayerViewModel by viewModels()
+    @Inject lateinit var artwork: ArtworkRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,31 +38,20 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         setContent {
-            val state by playerViewModel.state.collectAsStateWithLifecycle()
-            val player by playerViewModel.player.collectAsStateWithLifecycle()
-            val cover = rememberFieldColor(state.cover.bitmap, state.nowPlayingSeed)
-            DMTTheme(accent = accentFor(state.settings.accent, cover)) {
+            val app: AppViewModel = hiltViewModel()
+            val nowPlaying: NowPlayingViewModel = hiltViewModel()
+            val state by app.state.collectAsStateWithLifecycle()
+            val playing by nowPlaying.state.collectAsStateWithLifecycle()
+            val cover = rememberFieldColor(playing.cover.bitmap, playing.seed)
+            DMTTheme(accent = accentFor(state.accent, cover)) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     when {
-                        !state.settingsLoaded -> Unit
-
-                        !state.settings.setupDone ->
-                            SetupScreen(
-                                state = state,
-                                dispatch = playerViewModel::onIntent,
-                            )
-
-                        else ->
-                            DmtScreen(
-                                state = state,
-                                player = player,
-                                field = cover,
-                                dispatch = playerViewModel::onIntent,
-                                artwork = playerViewModel.artwork,
-                            )
+                        !state.loaded -> Unit
+                        !state.setupDone -> SetupScreen()
+                        else -> DmtScreen(field = cover, artwork = artwork)
                     }
                 }
             }

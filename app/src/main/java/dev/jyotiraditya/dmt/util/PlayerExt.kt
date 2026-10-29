@@ -16,6 +16,7 @@ import androidx.media3.common.util.Util
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import dev.jyotiraditya.dmt.domain.model.LastSession
+import dev.jyotiraditya.dmt.domain.model.QueueEntry
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.playback.PlaybackService
@@ -43,12 +44,14 @@ fun LastSession.resolveQueue(tracks: List<Track>): ResolvedQueue? {
     return ResolvedQueue(existing, startIndex, position)
 }
 
-suspend fun Context.mediaController(): MediaController = MediaController.Builder(
-    this,
-    SessionToken(this, ComponentName(this, PlaybackService::class.java)),
-)
-    .buildAsync()
-    .await()
+suspend fun Context.mediaController(listener: MediaController.Listener): MediaController =
+    MediaController.Builder(
+        this,
+        SessionToken(this, ComponentName(this, PlaybackService::class.java)),
+    )
+        .setListener(listener)
+        .buildAsync()
+        .await()
 
 /** An id-only item that the service resolves to the full track. */
 fun Track.toQueueRequest(): MediaItem = MediaItem.Builder().setMediaId(id.toString()).build()
@@ -79,22 +82,9 @@ fun Track.toMediaItem(): MediaItem = MediaItem.Builder()
     )
     .build()
 
-/** Moves repeat from off to all to one and back to off. */
-fun Player.cycleRepeat() {
-    repeatMode =
-        when (repeatMode) {
-            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-            else -> Player.REPEAT_MODE_OFF
-        }
-}
-
 /** The first value of tag [name], ignoring case. */
 fun Map<String, List<String>>.tag(name: String): String? =
     entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value?.firstOrNull()
-
-/** A queued item; [index] is its place in the player's item list, not the play order. */
-data class QueueEntry(val index: Int, val mediaId: String, val title: String, val artist: String)
 
 /** The queue in play order, following shuffle. */
 fun Player.queueEntries(): List<QueueEntry> {
@@ -122,13 +112,6 @@ fun Player.queueEntries(): List<QueueEntry> {
             index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffleModeEnabled)
         }
     }
-}
-
-data class QueueSnapshot(val entries: List<QueueEntry>, val position: Int)
-
-fun Player.queueWithPosition(): QueueSnapshot {
-    val entries = queueEntries()
-    return QueueSnapshot(entries, entries.indexOfFirst { it.index == currentMediaItemIndex })
 }
 
 @OptIn(UnstableApi::class)

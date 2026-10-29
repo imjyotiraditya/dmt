@@ -2,8 +2,16 @@ package dev.jyotiraditya.dmt.data.repository
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.di.ApplicationScope
 import dev.jyotiraditya.dmt.domain.model.Playlist
 import dev.jyotiraditya.dmt.domain.model.Track
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,7 +26,13 @@ class PlaylistRepository
 @Inject
 constructor(
     @param:ApplicationContext private val context: Context,
+    private val libraryRepository: LibraryRepository,
+    @ApplicationScope private val scope: CoroutineScope,
 ) {
+
+    /** The saved playlists, holding the library tracks they list. */
+    val playlists: StateFlow<List<Playlist>>
+        field = MutableStateFlow<List<Playlist>>(emptyList())
 
     private val dir: File
         get() =
@@ -26,45 +40,53 @@ constructor(
                 mkdirs()
             }
 
-    fun load(tracks: List<Track>): List<Playlist> {
-        val byPath = tracks.associateBy { it.path }
-
-        return dir.listFiles { file -> file.extension == M3U_EXTENSION }
-            .orEmpty()
-            .sortedBy { it.nameWithoutExtension.lowercase() }
-            .map { file ->
-                Playlist(
-                    name = file.nameWithoutExtension,
-                    tracks = entriesOf(file).mapNotNull { byPath[it] },
-                )
-            }
+    init {
+        scope.launch { libraryRepository.library.collectLatest { reload() } }
     }
 
-    fun create(name: String): Boolean {
-        val file = fileFor(name) ?: return false
-        if (file.exists()) return false
-
-        return runCatching { file.writeText(M3U_HEADER + "\n") }.isSuccess
+    suspend fun create(name: String) = edit {
+        val file = fileFor(name) ?: return@edit
+        if (!file.exists()) runCatching { file.writeText(M3U_HEADER + "\n") }
     }
 
-    fun delete(name: String) {
-        fileFor(name)?.delete()
+    suspend fun delete(name: String) = edit { fileFor(name)?.delete() }
+
+    suspend fun addTrack(name: String, track: Track) = edit {
+        val file = fileFor(name) ?: return@edit
+        if (!file.exists() || track.path.isEmpty() || track.path in entriesOf(file)) return@edit
+        runCatching { file.appendText(track.path + "\n") }
     }
 
-    fun addTrack(name: String, track: Track): Boolean {
-        val file = fileFor(name) ?: return false
-        if (!file.exists() || track.path.isEmpty()) return false
-        if (track.path in entriesOf(file)) return false
-
-        return runCatching { file.appendText(track.path + "\n") }.isSuccess
-    }
-
-    fun removeTrack(name: String, path: String) {
-        val file = fileFor(name) ?: return
-        if (!file.exists()) return
-
+    suspend fun removeTrack(name: String, path: String) = edit {
+        val file = fileFor(name)?.takeIf { it.exists() } ?: return@edit
         val kept = file.readLines().filterNot { it.trim() == path }
         runCatching { file.writeText(kept.joinToString("\n", postfix = "\n")) }
+    }
+
+    /** Runs [change] on the playlist files, then reads them again, even if the caller leaves. */
+    private suspend fun edit(change: () -> Unit) {
+        scope
+            .launch {
+                withContext(Dispatchers.IO) { change() }
+                reload()
+            }
+            .join()
+    }
+
+    private suspend fun reload() {
+        val byPath = libraryRepository.library.value.tracks.associateBy { it.path }
+        playlists.value =
+            withContext(Dispatchers.IO) {
+                dir.listFiles { file -> file.extension == M3U_EXTENSION }
+                    .orEmpty()
+                    .sortedBy { it.nameWithoutExtension.lowercase() }
+                    .map { file ->
+                        Playlist(
+                            name = file.nameWithoutExtension,
+                            tracks = entriesOf(file).mapNotNull { byPath[it] },
+                        )
+                    }
+            }
     }
 
     private fun entriesOf(file: File): List<String> = runCatching {

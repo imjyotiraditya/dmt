@@ -23,8 +23,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.AudioQuality
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.nowPlayingTrack
+import dev.jyotiraditya.dmt.presentation.nowplaying.NowPlayingUiState
 import dev.jyotiraditya.dmt.ui.components.FactRow
 import dev.jyotiraditya.dmt.ui.components.QualityBadge
 import dev.jyotiraditya.dmt.ui.theme.Ground
@@ -36,11 +35,11 @@ import dev.jyotiraditya.dmt.util.asTime
 /** The playing track's format, the path its sound takes to the speaker, and its tags. */
 @OptIn(UnstableApi::class)
 @Composable
-internal fun DetailsPage(state: DmtState, player: Player) {
+internal fun DetailsPage(state: NowPlayingUiState, player: Player) {
     val speed = rememberPlaybackSpeedState(player).playbackSpeed
     val stages =
         remember(state.tech, state.route, speed) { signalChain(state.tech, state.route, speed) }
-    val track = state.nowPlayingTrack
+    val track = state.track
     val file =
         remember(stages) { stages.firstOrNull { it.title == R.string.chain_file }?.facts.orEmpty() }
 
@@ -130,7 +129,7 @@ private fun Heading(text: String) {
 
 private data class InfoRow(@param:StringRes val label: Int, val value: String)
 
-private fun trackInfo(state: DmtState, track: Track?): List<InfoRow> = buildList {
+private fun trackInfo(state: NowPlayingUiState, track: Track?): List<InfoRow> = buildList {
     add(InfoRow(R.string.track_field_title, state.title))
     add(InfoRow(R.string.track_field_artist, state.artist.asCredit()))
     if (state.album.isNotBlank()) {

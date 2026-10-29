@@ -12,18 +12,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.PageHead
 import dev.jyotiraditya.dmt.ui.components.Toggle
 import dev.jyotiraditya.dmt.ui.components.pressableToggle
@@ -62,16 +62,16 @@ private fun musicFolders(
 
 /** Chooses which folders' tracks appear in the library. */
 @Composable
-internal fun LibraryFoldersPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    val hidden = state.settings.hiddenFolders
-    // Counts as the page opened, so a folder hidden since keeps its count.
-    val counts = remember { state.folders.associate { it.path to it.tracks.size } }
+internal fun LibraryFoldersPage(viewModel: LibraryFoldersViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val folders =
-        musicFolders(state.folders, hidden, counts, stringResource(R.string.folders_storage_root))
-    val setShown = { folder: MusicFolder, shown: Boolean ->
-        val updated = if (shown) hidden - folder.path else hidden + folder.path
-        dispatch(DmtAction.Config(state.settings.copy(hiddenFolders = updated)))
-    }
+        musicFolders(
+            state.folders,
+            state.hidden,
+            state.counts,
+            stringResource(R.string.folders_storage_root),
+        )
+    val setShown = { folder: MusicFolder, shown: Boolean -> viewModel.setShown(folder.path, shown) }
 
     LazyColumn(contentPadding = PaddingValues(bottom = LocalContentBottom.current)) {
         item {

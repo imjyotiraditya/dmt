@@ -20,7 +20,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.domain.model.LyricsTiming
 import dev.jyotiraditya.dmt.presentation.nowplaying.lyrics.label
-import dev.jyotiraditya.dmt.presentation.player.LyricsSourceStatus
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
 import dev.jyotiraditya.dmt.ui.components.SelectionMark
 import dev.jyotiraditya.dmt.ui.components.SheetHeader

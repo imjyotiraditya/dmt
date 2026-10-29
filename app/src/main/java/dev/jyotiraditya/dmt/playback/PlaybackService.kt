@@ -14,6 +14,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSourceBitmapLoader
@@ -88,10 +89,15 @@ class PlaybackService : MediaLibraryService() {
 
         val player = buildMusicPlayer(dataSourceFactory)
         sleepTimer =
-            SleepTimer(scope, player) { level ->
-                fadeLevel = level
-                applyVolume()
-            }
+            SleepTimer(
+                scope = scope,
+                player = player,
+                onLevel = { level ->
+                    fadeLevel = level
+                    applyVolume()
+                },
+                onChange = { timer -> mediaSession?.setSessionExtras(timer.extras()) },
+            )
         player.addAnalyticsListener(playStatsListener())
         player.addListener(sessionListener(player))
         if (player.audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
@@ -202,6 +208,13 @@ class PlaybackService : MediaLibraryService() {
             applyReplayGain(mediaItem)
         }
 
+        /** Pauses on a track that holds no audio this device can play. */
+        override fun onTracksChanged(tracks: Tracks) {
+            if (tracks.groups.isNotEmpty() && !tracks.isTypeSupported(C.TRACK_TYPE_AUDIO)) {
+                player.pause()
+            }
+        }
+
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
             broadcastEffectSession(
                 AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION,
@@ -265,14 +278,20 @@ class PlaybackService : MediaLibraryService() {
                 Player.REPEAT_MODE_ONE -> CommandButton.ICON_REPEAT_ONE
                 else -> CommandButton.ICON_REPEAT_OFF
             }
+        val nextRepeat =
+            when (player.repeatMode) {
+                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                else -> Player.REPEAT_MODE_OFF
+            }
         return listOf(
             CommandButton.Builder(shuffleIcon)
                 .setDisplayName(getString(R.string.auto_shuffle))
-                .setSessionCommand(PlaybackCommands.TOGGLE_SHUFFLE)
+                .setPlayerCommand(Player.COMMAND_SET_SHUFFLE_MODE)
                 .build(),
             CommandButton.Builder(repeatIcon)
                 .setDisplayName(getString(R.string.auto_repeat))
-                .setSessionCommand(PlaybackCommands.CYCLE_REPEAT)
+                .setPlayerCommand(Player.COMMAND_SET_REPEAT_MODE, nextRepeat)
                 .build(),
         )
     }

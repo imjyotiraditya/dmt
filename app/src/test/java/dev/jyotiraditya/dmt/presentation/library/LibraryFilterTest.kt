@@ -1,4 +1,4 @@
-package dev.jyotiraditya.dmt.presentation.player
+package dev.jyotiraditya.dmt.presentation.library
 
 import android.net.Uri
 import dev.jyotiraditya.dmt.domain.model.LibrarySort

@@ -1,85 +1,117 @@
 package dev.jyotiraditya.dmt.presentation.library
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.Album
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
+import dev.jyotiraditya.dmt.presentation.navigation.Destination
+import dev.jyotiraditya.dmt.presentation.navigation.Shelf
 import dev.jyotiraditya.dmt.ui.components.ScrollMemory
-import dev.jyotiraditya.dmt.ui.motion.Depth
 
-/** The library: a shelf, or the collection opened from it, sliding by depth between them. */
+/** The shared-element key of an album's cover, used by its tiles and its page header. */
+internal fun albumCoverKey(id: String): String = "cover:album:$id"
+
+/** Track menu navigation that opens albums and artists on top of the screen shown. */
+internal fun trackMenuNavigation(onOpen: (Destination) -> Unit) = TrackMenuNavigation(
+    openAlbum = { onOpen(Destination.Album(it)) },
+    openArtist = { onOpen(Destination.Artist(it)) },
+)
+
+/** The library's first screen: the search box and shelf tabs over the shelf or search results. */
 @Composable
-fun LibraryPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
-    Depth(
-        target = state.libraryScreen(),
-        keyOf = { it.key },
-        depthOf = { it.depth },
-    ) { screen ->
-        LibraryContent(screen, state, dispatch)
+fun LibraryScreen(
+    shelf: Shelf,
+    onShelf: (Shelf) -> Unit,
+    onOpen: (Destination) -> Unit,
+    viewModel: LibraryViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val searching = state.results.searching
+    BackHandler(enabled = searching) { viewModel.clearSearch() }
+    Column {
+        LibraryHead(
+            state = state,
+            search = viewModel.search,
+            shelf = shelf,
+            onShelf = onShelf,
+        )
+        ScrollMemory("shelf:${shelf.name}:$searching") {
+            Shelf(shelf = shelf, state = state, viewModel = viewModel, onOpen = onOpen)
+        }
     }
 }
 
+/** An album, artist, genre, folder or playlist opened from the library. */
 @Composable
-private fun LibraryContent(screen: LibraryScreen, state: DmtState, dispatch: (DmtAction) -> Unit) {
-    when (screen) {
-        is LibraryScreen.OfArtistAlbum -> AlbumDetail(screen.album, state, dispatch)
-
-        is LibraryScreen.OfArtist -> ArtistDetail(screen.artist, state, dispatch)
-
-        is LibraryScreen.OfAlbum -> AlbumDetail(screen.album, state, dispatch)
-
-        is LibraryScreen.OfGenre ->
-            with(screen.genre) {
+fun CollectionScreen(
+    destination: Destination,
+    onOpen: (Destination) -> Unit,
+    viewModel: CollectionViewModel =
+        hiltViewModel<CollectionViewModel, CollectionViewModel.Factory>(
+            creationCallback = { it.create(destination) },
+        ),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val navigation = trackMenuNavigation(onOpen)
+    when (val collection = state.collection) {
+        is Collection.OfAlbum ->
+            with(collection.album) {
                 TracksDetail(
-                    name,
-                    stringResource(R.string.collection_genre),
-                    tracks,
-                    numbered = false,
-                    state,
-                    dispatch,
+                    title = name,
+                    meta = artist,
+                    tracks = tracks,
+                    numbered = true,
+                    nowPlayingId = state.nowPlayingId,
+                    actions = viewModel,
+                    navigation = navigation,
+                    coverKey = albumCoverKey(id),
                 )
             }
 
-        is LibraryScreen.OfFolder ->
-            with(screen.folder) {
+        is Collection.OfArtist ->
+            ArtistDetail(
+                artist = collection.artist,
+                actions = viewModel,
+                onOpenAlbum = { onOpen(Destination.Album(it, artist = collection.artist.name)) },
+            )
+
+        is Collection.OfGenre ->
+            with(collection.genre) {
                 TracksDetail(
-                    folderTitle(this),
-                    location,
-                    tracks,
+                    title = name,
+                    meta = stringResource(R.string.collection_genre),
+                    tracks = tracks,
                     numbered = false,
-                    state,
-                    dispatch,
+                    nowPlayingId = state.nowPlayingId,
+                    actions = viewModel,
+                    navigation = navigation,
                 )
             }
 
-        is LibraryScreen.OfPlaylist -> PlaylistDetail(screen.playlist, state, dispatch)
-
-        is LibraryScreen.Shelf ->
-            Column {
-                LibraryHead(state, screen.view, dispatch)
-                ScrollMemory("shelf:${screen.view.name}:${screen.searching}") {
-                    Shelf(
-                        screen.view,
-                        state,
-                        dispatch,
-                    )
-                }
+        is Collection.OfFolder ->
+            with(collection.folder) {
+                TracksDetail(
+                    title = folderTitle(this),
+                    meta = location,
+                    tracks = tracks,
+                    numbered = false,
+                    nowPlayingId = state.nowPlayingId,
+                    actions = viewModel,
+                    navigation = navigation,
+                )
             }
+
+        is Collection.OfPlaylist ->
+            PlaylistDetail(
+                playlist = collection.playlist,
+                state = state,
+                viewModel = viewModel,
+            )
+
+        null -> Unit
     }
-}
-
-@Composable
-private fun AlbumDetail(album: Album, state: DmtState, dispatch: (DmtAction) -> Unit) {
-    TracksDetail(
-        album.name,
-        album.artist,
-        album.tracks,
-        numbered = true,
-        state,
-        dispatch,
-        coverKey = albumCoverKey(album.id),
-    )
 }

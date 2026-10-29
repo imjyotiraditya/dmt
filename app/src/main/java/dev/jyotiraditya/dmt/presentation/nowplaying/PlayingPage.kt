@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
@@ -45,9 +46,6 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.asString
 import dev.jyotiraditya.dmt.domain.model.AudioQuality
 import dev.jyotiraditya.dmt.domain.model.asCredit
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.nowPlayingTrack
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.Notice
 import dev.jyotiraditya.dmt.ui.components.QualityBadge
@@ -72,11 +70,11 @@ private const val PAUSED_COVER_SCALE = 0.92f
  */
 @Composable
 internal fun PlayingPage(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     steps: SeekSteps,
     field: Color,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
     showCover: Boolean,
     coverHidden: Boolean,
     onCoverPlaced: (LayoutCoordinates) -> Unit,
@@ -97,7 +95,7 @@ internal fun PlayingPage(
         transport = { Transport(player, steps, field, ink) },
         extras = {
             Column {
-                Extras(state, player, field, ink, dispatch, onOpenQueue)
+                Extras(state, player, field, ink, actions, onOpenQueue)
                 Notice(error = state.error, notice = state.notice)
             }
         },
@@ -112,7 +110,7 @@ internal fun PlayingPage(
 @OptIn(UnstableApi::class)
 @Composable
 internal fun PlayerCover(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     steps: SeekSteps,
     hidden: Boolean,
@@ -120,6 +118,7 @@ internal fun PlayerCover(
     modifier: Modifier = Modifier,
 ) {
     val paused = rememberPlayPauseButtonState(player).showPlay
+    val stepMs by steps.stepMs.collectAsStateWithLifecycle(null)
     val scale by
         animateFloatAsState(
             targetValue = if (paused) PAUSED_COVER_SCALE else 1f,
@@ -150,7 +149,7 @@ internal fun PlayerCover(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-            steps.stepMs?.let { step ->
+            stepMs?.let { step ->
                 SeekReadout(player, step, modifier = Modifier.align(Alignment.Center))
             }
         }
@@ -172,7 +171,12 @@ private fun SeekReadout(player: Player, stepMs: Long, modifier: Modifier = Modif
 
 /** Title and credit on one line each; a long title scrolls so the layout never shifts. */
 @Composable
-private fun TrackTitle(state: DmtState, ink: Color, dim: Color, onOpenArtist: () -> Unit) {
+private fun TrackTitle(
+    state: NowPlayingUiState,
+    ink: Color,
+    dim: Color,
+    onOpenArtist: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AnimatedContent(
             targetState = state.title,
@@ -219,11 +223,17 @@ private fun TrackTitle(state: DmtState, ink: Color, dim: Color, onOpenArtist: ()
 /** The seek bar with elapsed and remaining time, and the track's tags between them. */
 @OptIn(UnstableApi::class)
 @Composable
-private fun SeekRow(state: DmtState, player: Player, field: Color, ink: Color, dim: Color) {
+private fun SeekRow(
+    state: NowPlayingUiState,
+    player: Player,
+    field: Color,
+    ink: Color,
+    dim: Color,
+) {
     var width by remember { mutableIntStateOf(0) }
     val hold = rememberSeekHold(player, width)
     val clock = rememberProgressStateWithTickInterval(player, tickIntervalMs = 1000L)
-    val cue = state.nowPlayingTrack?.cue == true
+    val cue = state.track?.cue == true
     val shown = hold.shownMs(clock.currentPositionMs)
 
     Column(modifier = Modifier.fillMaxWidth()) {

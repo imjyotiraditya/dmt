@@ -30,8 +30,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.media3.common.Player
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.adaptive.windowShape
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.animateFieldAsState
@@ -46,12 +44,12 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingSurface(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
+    actions: NowPlayingActions,
     sheet: SheetState,
     peek: Dp,
     field: Color,
-    dispatch: (DmtAction) -> Unit,
     onExpand: (Boolean) -> Unit,
     onOpenArtist: () -> Unit,
 ) {
@@ -73,9 +71,11 @@ fun NowPlayingSurface(
                 if (collapsed) pager.scrollToPage(PlayerPage.PLAYING.ordinal)
             }
     }
-    LaunchedEffect(state.lyrics, state.lyricsFetching) {
+    // Shows online lyrics as soon as they arrive.
+    LaunchedEffect(state.lyrics.lyrics, state.lyrics.fetching) {
         val expanded = sheet.currentValue == SheetValue.Expanded
-        if (state.lyrics != null && state.lyricsShowingFrom?.online == true && expanded) {
+        val lyrics = state.lyrics
+        if (lyrics.lyrics != null && lyrics.showingFrom?.online == true && expanded) {
             pager.animateScrollToPage(PlayerPage.LYRICS.ordinal)
         }
     }
@@ -110,7 +110,7 @@ fun NowPlayingSurface(
                     state = state,
                     player = player,
                     field = field,
-                    dispatch = dispatch,
+                    actions = actions,
                     pager = pager,
                     ownsSystemBars = ownsSystemBars,
                     coverHidden = flightTarget != null,

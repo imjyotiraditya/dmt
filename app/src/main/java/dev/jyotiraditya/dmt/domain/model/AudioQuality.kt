@@ -1,5 +1,10 @@
 package dev.jyotiraditya.dmt.domain.model
 
+import androidx.compose.runtime.Immutable
+
+/** One figure of a track's audio, such as its bit depth; [hot] marks the one to stand out. */
+@Immutable data class Spec(val label: String, val value: String, val hot: Boolean = false)
+
 /** A class of audio quality worth a badge on the track that has it. */
 enum class AudioQuality {
     LOSSLESS,

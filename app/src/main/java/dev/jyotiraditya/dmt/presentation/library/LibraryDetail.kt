@@ -31,10 +31,9 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
+import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.TextLink
@@ -59,7 +58,7 @@ internal fun DetailHead(
     title: String,
     meta: String,
     tracks: List<Track>,
-    dispatch: (DmtAction) -> Unit,
+    actions: TrackListActions,
     modifier: Modifier = Modifier,
     coverKey: Any? = null,
     action: (@Composable (Color) -> Unit)? = null,
@@ -121,17 +120,17 @@ internal fun DetailHead(
                     icon = DmtIcons.Play,
                     fill = ink,
                     ink = field,
-                    onClick = { dispatch(DmtAction.PlayAt(tracks, 0)) },
+                    onClick = { actions.play(tracks, 0) },
                 )
                 TextLink(
                     label = stringResource(R.string.player_shuffle),
                     color = ink,
-                    onClick = { dispatch(DmtAction.ShufflePlay(tracks)) },
+                    onClick = { actions.shuffle(tracks) },
                 )
                 TextLink(
                     label = stringResource(R.string.action_queue),
                     color = ink,
-                    onClick = { dispatch(DmtAction.Enqueue(tracks, title)) },
+                    onClick = { actions.enqueue(tracks, title) },
                 )
             }
             action?.invoke(ink)
@@ -145,14 +144,15 @@ internal fun TracksDetail(
     meta: String,
     tracks: List<Track>,
     numbered: Boolean,
-    state: DmtState,
-    dispatch: (DmtAction) -> Unit,
+    nowPlayingId: String?,
+    actions: TrackListActions,
+    navigation: TrackMenuNavigation,
     coverKey: Any? = null,
 ) {
-    val openTrackMenu = rememberTrackMenu(state, dispatch, libraryNavigation(dispatch))
+    val openTrackMenu = rememberTrackMenu(navigation)
     val playing = rememberWantsPlayback()
     LazyColumn(contentPadding = PaddingValues(bottom = LocalContentBottom.current)) {
-        item { DetailHead(title, meta, tracks, dispatch, coverKey = coverKey) }
+        item { DetailHead(title, meta, tracks, actions, coverKey = coverKey) }
         item { Spacer(modifier = Modifier.height(12.dp)) }
         itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
             TrackRow(
@@ -163,7 +163,7 @@ internal fun TracksDetail(
                     } else {
                         trackSummary(track)
                     },
-                current = track.id.toString() == state.nowPlayingId,
+                current = track.id.toString() == nowPlayingId,
                 playing = playing,
                 number =
                     if (numbered) {
@@ -171,7 +171,7 @@ internal fun TracksDetail(
                     } else {
                         null
                     },
-                onClick = { dispatch(DmtAction.PlayAt(tracks, index)) },
+                onClick = { actions.play(tracks, index) },
                 onLongClick = { openTrackMenu(track) },
             )
         }
@@ -179,17 +179,21 @@ internal fun TracksDetail(
 }
 
 @Composable
-internal fun ArtistDetail(artist: Artist, state: DmtState, dispatch: (DmtAction) -> Unit) {
+internal fun ArtistDetail(
+    artist: Artist,
+    actions: TrackListActions,
+    onOpenAlbum: (String) -> Unit,
+) {
     val albums = artist.discography
     LazyColumn(contentPadding = PaddingValues(bottom = LocalContentBottom.current)) {
-        item { DetailHead(artist.name, artistSummary(artist), artist.tracks, dispatch) }
+        item { DetailHead(artist.name, artistSummary(artist), artist.tracks, actions) }
         items(albums, key = { it.id }) { a ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier.fillMaxWidth()
                         .pressable(
-                            onClick = { dispatch(DmtAction.OpenAlbum(a.id)) },
+                            onClick = { onOpenAlbum(a.id) },
                             sink = 0.985f,
                             label = a.name,
                         )

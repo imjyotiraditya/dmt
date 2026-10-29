@@ -19,12 +19,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.SLEEP_RANGE
-import dev.jyotiraditya.dmt.presentation.player.ceilMinutes
-import dev.jyotiraditya.dmt.presentation.player.sleepOn
-import dev.jyotiraditya.dmt.presentation.player.steppedSleepMinutes
+import dev.jyotiraditya.dmt.domain.model.SLEEP_RANGE
+import dev.jyotiraditya.dmt.domain.model.ceilMinutes
+import dev.jyotiraditya.dmt.domain.model.steppedSleepMinutes
 import dev.jyotiraditya.dmt.presentation.settings.ToggleRow
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
@@ -42,9 +39,13 @@ private val SLEEP_PRESETS = listOf(15, 30, 45, 60)
 
 /** Picks a sleep timer length, or the end of the song, and starts it on the button. */
 @Composable
-internal fun SleepSheet(state: DmtState, dispatch: (DmtAction) -> Unit, onDismiss: () -> Unit) {
+internal fun SleepSheet(
+    state: NowPlayingUiState,
+    actions: NowPlayingActions,
+    onDismiss: () -> Unit,
+) {
     val settings = state.settings
-    val left = sleepLeft(state)
+    val left = sleepLeft(state.sleep)
     var minutes by rememberSaveable {
         mutableIntStateOf(left?.takeIf { it > 0L }?.ceilMinutes() ?: settings.sleepCustomMinutes)
     }
@@ -122,33 +123,31 @@ internal fun SleepSheet(state: DmtState, dispatch: (DmtAction) -> Unit, onDismis
                 ),
             checked = settings.sleepFinishSong,
             onToggle = {
-                dispatch(
-                    DmtAction.Config(settings.copy(sleepFinishSong = !settings.sleepFinishSong)),
-                )
+                actions.updateSettings { it.copy(sleepFinishSong = !it.sleepFinishSong) }
             },
         )
         Block(
             label =
                 stringResource(
-                    if (state.sleepOn) R.string.sleep_update else R.string.sleep_start,
+                    if (state.sleep.on) R.string.sleep_update else R.string.sleep_start,
                     if (songEnd) stringResource(R.string.sleep_song_end) else minutesLabel,
                 ),
             onClick = {
                 if (songEnd) {
-                    dispatch(DmtAction.SleepAtSongEnd)
+                    actions.sleepAtSongEnd()
                 } else {
-                    dispatch(DmtAction.SetSleep(minutes))
-                    dispatch(DmtAction.Config(settings.copy(sleepCustomMinutes = minutes)))
+                    actions.setSleep(minutes)
+                    actions.updateSettings { it.copy(sleepCustomMinutes = minutes) }
                 }
                 dismiss()
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = Margin, vertical = 8.dp),
         )
-        if (state.sleepOn) {
+        if (state.sleep.on) {
             TextLink(
                 label = stringResource(R.string.sleep_turn_off),
                 onClick = {
-                    dispatch(DmtAction.SetSleep(0))
+                    actions.setSleep(0)
                     dismiss()
                 },
                 modifier = Modifier.padding(horizontal = Margin),

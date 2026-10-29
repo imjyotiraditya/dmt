@@ -35,10 +35,7 @@ import androidx.media3.ui.compose.state.rememberSeekBackButtonState
 import androidx.media3.ui.compose.state.rememberSeekForwardButtonState
 import androidx.media3.ui.compose.state.rememberShuffleButtonState
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.ceilMinutes
-import dev.jyotiraditya.dmt.presentation.player.sleepOn
+import dev.jyotiraditya.dmt.domain.model.ceilMinutes
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.IconChip
 import dev.jyotiraditya.dmt.ui.components.IconTap
@@ -182,11 +179,11 @@ internal fun PlayPauseTap(
 @OptIn(UnstableApi::class)
 @Composable
 internal fun Extras(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     field: Color,
     ink: Color,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
     onOpenQueue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -201,14 +198,14 @@ internal fun Extras(
             icon = DmtIcons.Sleep,
             description = stringResource(R.string.sleep_title),
             value =
-                sleepLeft(state)?.let { left ->
+                sleepLeft(state.sleep)?.let { left ->
                     if (left > 0L) {
                         stringResource(R.string.sleep_minutes, left.ceilMinutes())
                     } else {
                         stringResource(R.string.sleep_song_end)
                     }
                 },
-            on = state.sleepOn,
+            on = state.sleep.on,
             onClick = { sheet = ExtraSheet.SLEEP },
             ink = ink,
             field = field,
@@ -239,8 +236,8 @@ internal fun Extras(
         }
     }
     when (sheet) {
-        ExtraSheet.SLEEP -> SleepSheet(state, dispatch, onDismiss = { sheet = null })
-        ExtraSheet.SPEED -> SpeedSheet(state, speed, dispatch, onDismiss = { sheet = null })
+        ExtraSheet.SLEEP -> SleepSheet(state, actions, onDismiss = { sheet = null })
+        ExtraSheet.SPEED -> SpeedSheet(state, speed, actions, onDismiss = { sheet = null })
         null -> Unit
     }
 }

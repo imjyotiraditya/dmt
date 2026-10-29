@@ -10,20 +10,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.domain.model.ServerSource
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.library.tracksSummary
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
+import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.DmtView
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.PageHead
 import dev.jyotiraditya.dmt.ui.components.TextLink
@@ -35,7 +36,8 @@ import dev.jyotiraditya.dmt.ui.theme.rowFill
 
 /** Picks where music comes from: this device or one of the added servers. */
 @Composable
-fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
+fun SourcesPage(onOpen: (Destination) -> Unit, viewModel: SourcesViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
     val library = tracksSummary(state.tracks)
     val localChosen = settings.server == null
@@ -65,7 +67,7 @@ fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 )
                     .joinToString(" · "),
             chosen = localChosen,
-            onClick = { dispatch(DmtAction.Config(settings.copy(activeSource = null))) },
+            onClick = { viewModel.use(null) },
             fill = 0.rowFill,
             spinning = localChosen && playing,
             actions =
@@ -73,7 +75,7 @@ fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
                     { ink ->
                         TextLink(
                             label = stringResource(R.string.permissions_allow_music),
-                            onClick = { dispatch(DmtAction.Show(DmtView.PERMISSIONS)) },
+                            onClick = { onOpen(Destination.Permissions) },
                             color = ink,
                         )
                     }
@@ -82,7 +84,16 @@ fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
                 },
         )
         settings.sources.forEachIndexed { index, source ->
-            ServerSleeve(source, index + 1, state, library, playing, dispatch)
+            ServerSleeve(
+                source = source,
+                position = index + 1,
+                chosen = settings.server?.id == source.id,
+                library = library,
+                playing = playing,
+                onUse = { viewModel.use(source.id) },
+                onEdit = { onOpen(Destination.SourceForm(source.kind, source.id)) },
+                onSignOut = { viewModel.signOut(source.id) },
+            )
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -90,7 +101,7 @@ fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
             modifier =
                 Modifier.fillMaxWidth()
                     .pressable(
-                        onClick = { dispatch(DmtAction.Show(DmtView.SOURCE_KINDS)) },
+                        onClick = { onOpen(Destination.SourceKinds) },
                         label = stringResource(R.string.sources_add),
                     )
                     .padding(horizontal = Margin, vertical = 18.dp),
@@ -110,14 +121,13 @@ fun SourcesPage(state: DmtState, dispatch: (DmtAction) -> Unit) {
 private fun ServerSleeve(
     source: ServerSource,
     position: Int,
-    state: DmtState,
+    chosen: Boolean,
     library: String,
     playing: Boolean,
-    dispatch: (DmtAction) -> Unit,
+    onUse: () -> Unit,
+    onEdit: () -> Unit,
+    onSignOut: () -> Unit,
 ) {
-    val settings = state.settings
-    val chosen = settings.server?.id == source.id
-    val edit = { dispatch(DmtAction.OpenSourceForm(source.kind, source.id)) }
     SourceSleeve(
         icon = source.kind.icon,
         label = source.name,
@@ -134,13 +144,7 @@ private fun ServerSleeve(
             )
                 .joinToString(" · "),
         chosen = chosen,
-        onClick = {
-            if (source.signedIn) {
-                dispatch(DmtAction.Config(settings.copy(activeSource = source.id)))
-            } else {
-                edit()
-            }
-        },
+        onClick = if (source.signedIn) onUse else onEdit,
         fill = position.rowFill,
         muted = !source.signedIn,
         spinning = chosen && playing,
@@ -149,12 +153,12 @@ private fun ServerSleeve(
                 { ink ->
                     TextLink(
                         label = stringResource(R.string.sources_edit),
-                        onClick = edit,
+                        onClick = onEdit,
                         color = ink,
                     )
                     TextLink(
                         label = stringResource(R.string.sources_disconnect),
-                        onClick = { dispatch(DmtAction.Config(settings.signedOut(source.id))) },
+                        onClick = onSignOut,
                         color = ink,
                     )
                 }

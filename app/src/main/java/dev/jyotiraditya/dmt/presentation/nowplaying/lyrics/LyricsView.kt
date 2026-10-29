@@ -12,9 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -24,10 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.jyotiraditya.dmt.util.lingering
 import dev.jyotiraditya.lyrics.Lyrics
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
+import kotlin.time.Duration.Companion.milliseconds
 
 /** How long auto-scroll stays paused after the user scrolls by hand. */
 private const val HAND_SCROLL_HOLD_MS = 3500L
@@ -53,16 +53,14 @@ internal fun LyricsView(
             derivedStateOf { if (lyrics.synced) lyrics.lines.indexAt(position.value) else -1 }
         }
 
-    var handHeld by remember { mutableStateOf(false) }
-    LaunchedEffect(listState) {
-        listState.interactionSource.interactions
-            .filterIsInstance<DragInteraction.Start>()
-            .collectLatest {
-                handHeld = true
-                delay(HAND_SCROLL_HOLD_MS)
-                handHeld = false
-            }
-    }
+    val handHeld by
+        remember(listState) {
+            listState.interactionSource.interactions
+                .filterIsInstance<DragInteraction.Start>()
+                .lingering(HAND_SCROLL_HOLD_MS.milliseconds)
+                .map { it != null }
+        }
+            .collectAsStateWithLifecycle(false)
     LaunchedEffect(trackId) { listState.scrollToItem(0) }
     LaunchedEffect(lyrics, listState) {
         snapshotFlow { if (handHeld) -1 else activeIndex }

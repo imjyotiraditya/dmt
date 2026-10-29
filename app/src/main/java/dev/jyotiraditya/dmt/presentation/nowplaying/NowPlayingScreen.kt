@@ -32,8 +32,6 @@ import androidx.media3.common.Player
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.presentation.nowplaying.details.DetailsPage
 import dev.jyotiraditya.dmt.presentation.nowplaying.lyrics.LyricsPage
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
 import dev.jyotiraditya.dmt.ui.adaptive.SystemBarsOver
 import dev.jyotiraditya.dmt.ui.adaptive.windowShape
 import dev.jyotiraditya.dmt.ui.components.IconTap
@@ -68,10 +66,10 @@ internal enum class PlayerPage(@param:StringRes val title: Int) {
 /** The expanded player; in a wide window the cover stays on the left beside the pages. */
 @Composable
 internal fun NowPlayingScreen(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     field: Color,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
     pager: PagerState,
     ownsSystemBars: Boolean,
     coverHidden: Boolean,
@@ -120,7 +118,7 @@ internal fun NowPlayingScreen(
                         player,
                         steps,
                         field,
-                        dispatch,
+                        actions,
                         pager,
                         wide = true,
                         coverHidden,
@@ -143,7 +141,7 @@ internal fun NowPlayingScreen(
                     player,
                     steps,
                     field,
-                    dispatch,
+                    actions,
                     pager,
                     wide = false,
                     coverHidden,
@@ -188,11 +186,11 @@ private fun PageTabs(
 
 @Composable
 private fun ColumnScope.Pages(
-    state: DmtState,
+    state: NowPlayingUiState,
     player: Player,
     steps: SeekSteps,
     field: Color,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
     pager: PagerState,
     wide: Boolean,
     coverHidden: Boolean,
@@ -213,7 +211,7 @@ private fun ColumnScope.Pages(
                     player = player,
                     steps = steps,
                     field = field,
-                    dispatch = dispatch,
+                    actions = actions,
                     showCover = !wide,
                     coverHidden = coverHidden,
                     onCoverPlaced = onCoverPlaced,
@@ -223,9 +221,9 @@ private fun ColumnScope.Pages(
                     },
                 )
 
-            PlayerPage.LYRICS -> LyricsPage(state, player, dispatch)
+            PlayerPage.LYRICS -> LyricsPage(state, player, actions)
 
-            PlayerPage.QUEUE -> QueuePage(state, player, dispatch)
+            PlayerPage.QUEUE -> QueuePage(state, player, actions)
 
             PlayerPage.DETAILS -> DetailsPage(state, player)
         }

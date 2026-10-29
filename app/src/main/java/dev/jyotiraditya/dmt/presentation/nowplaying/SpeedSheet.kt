@@ -10,10 +10,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.presentation.player.DmtAction
-import dev.jyotiraditya.dmt.presentation.player.DmtState
-import dev.jyotiraditya.dmt.presentation.player.SPEED_RANGE
-import dev.jyotiraditya.dmt.presentation.player.steppedSpeed
+import dev.jyotiraditya.dmt.domain.model.SPEED_RANGE
+import dev.jyotiraditya.dmt.domain.model.steppedSpeed
 import dev.jyotiraditya.dmt.presentation.settings.ToggleRow
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
 import dev.jyotiraditya.dmt.ui.components.FlatSlider
@@ -28,9 +26,9 @@ private val SPEED_MARKS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 /** Sets the playback speed by step or slider, showing the song's length at that speed. */
 @Composable
 internal fun SpeedSheet(
-    state: DmtState,
+    state: NowPlayingUiState,
     playbackSpeed: Float,
-    dispatch: (DmtAction) -> Unit,
+    actions: NowPlayingActions,
     onDismiss: () -> Unit,
 ) {
     val speed = steppedSpeed(playbackSpeed)
@@ -48,13 +46,13 @@ internal fun SpeedSheet(
         )
         Stepper(
             value = stringResource(R.string.speed_value, speed.speedLabel()),
-            onStep = { dispatch(DmtAction.SetSpeed(steppedSpeed(speed, it))) },
+            onStep = { actions.setSpeed(steppedSpeed(speed, it)) },
             lessLabel = stringResource(R.string.speed_slower),
             moreLabel = stringResource(R.string.speed_faster),
             canLess = speed > SPEED_RANGE.start,
             canMore = speed < SPEED_RANGE.endInclusive,
             valueLabel = stringResource(R.string.speed_reset),
-            onValueClick = { dispatch(DmtAction.SetSpeed(1f)) },
+            onValueClick = { actions.setSpeed(1f) },
             modifier = Modifier.padding(horizontal = Margin, vertical = 8.dp),
         )
         if (state.durationMs > 0L) {
@@ -73,7 +71,7 @@ internal fun SpeedSheet(
         }
         FlatSlider(
             value = speed,
-            onValueChange = { dispatch(DmtAction.SetSpeed(it)) },
+            onValueChange = actions::setSpeed,
             range = SPEED_RANGE,
             label = stringResource(R.string.speed_title),
             marks =
@@ -82,14 +80,11 @@ internal fun SpeedSheet(
                 },
             modifier = Modifier.padding(horizontal = Margin, vertical = 12.dp),
         )
-        val keepPitch = state.settings.keepPitch
         ToggleRow(
             label = stringResource(R.string.speed_keep_pitch),
             hint = stringResource(R.string.speed_keep_pitch_hint),
-            checked = keepPitch,
-            onToggle = {
-                dispatch(DmtAction.Config(state.settings.copy(keepPitch = !keepPitch)))
-            },
+            checked = state.settings.keepPitch,
+            onToggle = { actions.updateSettings { it.copy(keepPitch = !it.keepPitch) } },
         )
     }
 }

@@ -11,6 +11,7 @@ class PlaybackConnection
 constructor(
     @param:ApplicationContext private val context: Context,
 ) {
-    /** A controller connected to the playback service; release it when done. */
-    suspend fun connect(): MediaController = context.mediaController()
+    /** A controller connected to the playback service, telling [listener]; release it when done. */
+    suspend fun connect(listener: MediaController.Listener): MediaController =
+        context.mediaController(listener)
 }

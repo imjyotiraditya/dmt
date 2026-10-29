@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.playback
 
+import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -23,12 +24,16 @@ internal fun fadeLevel(progress: Float): Float {
     return left * left
 }
 
-/** Pauses [player] at a set time, or at the end of the song then playing, fading out first. */
+/**
+ * Pauses [player] at a set time, or at the end of the song then playing, fading out first;
+ * [onChange] hears each start and stop.
+ */
 @OptIn(UnstableApi::class)
 internal class SleepTimer(
     private val scope: CoroutineScope,
     private val player: ExoPlayer,
     private val onLevel: (Float) -> Unit,
+    private val onChange: (SleepTimer) -> Unit,
 ) {
     private var job: Job? = null
     private var fadeJob: Job? = null
@@ -63,8 +68,17 @@ internal class SleepTimer(
 
     /** Starts the timer for [endAt], or stops it when [endAt] is 0. */
     fun set(endAt: Long, finishSong: Boolean) {
-        cancel()
-        if (endAt <= 0L) return
+        stop()
+        if (endAt > 0L) start(endAt, finishSong)
+        onChange(this)
+    }
+
+    fun cancel() {
+        stop()
+        onChange(this)
+    }
+
+    private fun start(endAt: Long, finishSong: Boolean) {
         this.endAt = endAt
         this.finishSong = finishSong
         job = scope.launch {
@@ -82,7 +96,7 @@ internal class SleepTimer(
         }
     }
 
-    fun cancel() {
+    private fun stop() {
         job?.cancel()
         fadeJob?.cancel()
         player.removeListener(songEnd)
@@ -110,6 +124,12 @@ internal class SleepTimer(
             delay(step)
             onLevel(fadeLevel(i.toFloat() / FADE_STEPS))
         }
+    }
+
+    /** The end time and finish-the-song choice, as the session shares them with controllers. */
+    fun extras(): Bundle = Bundle().apply {
+        putLong(PlaybackCommands.KEY_END_AT, endAt ?: 0L)
+        putBoolean(PlaybackCommands.KEY_FINISH_SONG, finishSong)
     }
 
     private fun untilEnd(): Duration = ((endAt ?: 0L) - System.currentTimeMillis()).milliseconds
