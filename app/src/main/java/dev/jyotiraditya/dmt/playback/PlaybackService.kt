@@ -31,6 +31,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
+import dev.jyotiraditya.dmt.domain.model.ShufflePlan
 import dev.jyotiraditya.dmt.domain.usecase.ScanLibraryUseCase
 import dev.jyotiraditya.dmt.util.notificationPermission
 import kotlinx.coroutines.CoroutineScope
@@ -172,7 +173,7 @@ class PlaybackService : MediaLibraryService() {
             if (replaced) queueReplaced = false
             val saved = pendingShuffle
             pendingShuffle = null
-            val restored = saved?.let { ShufflePlan.parse(it.shuffleOrder) }
+            val restored = saved?.shufflePlan
             when {
                 restored != null && restored.count == timeline.windowCount -> {
                     shufflePlan = restored
@@ -320,7 +321,7 @@ class PlaybackService : MediaLibraryService() {
                 index = player.currentMediaItemIndex,
                 positionMs = player.currentPosition.coerceAtLeast(0L),
                 shuffle = player.shuffleModeEnabled,
-                shuffleOrder = shufflePlan?.toString().orEmpty(),
+                shufflePlan = shufflePlan,
             )
         scope.launch { preferencesRepository.saveSession(session) }
     }

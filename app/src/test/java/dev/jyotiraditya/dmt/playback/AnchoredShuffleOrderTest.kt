@@ -3,6 +3,7 @@ package dev.jyotiraditya.dmt.playback
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.source.ShuffleOrder
+import dev.jyotiraditya.dmt.domain.model.ShufflePlan
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

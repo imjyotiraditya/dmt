@@ -1,6 +1,8 @@
 package dev.jyotiraditya.dmt.data.source.local
 
 import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -8,8 +10,12 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.serialization.json.Json
 
 val Context.dmtStore by preferencesDataStore(name = "dmt")
+
+/** How structured values are written into the store. */
+internal val StoreJson = Json { ignoreUnknownKeys = true }
 
 val KEY_NORMALIZE = booleanPreferencesKey("normalize_volume")
 val KEY_ANIMATED_ART = booleanPreferencesKey("animated_art")
@@ -28,25 +34,25 @@ val KEY_STAT_TOTAL = longPreferencesKey("stat_total_ms")
 val KEY_LIBRARY_GENERATION = longPreferencesKey("library_generation")
 val KEY_LAST_SCAN_AT = longPreferencesKey("last_scan_at")
 val KEY_LAST_SCAN_TRACKS = intPreferencesKey("last_scan_tracks")
-val KEY_STAT_COUNTS = stringPreferencesKey("stat_counts")
-val KEY_LAST_QUEUE = stringPreferencesKey("last_queue")
-val KEY_LAST_INDEX = intPreferencesKey("last_index")
-val KEY_LAST_POS = longPreferencesKey("last_pos")
-val KEY_LAST_SHUFFLE = booleanPreferencesKey("last_shuffle")
-val KEY_LAST_SHUFFLE_ORDER = stringPreferencesKey("last_shuffle_order")
+val KEY_PLAY_COUNTS = stringPreferencesKey("play_counts")
+val KEY_SESSION = stringPreferencesKey("session")
 val KEY_LIBRARY_SORT = stringPreferencesKey("sort")
 val KEY_ACCENT = stringPreferencesKey("accent")
 val KEY_JELLYFIN_DEVICE_ID = stringPreferencesKey("jellyfin_device_id")
 val KEY_SOURCES = stringPreferencesKey("sources")
 val KEY_ACTIVE_SOURCE = stringPreferencesKey("active_source")
 
-fun String.toCounts(): Map<Long, Int> = split(';')
-    .mapNotNull { entry ->
-        val parts = entry.split(':')
-        val id = parts.getOrNull(0)?.toLongOrNull() ?: return@mapNotNull null
-        val count = parts.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
-        id to count
+/** The stored value at [key] read as [T], or null when absent or unreadable. */
+internal inline fun <reified T> Preferences.decoded(key: Preferences.Key<String>): T? =
+    this[key]?.let {
+        try {
+            StoreJson.decodeFromString<T>(it)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
     }
-    .toMap()
 
-fun Map<Long, Int>.encodeCounts(): String = entries.joinToString(";") { "${it.key}:${it.value}" }
+/** Stores [value] at [key] as JSON. */
+internal inline fun <reified T> MutablePreferences.encode(key: Preferences.Key<String>, value: T) {
+    this[key] = StoreJson.encodeToString(value)
+}

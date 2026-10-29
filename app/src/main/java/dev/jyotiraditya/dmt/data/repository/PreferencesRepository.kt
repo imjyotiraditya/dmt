@@ -11,31 +11,27 @@ import dev.jyotiraditya.dmt.data.source.local.KEY_ANIMATED_ART
 import dev.jyotiraditya.dmt.data.source.local.KEY_HIDDEN_FOLDERS
 import dev.jyotiraditya.dmt.data.source.local.KEY_JELLYFIN_DEVICE_ID
 import dev.jyotiraditya.dmt.data.source.local.KEY_KEEP_PITCH
-import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_INDEX
-import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_POS
-import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_QUEUE
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_SCAN_AT
 import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_SCAN_TRACKS
-import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_SHUFFLE
-import dev.jyotiraditya.dmt.data.source.local.KEY_LAST_SHUFFLE_ORDER
 import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_GENERATION
 import dev.jyotiraditya.dmt.data.source.local.KEY_LIBRARY_SORT
 import dev.jyotiraditya.dmt.data.source.local.KEY_LYRICS_SOURCE
 import dev.jyotiraditya.dmt.data.source.local.KEY_NORMALIZE
+import dev.jyotiraditya.dmt.data.source.local.KEY_PLAY_COUNTS
 import dev.jyotiraditya.dmt.data.source.local.KEY_ROMANIZED_LYRICS
+import dev.jyotiraditya.dmt.data.source.local.KEY_SESSION
 import dev.jyotiraditya.dmt.data.source.local.KEY_SETUP_DONE
 import dev.jyotiraditya.dmt.data.source.local.KEY_SINGER_COLORS
 import dev.jyotiraditya.dmt.data.source.local.KEY_SLEEP_CUSTOM_MINUTES
 import dev.jyotiraditya.dmt.data.source.local.KEY_SLEEP_FINISH_SONG
 import dev.jyotiraditya.dmt.data.source.local.KEY_SOURCES
 import dev.jyotiraditya.dmt.data.source.local.KEY_SPEED
-import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_COUNTS
 import dev.jyotiraditya.dmt.data.source.local.KEY_STAT_TOTAL
 import dev.jyotiraditya.dmt.data.source.local.KEY_STOP_ON_DISMISS
+import dev.jyotiraditya.dmt.data.source.local.decoded
 import dev.jyotiraditya.dmt.data.source.local.dmtStore
-import dev.jyotiraditya.dmt.data.source.local.encodeCounts
+import dev.jyotiraditya.dmt.data.source.local.encode
 import dev.jyotiraditya.dmt.data.source.local.encodeSources
-import dev.jyotiraditya.dmt.data.source.local.toCounts
 import dev.jyotiraditya.dmt.data.source.local.toSources
 import dev.jyotiraditya.dmt.di.ApplicationScope
 import dev.jyotiraditya.dmt.domain.model.AccentColor
@@ -100,27 +96,13 @@ constructor(
         return checkNotNull(prefs[KEY_JELLYFIN_DEVICE_ID])
     }
 
-    suspend fun lastSession(): LastSession? {
-        val prefs = context.dmtStore.data.first()
-        val ids = (prefs[KEY_LAST_QUEUE] ?: "").split(',').mapNotNull { it.toLongOrNull() }
-        if (ids.isEmpty()) return null
-        return LastSession(
-            queueIds = ids,
-            index = prefs[KEY_LAST_INDEX] ?: 0,
-            positionMs = prefs[KEY_LAST_POS] ?: 0L,
-            shuffle = prefs[KEY_LAST_SHUFFLE] ?: false,
-            shuffleOrder = prefs[KEY_LAST_SHUFFLE_ORDER] ?: "",
-        )
-    }
+    suspend fun lastSession(): LastSession? =
+        context.dmtStore.data.first().decoded<LastSession>(KEY_SESSION)?.takeIf {
+            it.queueIds.isNotEmpty()
+        }
 
     suspend fun saveSession(session: LastSession) {
-        context.dmtStore.edit { prefs ->
-            prefs[KEY_LAST_QUEUE] = session.queueIds.joinToString(",")
-            prefs[KEY_LAST_INDEX] = session.index
-            prefs[KEY_LAST_POS] = session.positionMs
-            prefs[KEY_LAST_SHUFFLE] = session.shuffle
-            prefs[KEY_LAST_SHUFFLE_ORDER] = session.shuffleOrder
-        }
+        context.dmtStore.edit { it.encode(KEY_SESSION, session) }
     }
 
     suspend fun libraryGeneration(): Long =
@@ -148,9 +130,8 @@ constructor(
         context.dmtStore.edit { prefs ->
             prefs[KEY_STAT_TOTAL] = (prefs[KEY_STAT_TOTAL] ?: 0L) + playedMs
             if (playedMs >= COUNTED_LISTEN_MS && trackId != null) {
-                val counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts().toMutableMap()
-                counts[trackId] = (counts[trackId] ?: 0) + 1
-                prefs[KEY_STAT_COUNTS] = counts.encodeCounts()
+                val counts = prefs.playCounts()
+                prefs.encode(KEY_PLAY_COUNTS, counts + (trackId to (counts[trackId] ?: 0) + 1))
             }
         }
     }
@@ -160,7 +141,7 @@ constructor(
             .map { prefs ->
                 DmtStats(
                     totalMs = prefs[KEY_STAT_TOTAL] ?: 0L,
-                    counts = (prefs[KEY_STAT_COUNTS] ?: "").toCounts(),
+                    counts = prefs.playCounts(),
                 )
             }
             .distinctUntilChanged()
@@ -205,6 +186,10 @@ private fun MutablePreferences.write(settings: DmtSettings) {
     this[KEY_SOURCES] = settings.sources.encodeSources()
     putOrRemove(KEY_ACTIVE_SOURCE, settings.activeSource)
 }
+
+/** How many times each track has been played, by track id. */
+private fun Preferences.playCounts(): Map<Long, Int> =
+    decoded<Map<Long, Int>>(KEY_PLAY_COUNTS).orEmpty()
 
 /** The entry of [E] with this name, or [default] when there is none. */
 private inline fun <reified E : Enum<E>> String?.toEnum(default: E): E =

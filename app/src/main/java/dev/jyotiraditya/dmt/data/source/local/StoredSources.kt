@@ -3,7 +3,6 @@ package dev.jyotiraditya.dmt.data.source.local
 import dev.jyotiraditya.dmt.domain.model.ServerSource
 import dev.jyotiraditya.dmt.domain.model.SourceMode
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 /** A [ServerSource] as stored, with its kind kept by name. */
 @Serializable
@@ -16,14 +15,15 @@ private data class StoredSource(
     val secrets: Map<String, String> = emptyMap(),
 )
 
-private val json = Json { ignoreUnknownKeys = true }
-
 /** Decodes stored sources, skipping any whose kind is unknown. */
-fun String.toSources(): List<ServerSource> = runCatching {
-    json.decodeFromString<List<StoredSource>>(this)
-}
-    .getOrDefault(emptyList())
-    .mapNotNull { stored ->
+fun String.toSources(): List<ServerSource> {
+    val sources =
+        try {
+            StoreJson.decodeFromString<List<StoredSource>>(this)
+        } catch (_: IllegalArgumentException) {
+            emptyList()
+        }
+    return sources.mapNotNull { stored ->
         ServerSource(
             id = stored.id,
             kind =
@@ -34,8 +34,9 @@ fun String.toSources(): List<ServerSource> = runCatching {
             secrets = stored.secrets,
         )
     }
+}
 
 /** Encodes these sources for storage. */
-fun List<ServerSource>.encodeSources(): String = json.encodeToString(
+fun List<ServerSource>.encodeSources(): String = StoreJson.encodeToString(
     map { StoredSource(it.id, it.kind.name, it.name, it.url, it.username, it.secrets) },
 )

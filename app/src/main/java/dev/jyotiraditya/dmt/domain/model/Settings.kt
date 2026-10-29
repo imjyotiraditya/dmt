@@ -106,11 +106,3 @@ data class DmtSettings(
         activeSource = activeSource.takeIf { it != id },
     )
 }
-
-data class LastSession(
-    val queueIds: List<Long>,
-    val index: Int,
-    val positionMs: Long,
-    val shuffle: Boolean = false,
-    val shuffleOrder: String = "",
-)
