@@ -204,6 +204,7 @@ private fun ColumnScope.Pages(
         state = pager,
         beyondViewportPageCount = 1,
         modifier = Modifier.weight(1f).fillMaxWidth(),
+        overscrollEffect = null,
     ) { index ->
         when (PlayerPage.entries[index]) {
             PlayerPage.PLAYING ->

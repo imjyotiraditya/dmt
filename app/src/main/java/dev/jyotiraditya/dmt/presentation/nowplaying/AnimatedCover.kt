@@ -20,6 +20,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 
@@ -70,6 +71,7 @@ fun AnimatedCover(url: String, playing: Boolean, modifier: Modifier = Modifier) 
             modifier =
                 Modifier.resizeWithContentScale(ContentScale.Crop, presentation.videoSizeDp)
                     .graphicsLayer { this.alpha = alpha },
+            surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
         )
     }
 }
