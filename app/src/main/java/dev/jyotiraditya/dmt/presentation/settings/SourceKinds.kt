@@ -46,7 +46,8 @@ fun SourceKindsPage(onOpen: (Destination) -> Unit) {
             modifier = Modifier.padding(horizontal = Margin).padding(bottom = 20.dp),
         )
         serverKinds.forEachIndexed { index, kind ->
-            val title = stringResource(kind.title)
+            val display = kind.display
+            val title = stringResource(display.title)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -60,11 +61,11 @@ fun SourceKindsPage(onOpen: (Destination) -> Unit) {
                         )
                         .padding(horizontal = Margin, vertical = 18.dp),
             ) {
-                DmtIcon(icon = kind.icon, tint = Ink, size = 26.dp)
+                DmtIcon(icon = display.icon, tint = Ink, size = 26.dp)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = title, style = MaterialTheme.typography.titleLarge, color = Ink)
                     Text(
-                        text = stringResource(kind.line),
+                        text = stringResource(display.line),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )

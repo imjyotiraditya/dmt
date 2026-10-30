@@ -38,8 +38,4 @@ object DmtIcons {
     val Show = R.drawable.ic_show
     val Hide = R.drawable.ic_hide
     val Device = R.drawable.ic_device
-
-    /** The Jellyfin and Navidrome logos, in one colour like the symbols. */
-    val Jellyfin = R.drawable.ic_jellyfin
-    val Navidrome = R.drawable.ic_navidrome
 }

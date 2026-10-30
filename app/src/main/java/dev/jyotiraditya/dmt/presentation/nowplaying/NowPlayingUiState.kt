@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.presentation.nowplaying
 
 import dev.jyotiraditya.dmt.core.common.UiText
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.AudioQuality
 import dev.jyotiraditya.dmt.domain.model.Cover
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
@@ -9,7 +10,6 @@ import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.domain.model.QueueEntry
 import dev.jyotiraditya.dmt.domain.model.SleepState
 import dev.jyotiraditya.dmt.domain.model.Spec
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.lyrics.Lyrics
 
 /** The lyrics of the track playing, and what each source has for it. */

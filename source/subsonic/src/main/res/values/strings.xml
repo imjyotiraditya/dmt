@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source_subsonic">Navidrome</string>
+    <string name="source_subsonic_line">Navidrome or any Subsonic server</string>
+    <string name="source_subsonic_setup">Navidrome or any Subsonic server. You sign in next.</string>
+    <string name="source_subsonic_address_hint" translatable="false">music.example.com</string>
+    <string name="source_subsonic_no_tracks">No tracks found on your Navidrome or Subsonic server. Rescan from Settings, or switch source.</string>
+    <string name="source_subsonic_scan_failed">Couldn’t reach your Navidrome or Subsonic server. Check the connection and rescan.</string>
+    <string name="source_subsonic_wrong_kind">That address doesn’t look like a Navidrome or Subsonic server.</string>
+</resources>

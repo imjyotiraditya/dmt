@@ -1,5 +1,7 @@
 package dev.jyotiraditya.dmt.domain.model
 
+import dev.jyotiraditya.dmt.core.model.Track
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_GENRE
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 

@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.ui.theme.Ink
 import dev.jyotiraditya.dmt.ui.theme.Muted
 

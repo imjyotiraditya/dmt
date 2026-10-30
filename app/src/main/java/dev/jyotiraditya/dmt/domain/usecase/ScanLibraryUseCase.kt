@@ -1,7 +1,8 @@
 package dev.jyotiraditya.dmt.domain.usecase
 
+import dev.jyotiraditya.dmt.core.model.Track
+import dev.jyotiraditya.dmt.data.repository.SourceRepository
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toLibrary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,31 +17,34 @@ import javax.inject.Singleton
 
 /** Reads the library from the current source and groups it, once per scan for every caller. */
 @Singleton
-class ScanLibraryUseCase @Inject constructor(private val mediaSourceProvider: MediaSourceProvider) {
+class ScanLibraryUseCase @Inject constructor(private val sources: SourceRepository) {
 
     @Volatile private var grouped: LibrarySnapshot? = null
 
-    fun changes(): Flow<Unit> = flow { emitAll(mediaSourceProvider.current().changes()) }
+    fun changes(): Flow<Unit> = flow { emitAll(sources.active().source.changes()) }
 
     /**
      * The library as stored, then as scanned now, each only when it changed; [refresh] skips the
      * stored one.
      */
     operator fun invoke(refresh: Boolean = false): Flow<LibrarySnapshot> = flow {
-        val source = mediaSourceProvider.current()
+        val (source, server) = sources.active()
         if (refresh) {
             source.invalidate()
         } else {
-            source.stored().takeIf { it.isNotEmpty() }?.let { emit(it) }
+            source.stored(server).takeIf { it.isNotEmpty() }?.let { emit(it) }
         }
-        emit(source.scan())
+        emit(source.scan(server))
     }
         .distinctUntilChanged()
         .map(::snapshotOf)
         .flowOn(Dispatchers.IO)
 
     /** The library as the current source holds it now. */
-    suspend fun current(): LibrarySnapshot = snapshotOf(mediaSourceProvider.current().scan())
+    suspend fun current(): LibrarySnapshot {
+        val (source, server) = sources.active()
+        return snapshotOf(source.scan(server))
+    }
 
     private suspend fun snapshotOf(tracks: List<Track>): LibrarySnapshot {
         grouped

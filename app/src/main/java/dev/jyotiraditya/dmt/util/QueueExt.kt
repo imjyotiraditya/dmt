@@ -1,8 +1,8 @@
 package dev.jyotiraditya.dmt.util
 
 import androidx.media3.common.Player
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.QueueEntry
-import dev.jyotiraditya.dmt.domain.model.Track
 
 fun Player.playTracks(tracks: List<Track>, index: Int) {
     setMediaItems(tracks.map { it.toQueueRequest() }, index, 0L)

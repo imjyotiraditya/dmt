@@ -8,12 +8,12 @@ import androidx.media3.common.Player
 import androidx.media3.common.listenTo
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.di.ApplicationScope
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.NowPlaying
 import dev.jyotiraditya.dmt.domain.model.PlaybackFault
 import dev.jyotiraditya.dmt.domain.model.SleepState
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.steppedSpeed
 import dev.jyotiraditya.dmt.library.takeIfSet
 import dev.jyotiraditya.dmt.playback.PlaybackCommands

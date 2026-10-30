@@ -1,12 +1,12 @@
 package dev.jyotiraditya.dmt.presentation.library
 
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.Genre
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
-import dev.jyotiraditya.dmt.domain.model.Track
 
 /** The parts of a library that match [query], with the tracks in the chosen order. */
 data class FilteredLibrary(

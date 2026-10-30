@@ -5,11 +5,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.jyotiraditya.dmt.data.repository.SourceRepository
+import javax.inject.Provider
 import javax.inject.Singleton
 
 private const val CONNECT_TIMEOUT_MS = 5_000
@@ -22,11 +25,18 @@ object PlaybackModule {
     @Provides
     @Singleton
     @UnstableApi
-    fun dataSourceFactory(@ApplicationContext context: Context): DataSource.Factory {
+    fun dataSourceFactory(
+        @ApplicationContext context: Context,
+        sources: Provider<SourceRepository>,
+    ): DataSource.Factory {
         val httpFactory =
             DefaultHttpDataSource.Factory()
                 .setConnectTimeoutMs(CONNECT_TIMEOUT_MS)
                 .setReadTimeoutMs(READ_TIMEOUT_MS)
-        return DefaultDataSource.Factory(context, httpFactory)
+        val withHeaders =
+            ResolvingDataSource.Factory(httpFactory) { spec ->
+                spec.withAdditionalHeaders(sources.get().headersFor(spec.uri.toString()))
+            }
+        return DefaultDataSource.Factory(context, withHeaders)
     }
 }

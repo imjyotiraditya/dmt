@@ -6,10 +6,10 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.ServerSource
+import dev.jyotiraditya.dmt.core.model.SourceDraft
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
-import dev.jyotiraditya.dmt.domain.model.ServerSource
-import dev.jyotiraditya.dmt.domain.model.SourceDraft
 import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

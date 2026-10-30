@@ -24,10 +24,10 @@ import androidx.core.net.toUri
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.UiText
 import dev.jyotiraditya.dmt.core.common.asString
-import dev.jyotiraditya.dmt.data.remote.jellyfin.normalizeServerUrl
-import dev.jyotiraditya.dmt.domain.model.ServerSource
-import dev.jyotiraditya.dmt.domain.model.SourceDraft
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.ServerSource
+import dev.jyotiraditya.dmt.core.model.SourceDraft
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.source.normalizeServerAddress
 import dev.jyotiraditya.dmt.ui.components.FilledField
 import dev.jyotiraditya.dmt.ui.components.PasswordField
 import dev.jyotiraditya.dmt.ui.theme.Danger
@@ -125,14 +125,14 @@ fun SourceFieldList(
             hint =
                 address
                     .takeIf { it.isNotBlank() }
-                    ?.let { normalizeServerUrl(it.toString()).toUri().host }
+                    ?.let { normalizeServerAddress(it.toString()).toUri().host }
                     ?: stringResource(R.string.source_form_name_hint),
             capitalization = KeyboardCapitalization.Words,
         )
         FilledField(
             label = stringResource(R.string.source_form_address_label),
             state = fields.url,
-            hint = stringResource(fields.kind.urlHint),
+            hint = fields.kind.display.addressHint?.let { stringResource(it) }.orEmpty(),
             keyboardType = KeyboardType.Uri,
         )
         FilledField(

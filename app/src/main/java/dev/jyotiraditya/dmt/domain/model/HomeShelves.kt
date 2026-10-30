@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.domain.model
 
 import androidx.compose.runtime.Immutable
+import dev.jyotiraditya.dmt.core.model.Track
 
 private const val SHELF_SIZE = 12
 

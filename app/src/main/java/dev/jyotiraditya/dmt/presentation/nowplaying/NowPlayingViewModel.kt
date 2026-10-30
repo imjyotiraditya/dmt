@@ -11,6 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.UiText
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.AnimatedArtworkRepository
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PlaybackRepository
@@ -22,7 +23,6 @@ import dev.jyotiraditya.dmt.domain.model.LyricsSource
 import dev.jyotiraditya.dmt.domain.model.NowPlaying
 import dev.jyotiraditya.dmt.domain.model.PlaybackFault
 import dev.jyotiraditya.dmt.domain.model.Spec
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackTech
 import dev.jyotiraditya.dmt.domain.repository.ArtworkRepository
 import dev.jyotiraditya.dmt.domain.usecase.GetLyricsUseCase

@@ -14,7 +14,9 @@ import dagger.hilt.components.SingletonComponent
 import dev.jyotiraditya.dmt.data.image.TrackCoverFetcher
 import dev.jyotiraditya.dmt.data.image.TrackCoverKeyer
 import dev.jyotiraditya.dmt.data.image.TrackCoverMapper
+import dev.jyotiraditya.dmt.data.remote.sourceHeaders
 import dev.jyotiraditya.dmt.data.repository.CoverArtRepository
+import dev.jyotiraditya.dmt.data.repository.SourceRepository
 import io.ktor.client.HttpClient
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -33,11 +35,17 @@ object ImageModule {
         @ApplicationContext context: Context,
         coverArt: Provider<CoverArtRepository>,
         client: Provider<HttpClient>,
+        sources: Provider<SourceRepository>,
     ): ImageLoader = ImageLoader.Builder(context)
         .components {
             add(
                 KtorNetworkFetcherFactory(
-                    httpClient = { client.get().config { expectSuccess = false } },
+                    httpClient = {
+                        client.get().config {
+                            expectSuccess = false
+                            install(sourceHeaders(sources))
+                        }
+                    },
                 ),
             )
             add(TrackCoverMapper())

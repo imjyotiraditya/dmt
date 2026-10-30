@@ -6,6 +6,8 @@ import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ALBUM
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ARTIST
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope

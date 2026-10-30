@@ -100,6 +100,10 @@ baselineProfile {
     dexLayoutOptimization = true
 }
 
+composeCompiler {
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose_stability.conf"))
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
@@ -108,7 +112,11 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.bundles.coil)
+    implementation(project(":core:model"))
+    implementation(project(":core:source"))
     implementation(project(":lyrics"))
+    implementation(project(":source:jellyfin"))
+    implementation(project(":source:subsonic"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.androidx.datastore.preferences)

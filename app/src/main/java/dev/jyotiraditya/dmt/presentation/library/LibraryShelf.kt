@@ -33,13 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import dev.jyotiraditya.dmt.presentation.navigation.Shelf
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.settings.noTracksMessage
+import dev.jyotiraditya.dmt.presentation.settings.display
 import dev.jyotiraditya.dmt.ui.components.ChoiceRow
 import dev.jyotiraditya.dmt.ui.components.CollectionRow
 import dev.jyotiraditya.dmt.ui.components.CoverTile
@@ -217,7 +217,7 @@ private fun LazyListScope.tracks(
         item {
             EmptyState(
                 title = stringResource(R.string.home_empty_title),
-                body = stringResource(state.sourceMode.noTracksMessage),
+                body = stringResource(state.sourceMode.display.noTracks),
                 modifier = Modifier.padding(horizontal = Margin),
             )
         }

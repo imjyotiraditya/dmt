@@ -6,6 +6,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PlaybackRepository
 import dev.jyotiraditya.dmt.data.repository.PlaylistRepository
@@ -15,7 +16,6 @@ import dev.jyotiraditya.dmt.domain.model.Folder
 import dev.jyotiraditya.dmt.domain.model.Genre
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.Playlist
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.common.TrackActions
 import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import dev.jyotiraditya.dmt.presentation.navigation.Destination

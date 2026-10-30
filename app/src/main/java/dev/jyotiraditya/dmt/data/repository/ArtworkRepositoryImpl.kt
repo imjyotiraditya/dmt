@@ -11,8 +11,8 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.image.coverKey
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.ArtworkRepository
 import dev.jyotiraditya.dmt.util.fieldColor
 import javax.inject.Inject

@@ -20,8 +20,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberPlaybackSpeedState
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.AudioQuality
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.nowplaying.NowPlayingUiState
 import dev.jyotiraditya.dmt.ui.components.FactRow

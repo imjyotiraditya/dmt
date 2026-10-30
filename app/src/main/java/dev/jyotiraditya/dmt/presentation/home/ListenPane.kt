@@ -23,15 +23,15 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.rememberMinuteClock
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.DmtStats
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.presentation.library.TrackMenuNavigation
 import dev.jyotiraditya.dmt.presentation.library.artistSummary
 import dev.jyotiraditya.dmt.presentation.library.rememberTrackMenu
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.nowplaying.rememberWantsPlayback
-import dev.jyotiraditya.dmt.presentation.settings.noTracksMessage
+import dev.jyotiraditya.dmt.presentation.settings.display
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.CoverTile
 import dev.jyotiraditya.dmt.ui.components.EmptyState
@@ -88,7 +88,7 @@ fun ListenPane(
                 item {
                     EmptyState(
                         title = stringResource(R.string.home_empty_title),
-                        body = stringResource(state.sourceMode.noTracksMessage),
+                        body = stringResource(state.sourceMode.display.noTracks),
                         modifier = Modifier.padding(horizontal = Margin),
                         action = {
                             Block(

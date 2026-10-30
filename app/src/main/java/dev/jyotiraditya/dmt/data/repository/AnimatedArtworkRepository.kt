@@ -5,13 +5,13 @@ import android.util.LruCache
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.Track
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ALBUM
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ARTIST
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_TITLE
 import dev.jyotiraditya.dmt.data.remote.artwork.AnimatedArtworkApi
 import dev.jyotiraditya.dmt.data.remote.knownOrNull
-import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.domain.model.TrackSource
-import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ALBUM
-import dev.jyotiraditya.dmt.domain.model.UNKNOWN_ARTIST
-import dev.jyotiraditya.dmt.domain.model.UNKNOWN_TITLE
 import dev.jyotiraditya.dmt.domain.model.primaryArtist
 import dev.jyotiraditya.dmt.library.MetadataReader
 import javax.inject.Inject
@@ -57,7 +57,7 @@ constructor(
     @OptIn(UnstableApi::class)
     private suspend fun releaseOf(track: Track): String? {
         val album =
-            if (track.source == TrackSource.LOCAL) {
+            if (track.source == SourceMode.LOCAL) {
                 MetadataReader.read(context, track.uri).album?.ifBlank { null }
             } else {
                 track.album.knownOrNull(UNKNOWN_ALBUM)

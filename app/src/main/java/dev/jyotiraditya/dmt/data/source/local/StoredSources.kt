@@ -1,7 +1,7 @@
 package dev.jyotiraditya.dmt.data.source.local
 
-import dev.jyotiraditya.dmt.domain.model.ServerSource
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.ServerSource
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import kotlinx.serialization.Serializable
 
 /** A [ServerSource] as stored, with its kind kept by name. */

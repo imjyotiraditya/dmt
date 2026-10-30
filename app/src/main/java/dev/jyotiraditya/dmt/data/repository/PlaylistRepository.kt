@@ -2,9 +2,9 @@ package dev.jyotiraditya.dmt.data.repository
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.di.ApplicationScope
 import dev.jyotiraditya.dmt.domain.model.Playlist
-import dev.jyotiraditya.dmt.domain.model.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

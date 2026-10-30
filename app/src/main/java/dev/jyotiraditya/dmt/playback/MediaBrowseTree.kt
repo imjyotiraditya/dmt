@@ -9,9 +9,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaConstants
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.util.toMediaItem
 
 /** Media ids of the browsable nodes, shared by the tree and the session that resolves picks. */

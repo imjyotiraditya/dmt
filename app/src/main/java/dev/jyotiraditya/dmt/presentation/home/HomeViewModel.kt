@@ -3,6 +3,8 @@ package dev.jyotiraditya.dmt.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PlaybackRepository
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
@@ -10,8 +12,6 @@ import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.DmtStats
 import dev.jyotiraditya.dmt.domain.model.HomeShelves
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
-import dev.jyotiraditya.dmt.domain.model.SourceMode
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.homeShelves
 import dev.jyotiraditya.dmt.presentation.common.TrackActions
 import dev.jyotiraditya.dmt.presentation.common.TrackListActions

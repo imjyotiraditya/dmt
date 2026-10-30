@@ -2,8 +2,8 @@ package dev.jyotiraditya.dmt.domain.usecase
 
 import android.net.Uri
 import androidx.media3.common.Format
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.TrackMediaRepository
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.TrackTech
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

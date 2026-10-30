@@ -12,7 +12,7 @@ import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.core.model.Track
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton

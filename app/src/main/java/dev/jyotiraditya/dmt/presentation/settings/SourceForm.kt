@@ -62,7 +62,7 @@ fun SourceFormPage(
                     saved == null ->
                         stringResource(
                             R.string.source_form_title_connect,
-                            stringResource(form.kind.title),
+                            stringResource(form.kind.display.title),
                         )
 
                     fields.editing -> stringResource(R.string.source_form_title_edit, saved.name)
@@ -71,7 +71,7 @@ fun SourceFormPage(
                 },
         )
         Text(
-            text = stringResource(form.kind.line),
+            text = stringResource(form.kind.display.line),
             style = MaterialTheme.typography.bodyLarge,
             color = Ink,
             modifier = Modifier.padding(bottom = 20.dp),

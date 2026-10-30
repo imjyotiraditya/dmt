@@ -36,6 +36,14 @@ rootProject.name = "DMT"
 
 include(":app")
 
+include(":core:model")
+
+include(":core:source")
+
+include(":source:jellyfin")
+
+include(":source:subsonic")
+
 include(":library")
 
 include(":lyrics")

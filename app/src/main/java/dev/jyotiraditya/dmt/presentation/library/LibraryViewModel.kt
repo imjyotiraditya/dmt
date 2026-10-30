@@ -6,6 +6,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PlaybackRepository
 import dev.jyotiraditya.dmt.data.repository.PlaylistRepository
@@ -14,7 +15,6 @@ import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
 import dev.jyotiraditya.dmt.domain.model.Playlist
-import dev.jyotiraditya.dmt.domain.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.common.TrackActions
 import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import kotlinx.coroutines.Dispatchers

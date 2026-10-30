@@ -5,9 +5,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Folder
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.util.asHoursMinutes
 import dev.jyotiraditya.dmt.util.asTime

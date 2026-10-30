@@ -1,7 +1,7 @@
 package dev.jyotiraditya.dmt.domain.repository
 
 import android.graphics.Bitmap
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.core.model.Track
 
 /** Track covers decoded at display size. */
 interface ArtworkRepository {

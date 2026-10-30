@@ -15,9 +15,9 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.util.resolveQueue
 import dev.jyotiraditya.dmt.util.toMediaItem
 import kotlinx.coroutines.CoroutineScope

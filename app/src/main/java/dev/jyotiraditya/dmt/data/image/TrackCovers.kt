@@ -17,8 +17,8 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import coil3.request.Options
 import coil3.size.pxOrElse
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.CoverArtRepository
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.util.fitWithin
 import javax.inject.Provider
 

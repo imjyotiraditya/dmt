@@ -15,7 +15,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.BuildConfig
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.navigation.Destination
 import dev.jyotiraditya.dmt.ui.icons.DmtIcons

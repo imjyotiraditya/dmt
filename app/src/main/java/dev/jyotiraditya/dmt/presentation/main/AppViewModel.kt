@@ -5,16 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.UiText
-import dev.jyotiraditya.dmt.data.remote.jellyfin.JellyfinError
-import dev.jyotiraditya.dmt.data.remote.jellyfin.toJellyfinError
-import dev.jyotiraditya.dmt.data.remote.subsonic.SubsonicError
-import dev.jyotiraditya.dmt.data.remote.subsonic.toSubsonicError
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.source.SourceDisplay
+import dev.jyotiraditya.dmt.core.source.SourceFailure
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
+import dev.jyotiraditya.dmt.data.repository.SourceRepository
 import dev.jyotiraditya.dmt.domain.model.AccentColor
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
-import dev.jyotiraditya.dmt.domain.model.SourceMode
-import dev.jyotiraditya.dmt.presentation.settings.scanFailedMessage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -38,6 +36,7 @@ class AppViewModel
 constructor(
     libraryRepository: LibraryRepository,
     preferences: PreferencesRepository,
+    private val sources: SourceRepository,
     private val notices: Notices,
 ) : ViewModel() {
 
@@ -54,6 +53,9 @@ constructor(
 
     val error: StateFlow<UiText?> = notices.error
 
+    /** How each kind of source is shown. */
+    val displays: Map<SourceMode, SourceDisplay> = sources.displays
+
     init {
         viewModelScope.launch {
             libraryRepository.failure.collect { failure ->
@@ -69,6 +71,17 @@ constructor(
 
     /** Clears the error once the user moves on to another screen. */
     fun dismissError() = notices.clearError()
+
+    /** The message for a library scan from the source in [settings] that failed with [failure]. */
+    private fun scanFailureMessage(settings: DmtSettings, failure: Throwable): UiText {
+        val source = sources.of(settings.sourceMode)
+        val server = settings.server
+        return if (server != null && source.failure(failure) == SourceFailure.BAD_CREDENTIALS) {
+            UiText(R.string.sources_session_ended, server.name)
+        } else {
+            UiText(source.display.scanFailed)
+        }
+    }
 }
 
 private fun stateOf(settings: DmtSettings?) = AppUiState(
@@ -76,20 +89,3 @@ private fun stateOf(settings: DmtSettings?) = AppUiState(
     setupDone = settings?.setupDone == true,
     accent = settings?.accent ?: AccentColor.GREEN,
 )
-
-/** The message for a library scan from the source in [settings] that failed with [failure]. */
-private fun scanFailureMessage(settings: DmtSettings, failure: Throwable): UiText {
-    val mode = settings.sourceMode
-    val sessionEnded =
-        when (mode) {
-            SourceMode.JELLYFIN -> failure.toJellyfinError() == JellyfinError.BAD_CREDENTIALS
-            SourceMode.SUBSONIC -> failure.toSubsonicError() == SubsonicError.BAD_CREDENTIALS
-            SourceMode.LOCAL -> false
-        }
-    val server = settings.server
-    return if (sessionEnded && server != null) {
-        UiText(R.string.sources_session_ended, server.name)
-    } else {
-        UiText(mode.scanFailedMessage)
-    }
-}

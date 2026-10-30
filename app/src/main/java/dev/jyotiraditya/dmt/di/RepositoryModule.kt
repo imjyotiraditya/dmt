@@ -4,27 +4,26 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoMap
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.source.InstallId
+import dev.jyotiraditya.dmt.core.source.MusicSource
+import dev.jyotiraditya.dmt.core.source.SourceKey
 import dev.jyotiraditya.dmt.data.repository.ArtworkRepositoryImpl
-import dev.jyotiraditya.dmt.data.repository.JellyfinMediaRepositoryImpl
-import dev.jyotiraditya.dmt.data.repository.MediaRepositoryImpl
-import dev.jyotiraditya.dmt.data.repository.SubsonicMediaRepositoryImpl
+import dev.jyotiraditya.dmt.data.repository.LocalMusicSource
+import dev.jyotiraditya.dmt.data.repository.StoredInstallId
 import dev.jyotiraditya.dmt.domain.repository.ArtworkRepository
-import dev.jyotiraditya.dmt.domain.repository.MediaRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    @Local @Binds
-    abstract fun mediaRepository(impl: MediaRepositoryImpl): MediaRepository
-
     @Binds abstract fun artworkRepository(impl: ArtworkRepositoryImpl): ArtworkRepository
 
-    @JellyfinSource
     @Binds
-    abstract fun jellyfinMediaRepository(impl: JellyfinMediaRepositoryImpl): MediaRepository
+    @IntoMap
+    @SourceKey(SourceMode.LOCAL)
+    abstract fun localSource(source: LocalMusicSource): MusicSource
 
-    @SubsonicSource
-    @Binds
-    abstract fun subsonicMediaRepository(impl: SubsonicMediaRepositoryImpl): MediaRepository
+    @Binds abstract fun installId(stored: StoredInstallId): InstallId
 }

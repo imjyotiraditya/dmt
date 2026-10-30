@@ -3,11 +3,11 @@ package dev.jyotiraditya.dmt.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
-import dev.jyotiraditya.dmt.domain.model.Track
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine

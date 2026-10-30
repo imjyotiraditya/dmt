@@ -37,7 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.ui.icons.DmtIcons
 import dev.jyotiraditya.dmt.ui.theme.Ink
 import dev.jyotiraditya.dmt.ui.theme.LocalAccent

@@ -1,5 +1,6 @@
 package dev.jyotiraditya.dmt.domain.model
 
+import dev.jyotiraditya.dmt.core.model.Track
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source_jellyfin" translatable="false">Jellyfin</string>
+    <string name="source_jellyfin_line">Your Jellyfin media server</string>
+    <string name="source_jellyfin_setup">Your own server. You sign in next.</string>
+    <string name="source_jellyfin_address_hint" translatable="false">jellyfin.example.com</string>
+    <string name="source_jellyfin_no_tracks">No tracks found on your Jellyfin server. Rescan from Settings, or switch source.</string>
+    <string name="source_jellyfin_scan_failed">Couldn’t reach your Jellyfin server. Check the connection and rescan.</string>
+    <string name="source_jellyfin_wrong_kind">That address doesn’t look like a Jellyfin server.</string>
+</resources>

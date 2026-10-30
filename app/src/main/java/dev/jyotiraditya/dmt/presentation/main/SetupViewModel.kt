@@ -3,10 +3,10 @@ package dev.jyotiraditya.dmt.presentation.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.SourceDraft
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PreferencesRepository
 import dev.jyotiraditya.dmt.domain.model.DmtSettings
-import dev.jyotiraditya.dmt.domain.model.SourceDraft
 import dev.jyotiraditya.dmt.presentation.settings.PermissionListener
 import dev.jyotiraditya.dmt.presentation.settings.SignInState
 import dev.jyotiraditya.dmt.presentation.settings.SourceSignIn

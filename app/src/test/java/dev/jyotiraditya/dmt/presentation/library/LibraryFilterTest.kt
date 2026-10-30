@@ -1,8 +1,8 @@
 package dev.jyotiraditya.dmt.presentation.library
 
 import android.net.Uri
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.LibrarySort
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.toLibrary
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

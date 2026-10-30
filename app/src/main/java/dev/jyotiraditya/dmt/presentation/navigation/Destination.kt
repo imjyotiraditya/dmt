@@ -4,7 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import dev.jyotiraditya.dmt.ui.icons.DmtIcons
 import kotlinx.serialization.Serializable
 

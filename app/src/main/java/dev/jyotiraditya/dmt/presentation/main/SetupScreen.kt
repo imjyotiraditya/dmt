@@ -46,7 +46,7 @@ import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.PermissionGrants
 import dev.jyotiraditya.dmt.core.common.UiText
 import dev.jyotiraditya.dmt.core.common.rememberPermissionGrants
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.settings.FILES_ENTRY
 import dev.jyotiraditya.dmt.presentation.settings.PERMISSION_REGISTRY
 import dev.jyotiraditya.dmt.presentation.settings.PermissionRow
@@ -54,12 +54,9 @@ import dev.jyotiraditya.dmt.presentation.settings.SourceFieldList
 import dev.jyotiraditya.dmt.presentation.settings.SourceFields
 import dev.jyotiraditya.dmt.presentation.settings.SourceSleeve
 import dev.jyotiraditya.dmt.presentation.settings.SyncPermissionState
-import dev.jyotiraditya.dmt.presentation.settings.icon
-import dev.jyotiraditya.dmt.presentation.settings.line
+import dev.jyotiraditya.dmt.presentation.settings.display
 import dev.jyotiraditya.dmt.presentation.settings.rememberSourceConnect
 import dev.jyotiraditya.dmt.presentation.settings.rememberSourceFields
-import dev.jyotiraditya.dmt.presentation.settings.setupDetail
-import dev.jyotiraditya.dmt.presentation.settings.title
 import dev.jyotiraditya.dmt.ui.components.Block
 import dev.jyotiraditya.dmt.ui.components.PageHead
 import dev.jyotiraditya.dmt.ui.components.TextLink
@@ -126,7 +123,7 @@ fun SetupScreen(viewModel: SetupViewModel = hiltViewModel()) {
                 Step.ACCESS -> Access(grants)
                 Step.SOURCE -> Source(kind, onPick = { kind = it })
                 Step.SIGN_IN -> SignIn(fields, state.signIn.error, server?.name, connect)
-                Step.READY -> Ready(server?.name ?: stringResource(kind.title), grants)
+                Step.READY -> Ready(server?.name ?: stringResource(kind.display.title), grants)
             }
         }
         Row(
@@ -247,10 +244,11 @@ private fun Source(picked: SourceMode, onPick: (SourceMode) -> Unit) {
             stringResource(R.string.setup_source_body),
         )
         SourceMode.entries.forEachIndexed { index, mode ->
+            val display = mode.display
             SourceSleeve(
-                icon = mode.icon,
-                label = stringResource(mode.title),
-                detail = stringResource(mode.setupDetail),
+                icon = display.icon,
+                label = stringResource(display.title),
+                detail = stringResource(display.setupDetail),
                 chosen = picked == mode,
                 onClick = { onPick(mode) },
                 fill = index.rowFill,
@@ -264,11 +262,14 @@ private fun Source(picked: SourceMode, onPick: (SourceMode) -> Unit) {
 private fun SignIn(fields: SourceFields, error: UiText?, signedIn: String?, connect: () -> Unit) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         StepTitle(
-            stringResource(R.string.source_form_title_connect, stringResource(fields.kind.title)),
+            stringResource(
+                R.string.source_form_title_connect,
+                stringResource(fields.kind.display.title),
+            ),
             if (signedIn != null) {
                 stringResource(R.string.setup_signed_in, signedIn)
             } else {
-                stringResource(fields.kind.line)
+                stringResource(fields.kind.display.line)
             },
         )
         if (signedIn == null) {

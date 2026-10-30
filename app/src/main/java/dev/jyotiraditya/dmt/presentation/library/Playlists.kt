@@ -28,8 +28,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.Playlist
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.navigation.Destination

@@ -26,8 +26,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Constraints
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.Cover
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.repository.ArtworkRepository
 import dev.jyotiraditya.dmt.ui.theme.Surface2
 import dev.jyotiraditya.dmt.util.fieldColor

@@ -7,6 +7,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.net.toUri
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ALBUM
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_ARTIST
+import dev.jyotiraditya.dmt.core.model.UNKNOWN_TITLE
 
 private const val TRACKS_PER_DISC = 1000
 

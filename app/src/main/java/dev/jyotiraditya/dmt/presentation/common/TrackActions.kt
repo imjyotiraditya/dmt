@@ -2,8 +2,8 @@ package dev.jyotiraditya.dmt.presentation.common
 
 import dev.jyotiraditya.dmt.R
 import dev.jyotiraditya.dmt.core.common.UiText
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.PlaybackRepository
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.main.Notices
 import javax.inject.Inject
 

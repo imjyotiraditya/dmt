@@ -71,11 +71,7 @@
     <!-- Library -->
     <string name="library_scanning">Reading your library</string>
     <string name="library_empty_local">No tracks found on this device. Rescan from Settings, or switch source.</string>
-    <string name="library_empty_jellyfin">No tracks found on your Jellyfin server. Rescan from Settings, or switch source.</string>
-    <string name="library_empty_subsonic">No tracks found on your Navidrome or Subsonic server. Rescan from Settings, or switch source.</string>
     <string name="library_scan_failed_local">Couldn’t read the music on this device. Check permissions and rescan.</string>
-    <string name="library_scan_failed_jellyfin">Couldn’t reach your Jellyfin server. Check the connection and rescan.</string>
-    <string name="library_scan_failed_subsonic">Couldn’t reach your Navidrome or Subsonic server. Check the connection and rescan.</string>
     <string name="library_cue_tag">Cue</string>
     <string name="library_cue_from">From a cue sheet</string>
 
@@ -319,10 +315,6 @@
 
     <!-- Source kinds -->
     <string name="source_kind_local">This device</string>
-    <string name="source_kind_jellyfin">Jellyfin</string>
-    <string name="source_kind_subsonic">Navidrome</string>
-    <string name="source_kind_jellyfin_summary">Your Jellyfin media server</string>
-    <string name="source_kind_subsonic_summary">Navidrome or any Subsonic server</string>
 
     <!-- Sources -->
     <string name="sources_title">Sources</string>
@@ -341,8 +333,6 @@
     <string name="source_form_name_label">Name</string>
     <string name="source_form_name_hint">Name it, like Home</string>
     <string name="source_form_address_label">Server address</string>
-    <string name="source_form_address_hint_jellyfin" translatable="false">jellyfin.example.com</string>
-    <string name="source_form_address_hint_subsonic" translatable="false">music.example.com</string>
     <string name="source_form_username_label">Username</string>
     <string name="source_form_username_hint">Your username</string>
     <string name="source_form_password_label">Password</string>
@@ -356,8 +346,6 @@
     <string name="source_form_error_missing">Fill in the server address, username and password first.</string>
     <string name="source_form_error_unreachable">Couldn’t reach the server. Check the address and your connection.</string>
     <string name="source_form_error_rejected">The server didn’t accept that username or password.</string>
-    <string name="source_form_error_not_jellyfin">That address doesn’t look like a Jellyfin server.</string>
-    <string name="source_form_error_not_subsonic">That address doesn’t look like a Navidrome or Subsonic server.</string>
     <string name="source_form_error_token_unsupported">This server doesn’t accept token sign-in, which dmt needs so it never stores your password.</string>
 
     <!-- Fields -->
@@ -399,8 +387,6 @@
     <string name="setup_source_title">Where it lives</string>
     <string name="setup_source_body">Pick a home for your library. You can switch any time.</string>
     <string name="setup_source_local_detail">Files stored on this device</string>
-    <string name="setup_source_jellyfin_detail">Your own server. You sign in next.</string>
-    <string name="setup_source_subsonic_detail">Navidrome or any Subsonic server. You sign in next.</string>
     <string name="setup_signed_in">Signed in to %1$s. Add more servers any time in Settings.</string>
     <string name="setup_ready_title">All set.</string>
     <string name="setup_ready_body">Everything here can be changed later in Settings.</string>

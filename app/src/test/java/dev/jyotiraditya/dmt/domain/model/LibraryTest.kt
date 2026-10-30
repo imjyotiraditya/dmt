@@ -1,6 +1,7 @@
 package dev.jyotiraditya.dmt.domain.model
 
 import android.net.Uri
+import dev.jyotiraditya.dmt.core.model.Track
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

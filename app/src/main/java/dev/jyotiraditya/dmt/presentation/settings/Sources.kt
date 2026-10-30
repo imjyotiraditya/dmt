@@ -19,8 +19,8 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.ServerSource
-import dev.jyotiraditya.dmt.domain.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.ServerSource
+import dev.jyotiraditya.dmt.core.model.SourceMode
 import dev.jyotiraditya.dmt.presentation.library.tracksSummary
 import dev.jyotiraditya.dmt.presentation.main.LocalContentBottom
 import dev.jyotiraditya.dmt.presentation.navigation.Destination
@@ -58,7 +58,7 @@ fun SourcesPage(onOpen: (Destination) -> Unit, viewModel: SourcesViewModel = hil
             modifier = Modifier.padding(horizontal = Margin).padding(bottom = 20.dp),
         )
         SourceSleeve(
-            icon = SourceMode.LOCAL.icon,
+            icon = SourceMode.LOCAL.display.icon,
             label = stringResource(R.string.source_kind_local),
             detail =
                 listOfNotNull(
@@ -129,11 +129,11 @@ private fun ServerSleeve(
     onSignOut: () -> Unit,
 ) {
     SourceSleeve(
-        icon = source.kind.icon,
+        icon = source.kind.display.icon,
         label = source.name,
         detail =
             listOfNotNull(
-                stringResource(source.kind.title),
+                stringResource(source.kind.display.title),
                 if (source.signedIn) {
                     source.username
                 } else {

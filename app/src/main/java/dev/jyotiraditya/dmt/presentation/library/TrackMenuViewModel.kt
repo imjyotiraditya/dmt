@@ -3,12 +3,12 @@ package dev.jyotiraditya.dmt.presentation.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.data.repository.LibraryRepository
 import dev.jyotiraditya.dmt.data.repository.PlaylistRepository
 import dev.jyotiraditya.dmt.domain.model.Album
 import dev.jyotiraditya.dmt.domain.model.Artist
 import dev.jyotiraditya.dmt.domain.model.Playlist
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.presentation.common.TrackActions
 import dev.jyotiraditya.dmt.presentation.common.TrackListActions
 import kotlinx.coroutines.flow.StateFlow

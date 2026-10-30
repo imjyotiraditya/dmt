@@ -1,5 +1,7 @@
 package dev.jyotiraditya.dmt.domain.model
 
+import dev.jyotiraditya.dmt.core.model.Track
+
 /**
  * A finished library scan: when it ended and how many tracks it found, with the tracks it [added]
  * and [removed] when it was a rescan compared against the library before it.

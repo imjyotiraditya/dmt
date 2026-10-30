@@ -1,6 +1,6 @@
 package dev.jyotiraditya.dmt.data.remote.artwork
 
-import dev.jyotiraditya.dmt.data.remote.missingAsNull
+import dev.jyotiraditya.dmt.core.source.missingAsNull
 import dev.jyotiraditya.dmt.util.suspendRunCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

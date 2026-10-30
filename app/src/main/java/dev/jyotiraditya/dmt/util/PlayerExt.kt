@@ -15,9 +15,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.LastSession
 import dev.jyotiraditya.dmt.domain.model.QueueEntry
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.domain.model.asCredit
 import dev.jyotiraditya.dmt.playback.PlaybackService
 import kotlinx.coroutines.guava.await

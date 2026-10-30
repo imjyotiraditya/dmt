@@ -85,8 +85,8 @@ constructor(
         context.dmtStore.edit { it[KEY_SPEED] = speed }
     }
 
-    /** This install's Jellyfin device id, created on first use; Jellyfin keeps a session per id. */
-    suspend fun jellyfinDeviceId(): String {
+    /** This install's id, created on first use. */
+    suspend fun installId(): String {
         val prefs =
             context.dmtStore.edit {
                 if (KEY_JELLYFIN_DEVICE_ID !in it) {

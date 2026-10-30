@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jyotiraditya.dmt.R
-import dev.jyotiraditya.dmt.domain.model.Track
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
 import dev.jyotiraditya.dmt.ui.components.SheetAction
 import dev.jyotiraditya.dmt.ui.components.SheetHeader

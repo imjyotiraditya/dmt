@@ -18,10 +18,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.jyotiraditya.dmt.core.model.SourceMode
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.AudioQuality
 import dev.jyotiraditya.dmt.domain.model.Spec
-import dev.jyotiraditya.dmt.domain.model.Track
-import dev.jyotiraditya.dmt.domain.model.TrackSource
 import dev.jyotiraditya.dmt.domain.model.TrackTech
 import dev.jyotiraditya.dmt.library.MetadataReader
 import dev.jyotiraditya.dmt.util.asKHz
@@ -46,7 +46,7 @@ constructor(
     /** The format of [track]: from its server for remote tracks, else from [played] or the file. */
     @OptIn(UnstableApi::class)
     suspend fun techSpecs(uri: Uri, track: Track?, played: Format?): TrackTech {
-        if (track != null && track.source != TrackSource.LOCAL) {
+        if (track != null && track.source != SourceMode.LOCAL) {
             val specs = buildList {
                 if (track.mime.isNotEmpty()) {
                     add(Spec(label = "FMT", value = track.mime.codecLabel()))

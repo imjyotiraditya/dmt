@@ -34,9 +34,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberShuffleButtonState
 import dev.jyotiraditya.dmt.R
+import dev.jyotiraditya.dmt.core.model.Track
 import dev.jyotiraditya.dmt.domain.model.LibrarySnapshot
 import dev.jyotiraditya.dmt.domain.model.QueueEntry
-import dev.jyotiraditya.dmt.domain.model.Track
 import dev.jyotiraditya.dmt.ui.components.Artwork
 import dev.jyotiraditya.dmt.ui.components.DmtIcon
 import dev.jyotiraditya.dmt.ui.components.DmtSheet
