@@ -2,7 +2,6 @@ package dev.jyotiraditya.dmt.presentation.nowplaying
 
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
@@ -20,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,7 +25,6 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,8 +118,19 @@ private fun UpcomingList(
     actions: NowPlayingActions,
 ) {
     val listState = rememberLazyListState()
-    val order = remember(upcoming) { upcoming.toMutableStateList() }
-    val drag = remember { DragState(listState) }
+    val order = remember(upcoming) { upcoming.keyed().toMutableStateList() }
+    val reorder =
+        rememberReorderState(
+            listState = listState,
+            onMove = { from, to -> order.add(to, order.removeAt(from)) },
+            onDrop = { key ->
+                val to = order.indexOfFirst { it.key == key }
+                val entry = order.getOrNull(to)?.entry
+                if (entry != null && to != upcoming.indexOf(entry)) {
+                    actions.move(entry.index, firstUpcomingIndex + to)
+                }
+            },
+        )
     var menuFor by remember { mutableStateOf<QueueEntry?>(null) }
     menuFor?.let { entry ->
         QueueItemSheet(entry, actions, onDismiss = { menuFor = null })
@@ -132,34 +139,44 @@ private fun UpcomingList(
     LaunchedEffect(firstUpcomingIndex) { listState.animateScrollToItem(0) }
 
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-        items(order, key = { it.index }) { entry ->
-            val dragging = drag.key == entry.index
-            Box(
+        items(order, key = { it.key }) { item ->
+            val entry = item.entry
+            val raised = reorder.raisedKey == item.key
+            UpcomingRow(
+                entry = entry,
+                track = library.track(entry.mediaId),
+                raised = raised,
+                onClick = { actions.jumpTo(entry.index) },
+                onLongClick = { menuFor = entry },
                 modifier =
-                    Modifier.then(if (dragging) Modifier.zIndex(1f) else Modifier.animateItem())
-                        .graphicsLayer { translationY = if (dragging) drag.offset else 0f },
-            ) {
-                UpcomingRow(
-                    entry = entry,
-                    track = library.track(entry.mediaId),
-                    raised = dragging,
-                    onClick = { actions.jumpTo(entry.index) },
-                    onLongClick = { menuFor = entry },
-                    handle =
-                        if (reorderable) {
-                            {
-                                DragHandle(
-                                    Modifier.reorderDrag(entry.index, drag, order) { from, to ->
-                                        actions.move(from, firstUpcomingIndex + to)
-                                    },
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                )
-            }
+                    if (raised) {
+                        Modifier.zIndex(1f).graphicsLayer {
+                            translationY = reorder.translation(item.key)
+                        }
+                    } else {
+                        Modifier.animateItem()
+                    },
+                handle =
+                    if (reorderable) {
+                        { DragHandle(Modifier.reorderHandle(reorder, item.key)) }
+                    } else {
+                        null
+                    },
+            )
         }
+    }
+}
+
+/** A queued [entry] with a [key] that stays the same while entries move around it. */
+private data class KeyedEntry(val key: String, val entry: QueueEntry)
+
+/** These entries keyed by media id and which copy of that item each one is. */
+private fun List<QueueEntry>.keyed(): List<KeyedEntry> {
+    val copies = HashMap<String, Int>()
+    return map { entry ->
+        val copy = copies.getOrDefault(entry.mediaId, 0)
+        copies[entry.mediaId] = copy + 1
+        KeyedEntry("${entry.mediaId}#$copy", entry)
     }
 }
 
@@ -186,76 +203,6 @@ private fun QueueItemSheet(entry: QueueEntry, actions: NowPlayingActions, onDism
     }
 }
 
-/** Drags row [key] through [order], then reports its player index and new place to [onMove]. */
-private fun Modifier.reorderDrag(
-    key: Int,
-    drag: DragState,
-    order: MutableList<QueueEntry>,
-    onMove: (from: Int, to: Int) -> Unit,
-): Modifier = pointerInput(key) {
-    detectDragGestures(
-        onDragStart = { drag.start(key) },
-        onDrag = { change, amount ->
-            change.consume()
-            drag.by(amount.y, order)
-        },
-        onDragEnd = { drag.finish(order)?.let { (from, to) -> onMove(from, to) } },
-        onDragCancel = { drag.cancel() },
-    )
-}
-
-/** The row being dragged, how far it has moved, and where it started. */
-private class DragState(private val listState: LazyListState) {
-    var key by mutableStateOf<Int?>(null)
-        private set
-
-    var offset by mutableFloatStateOf(0f)
-        private set
-
-    private var startPosition = -1
-
-    fun start(key: Int) {
-        this.key = key
-        offset = 0f
-        startPosition =
-            listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }?.index ?: -1
-    }
-
-    /** Moves the dragged row by [dy], swapping it with the row its centre passes over. */
-    fun by(dy: Float, order: MutableList<QueueEntry>) {
-        val dragged = key ?: return
-        offset += dy
-        val items = listState.layoutInfo.visibleItemsInfo
-        val info = items.firstOrNull { it.key == dragged } ?: return
-        val centre = info.offset + info.size / 2f + offset
-        val target =
-            items.firstOrNull {
-                it.key != dragged && centre.toInt() in it.offset until it.offset + it.size
-            } ?: return
-        val from = order.indexOfFirst { it.index == dragged }
-        val to = order.indexOfFirst { it.index == target.key }
-        if (from < 0 || to < 0) return
-        order.add(to, order.removeAt(from))
-        // The row now sits where the target was; keep it under the finger.
-        offset -= target.offset - info.offset
-    }
-
-    /** Ends the drag, returning the row's player index and new place if it moved. */
-    fun finish(order: List<QueueEntry>): Pair<Int, Int>? {
-        val dragged = key ?: return null
-        val to = order.indexOfFirst { it.index == dragged }
-        val moved = to >= 0 && to != startPosition
-        cancel()
-        return if (moved) dragged to to else null
-    }
-
-    fun cancel() {
-        key = null
-        offset = 0f
-        startPosition = -1
-    }
-}
-
 @Composable
 private fun UpcomingRow(
     entry: QueueEntry,
@@ -263,29 +210,32 @@ private fun UpcomingRow(
     raised: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    handle: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+    handle: (@Composable () -> Unit)? = null,
 ) {
-    val endPadding = if (handle != null) 4.dp else Margin
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
-            Modifier.fillMaxWidth()
+            modifier
+                .fillMaxWidth()
                 .background(if (raised) Surface2 else Ground)
-                .pressable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    sink = 0.985f,
-                    label = entry.title,
-                )
-                .padding(
-                    start = Margin,
-                    top = 8.dp,
-                    bottom = 8.dp,
-                    end = endPadding,
-                ),
+                .padding(end = if (handle != null) 4.dp else Margin),
     ) {
-        Artwork(track = track, modifier = Modifier.size(RowArt))
-        TrackText(entry.title, entry.artist, modifier = Modifier.weight(1f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier.weight(1f)
+                    .pressable(
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        sink = 0.985f,
+                        label = entry.title,
+                    )
+                    .padding(start = Margin, top = 8.dp, bottom = 8.dp),
+        ) {
+            Artwork(track = track, modifier = Modifier.size(RowArt))
+            TrackText(entry.title, entry.artist, modifier = Modifier.weight(1f))
+        }
         handle?.invoke()
     }
 }
