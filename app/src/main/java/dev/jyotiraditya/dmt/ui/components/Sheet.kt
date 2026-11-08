@@ -11,8 +11,9 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -40,7 +41,7 @@ class DmtSheetScope internal constructor(private val close: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DmtSheet(onDismiss: () -> Unit, content: @Composable DmtSheetScope.() -> Unit) {
-    val state = rememberModalBottomSheetState()
+    val state = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val dismissed by rememberUpdatedState(onDismiss)
     val sheet =

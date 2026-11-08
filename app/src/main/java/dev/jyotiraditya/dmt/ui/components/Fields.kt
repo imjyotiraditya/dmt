@@ -47,7 +47,7 @@ fun FilledField(
         state = state,
         label = { Text(label) },
         placeholder = { Text(hint, maxLines = 1) },
-        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true),
+        labelPosition = TextFieldLabelPosition.Inside(isAlwaysMinimized = true),
         lineLimits = TextFieldLineLimits.SingleLine,
         textStyle = MaterialTheme.typography.bodyLarge,
         keyboardOptions =
@@ -77,7 +77,7 @@ fun PasswordField(
         state = state,
         label = { Text(label) },
         placeholder = { Text(hint, maxLines = 1) },
-        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true),
+        labelPosition = TextFieldLabelPosition.Inside(isAlwaysMinimized = true),
         trailingIcon = {
             IconTap(
                 icon = if (shown) DmtIcons.Hide else DmtIcons.Show,
